@@ -1,0 +1,26 @@
+{
+  "scanner": "ScanCode Toolkit",
+  "scanner_version": "32.5.0",
+  "scan_date": "2026-08-18",
+  "candidate_artifacts": 194,
+  "scanner_files_examined": 193,
+  "manually_examined_files": [
+    ".gitignore"
+  ],
+  "scan_errors": [],
+  "license_expressions": [
+    "apache-2.0",
+    "mit"
+  ],
+  "license_result": "Expected project-license and dependency-license references only; no vendored third-party code detected.",
+  "copyright_result": "Expected Alexander Bea project notices only.",
+  "reviewed_false_positives": [
+    {
+      "path": "skills/slack-monitor-scaffolder/assets/output-template.md",
+      "detection": "label Signal Relevance Confidence Follow-up",
+      "disposition": "Generic Markdown table headers; not a copyright holder."
+    }
+  ],
+  "raw_report_sha256": "56c173347f3b7900919bf52da6e72cf9e4ae992a299fd7ab0311fdda378d867d",
+  "raw_report_committed": false
+}

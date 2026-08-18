@@ -65,3 +65,7 @@ contract, generalization rules, and pre-publication gates.
 Copyright 2026 Alexander Bea.
 
 Licensed under the [Apache License 2.0](LICENSE).
+See the repository [notice](NOTICE), [third-party notices](THIRD_PARTY_NOTICES.md), and
+[IP-rights review](docs/legal/IP-RIGHTS-REVIEW-2026-08-18.md) for attribution and
+redistribution details. Third-party product names are used nominatively; no affiliation or
+endorsement is claimed.

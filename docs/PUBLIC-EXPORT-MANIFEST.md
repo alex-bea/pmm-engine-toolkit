@@ -41,5 +41,7 @@ python3 -m unittest discover -s tests
 
 The repository is licensed under Apache-2.0. The independent all-ref and tracked-tree
 secrets scan is recorded in [`security/SECRET-AUDIT-2026-08-18.md`](security/SECRET-AUDIT-2026-08-18.md).
-Before creating a public remote, review repository name and ownership, confirm publication
-authorization, and enable GitHub secret scanning and push protection.
+The per-artifact provenance and redistribution review is recorded in
+[`legal/IP-RIGHTS-REVIEW-2026-08-18.md`](legal/IP-RIGHTS-REVIEW-2026-08-18.md). Before
+creating a public remote, confirm repository name and ownership, and enable GitHub secret
+scanning and push protection.

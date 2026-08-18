@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 import sys
@@ -24,9 +25,14 @@ REQUIRED_SHARED = {
     "CONTRIBUTING.md",
     "GOVERNANCE.md",
     "LICENSE",
+    "NOTICE",
     "PRIVACY.md",
     "SECURITY.md",
     "SUPPORT.md",
+    "THIRD_PARTY_NOTICES.md",
+    "docs/legal/IP-INVENTORY.csv",
+    "docs/legal/IP-RIGHTS-REVIEW-2026-08-18.md",
+    "docs/legal/scancode-summary-2026-08-18.json",
     "docs/security/SECRET-AUDIT-2026-08-18.md",
     "docs/security/gitleaks-history-2026-08-18.json",
     "docs/security/gitleaks-tracked-tree-2026-08-18.json",
@@ -38,6 +44,7 @@ AUDIT_REPORTS = {
     "docs/security/gitleaks-history-2026-08-18.json",
     "docs/security/gitleaks-tracked-tree-2026-08-18.json",
 }
+IP_INVENTORY = "docs/legal/IP-INVENTORY.csv"
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 BLOCKED = re.compile(
@@ -82,6 +89,38 @@ def main() -> int:
             continue
         if findings != []:
             errors.append(f"secrets-audit report contains findings: {rel}")
+
+    inventory_path = ROOT / IP_INVENTORY
+    if inventory_path.is_file():
+        with inventory_path.open(encoding="utf-8", newline="") as handle:
+            inventory_rows = list(csv.DictReader(handle))
+        inventory_files = [row.get("path", "") for row in inventory_rows]
+        duplicate_files = sorted({path for path in inventory_files if inventory_files.count(path) > 1})
+        public_files = {
+            path.relative_to(ROOT).as_posix()
+            for path in ROOT.rglob("*")
+            if path.is_file()
+            and not any(part in {".git", ".venv", "__pycache__"} for part in path.relative_to(ROOT).parts)
+            and path.suffix != ".pyc"
+        }
+        if set(inventory_files) != public_files:
+            errors.append(
+                "IP inventory mismatch: "
+                f"missing={sorted(public_files-set(inventory_files))} "
+                f"extra={sorted(set(inventory_files)-public_files)}"
+            )
+        if duplicate_files:
+            errors.append(f"IP inventory contains duplicate paths: {duplicate_files}")
+        incomplete = [
+            row.get("path", "<missing>")
+            for row in inventory_rows
+            if any(not row.get(field) for field in (
+                "path", "artifact_class", "provenance_basis", "third_party_content",
+                "redistribution_basis", "disposition",
+            )) or row.get("disposition") != "include"
+        ]
+        if incomplete:
+            errors.append(f"IP inventory contains incomplete or excluded rows: {sorted(incomplete)}")
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8") if (ROOT / "LICENSE").is_file() else ""
     if "Apache License" not in license_text or "Version 2.0, January 2004" not in license_text:
