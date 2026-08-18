@@ -19,12 +19,19 @@ SKILLS = {
     "pmm-instinct-review",
 }
 REQUIRED_SHARED = {
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "GOVERNANCE.md",
     "LICENSE",
+    "PRIVACY.md",
+    "SECURITY.md",
+    "SUPPORT.md",
     "docs/STD-evidence-privacy-v1.0.md",
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
 }
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 BLOCKED = re.compile(
     r"(/Users/|polygon|clickup|@polygon|channel[_ -]?id\s*[:=]\s*[A-Z0-9]|"
     r"api[_ -]?key\s*[:=]|secret\s*[:=]|token\s*[:=])",
@@ -59,6 +66,14 @@ def main() -> int:
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8") if (ROOT / "LICENSE").is_file() else ""
     if "Apache License" not in license_text or "Version 2.0, January 2004" not in license_text:
         errors.append("LICENSE is not the Apache License 2.0 text")
+
+    contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8") if (ROOT / "CONTRIBUTING.md").is_file() else ""
+    full_test_command = ".venv/bin/python -m unittest discover -s tests"
+    stale_test_command = "python3 -m unittest tests/test_diffguard_lite.py"
+    if full_test_command not in contributing:
+        errors.append("CONTRIBUTING.md is missing the full test command")
+    if stale_test_command in contributing:
+        errors.append("CONTRIBUTING.md contains the stale partial test command")
 
     for name in sorted(SKILLS):
         skill = ROOT / "skills" / name
@@ -109,6 +124,15 @@ def main() -> int:
         match = BLOCKED.search(text)
         if match:
             errors.append(f"public-safety pattern {match.group(0)!r}: {path.relative_to(ROOT)}")
+        if path.suffix.lower() == ".md":
+            for target in MARKDOWN_LINK_RE.findall(text):
+                clean_target = target.split("#", 1)[0]
+                if not clean_target or clean_target.startswith(("http://", "https://", "mailto:")):
+                    continue
+                if not (path.parent / clean_target).resolve().exists():
+                    errors.append(
+                        f"broken Markdown link {target!r}: {path.relative_to(ROOT)}"
+                    )
 
     if errors:
         print("Skill pack validation failed:", file=sys.stderr)

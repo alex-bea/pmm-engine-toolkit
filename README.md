@@ -20,10 +20,15 @@ on embedded company, customer, or individual data.
 
 ## Quick start
 
+Requirements: Git and Python 3.10 or newer.
+
 ```bash
+git clone <repository-url>
+cd pmm-engine-toolkit
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m unittest discover -s tests
+.venv/bin/python scripts/governance/validate_skill_pack.py
 ```
 
 Run Diffguard Lite against a Git base ref:
@@ -46,10 +51,14 @@ toolkit without copying private operating context.
 See the [public export manifest](docs/PUBLIC-EXPORT-MANIFEST.md) for the exact package
 contract, generalization rules, and pre-publication gates.
 
-## Security and contributions
+## Community and governance
 
-See [SECURITY.md](SECURITY.md) for vulnerability reporting and
-[CONTRIBUTING.md](CONTRIBUTING.md) for contribution expectations.
+- [Contributing](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Project governance](GOVERNANCE.md)
+- [Security policy](SECURITY.md)
+- [Support policy](SUPPORT.md)
+- [Privacy policy](PRIVACY.md)
 
 ## License
 

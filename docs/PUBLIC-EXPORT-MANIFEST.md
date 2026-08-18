@@ -4,6 +4,8 @@
 
 This local fresh-history repository contains the 26 skills listed in `SKILL-CATALOG.md`,
 Diffguard Lite, shared public standards, reusable templates, synthetic examples, and tests.
+The root governance set covers contributions, conduct, project decisions, security,
+support, privacy, licensing, and independent setup.
 
 ## Package contract
 
