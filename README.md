@@ -1,0 +1,40 @@
+# PMM Engine Toolkit
+
+A small, portable subset of PMM Engine for planning disciplined work and keeping code
+changes understandable:
+
+- **PM Prioritizer** — an agent skill for reducing build plans to a coherent MVP, with
+  explicit deferred and declined scope.
+- **Diffguard Lite** — a local Git-diff analyzer for Python and JavaScript complexity,
+  file size, churn, and test health.
+
+This repository deliberately contains no customer data, operating outputs, product-source
+registries, runtime configuration, integrations, or private Git history.
+
+## Quick start
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m unittest tests/test_diffguard_lite.py
+```
+
+Run Diffguard Lite against a Git base ref:
+
+```bash
+.venv/bin/python scripts/governance/diffguard_lite.py --base origin/main
+```
+
+The PM Prioritizer skill is self-contained under `skills/pm-prioritizer/`. Load its
+`SKILL.md` together with its listed reference files in an agent runtime that supports
+repository-local skills.
+
+## Security and contributions
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and
+[CONTRIBUTING.md](CONTRIBUTING.md) for contribution expectations.
+
+## License
+
+This staging repository is intentionally not licensed for public release until its owner
+selects and records the appropriate license.

@@ -1,0 +1,27 @@
+# Diffguard-lite default thresholds.
+#
+# All Python / JS findings are advisory in v1 — they surface in the report
+# but do not fail the workflow. Test-health failure is the only blocking
+# condition. Tune these numbers after real PR data accumulates.
+
+python:
+  max_function_lines: 60
+  max_file_lines: 400
+  max_cyclomatic: 15
+  max_cognitive_complexity: 15
+  max_nesting_depth: 4
+
+javascript:
+  max_function_lines: 80
+  max_file_lines: 500
+
+doc_paths:
+  - "docs/**"
+  - "**/*.md"
+  - "outputs/**"
+
+churn:
+  # Commits touching a file in this many days count toward its churn score.
+  window_days: 90
+  # Files with more than this many commits in the window produce an advisory finding.
+  high_threshold: 10
