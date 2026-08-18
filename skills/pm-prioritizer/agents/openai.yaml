@@ -1,0 +1,4 @@
+interface:
+  display_name: "PM Prioritizer"
+  short_description: "Reduce plans to a coherent MVP"
+  default_prompt: "Use $pm-prioritizer to reduce this plan to its minimum viable slice."

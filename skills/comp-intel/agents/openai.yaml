@@ -1,0 +1,4 @@
+interface:
+  display_name: "Competitive Intelligence"
+  short_description: "Synthesize sourced competitive signals"
+  default_prompt: "Use $comp-intel to analyze these competitor signals and identify implications."

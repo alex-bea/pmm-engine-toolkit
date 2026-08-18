@@ -1,0 +1,4 @@
+interface:
+  display_name: "Weekly Summary Promoter"
+  short_description: "Promote approved weekly summaries into durable artifacts"
+  default_prompt: "Use $weekly-summary-promoter to promote these approved weekly summaries."

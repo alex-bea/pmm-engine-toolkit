@@ -1,0 +1,4 @@
+interface:
+  display_name: "Status Update"
+  short_description: "Summarize accomplishments and active work"
+  default_prompt: "Use $status-update to create a status update from these activity sources."

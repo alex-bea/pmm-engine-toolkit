@@ -1,18 +1,10 @@
 ---
 name: pm-prioritizer
-version: 1.0.0
 description: >
   Scope-reduction analyst for build-driving plans. Evaluates whether a plan should be
   narrowed to an MVP slice, assigns a lane (marketing or foundation), and returns the
   MVP scope plus structured deferred-slice metadata. Use when scaffolding a new
   build-driving plan or when explicitly asked to prioritize/scope-check a plan.
-references:
-  - path: references/RUN-pm-prioritizer-workflow-prd-v1.0.md
-    role: runbook
-  - path: references/REF-pm-prioritizer-priority-framework-v1.0.md
-    role: knowledge
-  - path: references/BP-pm-prioritizer-output-template-impl-v1.0.md
-    role: template
 ---
 
 # PM Prioritizer
@@ -50,6 +42,8 @@ the plan content.
 ## Execution
 
 Follow `references/RUN-pm-prioritizer-workflow-prd-v1.0.md` exactly.
+Read `docs/STD-evidence-privacy-v1.0.md`, render with `assets/output-template.md`, and
+use `examples/EX-synthetic.md` only as a synthetic formatting example.
 
 ## Scope Constraints
 

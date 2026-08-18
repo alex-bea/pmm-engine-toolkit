@@ -1,0 +1,4 @@
+interface:
+  display_name: "Marketing Brief"
+  short_description: "Create an evidence-bound marketing brief"
+  default_prompt: "Use $marketing-brief to turn these approved inputs into a concise brief."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM Habits"
+  short_description: "Turn evidence into better PMM habits"
+  default_prompt: "Use $pmm-habits to review this week and choose one behavior to change."

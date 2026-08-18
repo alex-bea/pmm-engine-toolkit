@@ -1,24 +1,54 @@
 # Public Skill Catalog
 
-## Scope and planning
+The categories are mutually exclusive by each skill's primary job.
 
-- `pm-prioritizer` — reduces a build plan to a coherent MVP and explicit deferred scope.
+## Portfolio planning and workflow design
 
-## Review and decision quality
+- `pm-prioritizer` — reduce a plan to an MVP and explicit deferred scope.
+- `pmm-em-tracker` — maintain local roadmap, epic, and task state.
+- `pmm-plan-scaffolder` — turn an accepted idea into a governed plan.
+- `pmm-plan-auditor` — find drift between plans and tracker state.
+- `pmm-launch-scaffolder` — create a complete launch workspace.
 
-- `guidance-review` — checks marketing copy against a supplied claims guide.
-- `pre-read-sharpener` — turns a draft into a decision-ready executive pre-read.
-- `strategic-narrative-coach` — stress-tests narrative logic from first principles.
+## Personal execution and reporting
 
-## Marketing and sales writing
+- `daily-starter` — build a focused daily brief from local inputs.
+- `manage-up` — prepare an evidence-based manager update.
+- `pmm-habits` — turn weekly evidence into behavior changes.
+- `notes-weekly-team-comms` — transform notes into weekly communications.
+- `status-update` — summarize accomplishments and active work.
 
-- `marketing-brief` — creates evidence-bound launch briefs.
-- `product-page-copywriter` — drafts product and use-case landing-page copy.
-- `sales-one-pager` — produces prospect-facing one-pagers from approved inputs.
-- `linkedin-ghostwriter` — drafts posts from consented voice profiles and supplied sources.
+## Intelligence and analysis
 
-## Professional reflection
+- `people-intelligence` — create consented stakeholder briefs.
+- `comp-intel` — synthesize sourced competitive signals.
+- `pmm-weekly-impact` — connect shipped work to outcomes and next bets.
 
-- `pmm-habits` — converts user-provided work evidence into concrete habits actions.
+## Marketing and sales drafting or review
 
-See the standards and templates in `docs/` before creating or modifying a skill.
+- `guidance-review` — check copy against a supplied claims guide.
+- `linkedin-ghostwriter` — draft from consented voice profiles and sources.
+- `marketing-brief` — create an evidence-bound marketing brief.
+- `pre-read-sharpener` — make an executive pre-read decision-ready.
+- `product-page-copywriter` — draft product and use-case page copy.
+- `sales-one-pager` — produce a prospect-facing one-pager.
+- `strategic-narrative-coach` — stress-test narrative logic.
+
+## Release and signal operations
+
+- `meeting-notes-scaffolder` — scaffold reusable meeting-note capture.
+- `slack-monitor-scaffolder` — scaffold review-first channel monitoring.
+- `weekly-summary-promoter` — promote approved summaries into durable artifacts.
+
+## Repository hygiene
+
+- `git-sweep` — inspect and safely clean merged Git worktrees.
+
+## Global workflows
+
+- `pmm-accepted-plan-importer` — import an approved plan into governed local state.
+- `pmm-instinct-review` — review candidate lessons before promotion.
+
+All 26 packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
+and a synthetic example. Deterministic workflows also include scripts and tests. See the
+standards and templates in `docs/` before modifying a package.

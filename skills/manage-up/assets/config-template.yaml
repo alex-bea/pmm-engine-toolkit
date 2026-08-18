@@ -1,0 +1,9 @@
+identity:
+  author_name: "[Local only]"
+  manager_name: "[Local only]"
+preferences:
+  reporting_window_days: 7
+  max_priorities: 3
+  tone: concise
+sources:
+  - inputs/weekly-notes.md

@@ -1,0 +1,7 @@
+window_days: 7
+sources:
+  - name: notes
+    path: inputs/weekly-notes.md
+  - name: tracker
+    path: state/work/tracker.yaml
+output_path: outputs/status-update/

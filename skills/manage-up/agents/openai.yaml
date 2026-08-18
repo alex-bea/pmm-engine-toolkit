@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Up"
+  short_description: "Prepare an evidence-based manager update"
+  default_prompt: "Use $manage-up to draft a concise manager update from these inputs."

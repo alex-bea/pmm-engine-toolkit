@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Sweep"
+  short_description: "Inspect and safely clean merged Git worktrees"
+  default_prompt: "Use $git-sweep to inspect this repository and propose a safe cleanup."

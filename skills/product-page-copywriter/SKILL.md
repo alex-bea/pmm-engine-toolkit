@@ -1,34 +1,13 @@
 ---
 name: product-page-copywriter
-version: 1.0.0
-description: Draft evidence-bound product or use-case landing-page copy from approved source material and a supplied style guide.
-references:
-  - path: references/RUN-product-page-copywriter-workflow.md
-    role: runbook
+description: Draft evidence-bound product or use-case landing-page copy from approved source material and a supplied style guide. Use for page copy drafting or revision; do not research, design, build, publish, or invent claims.
 ---
 
 # Product Page Copywriter
 
-## Role
+1. Read `docs/STD-evidence-privacy-v1.0.md`.
+2. Follow `references/RUN-product-page-copywriter-workflow.md`.
+3. Render with `assets/output-template.md`.
+4. Use `examples/EX-synthetic.md` only as a structural example.
 
-Write a complete landing-page copy draft from a product brief, audience definition, and
-approved style guide. This skill creates copy only; it does not research, design, build,
-or publish a page.
-
-## Triggers
-
-- "write product page copy"
-- "draft landing page copy"
-- "create a use-case page"
-
-## Inputs
-
-- approved product brief and claims
-- target audience and desired action
-- approved style guide
-- optional, permitted competitor page for structural reference
-
-## Output
-
-Produce a hero, problem framing, value pillars, evidence, use cases, objections, and CTA.
-Flag missing facts and unapproved comparisons. Follow the runbook exactly.
+Flag missing facts and unapproved comparisons. Produce copy only, not page code or publishing.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Accepted Plan Importer"
+  short_description: "Import an approved plan into local governed state"
+  default_prompt: "Use $pmm-accepted-plan-importer to stage this approved plan for tracker import."

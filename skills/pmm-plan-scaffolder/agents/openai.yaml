@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM Plan Scaffolder"
+  short_description: "Turn an approved idea into a governed execution plan"
+  default_prompt: "Use $pmm-plan-scaffolder to draft a plan and its initial tracker mapping."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "People Intelligence"
+  short_description: "Build consented stakeholder briefs from supplied evidence"
+  default_prompt: "Use $people-intelligence to prepare a stakeholder brief from these approved sources."

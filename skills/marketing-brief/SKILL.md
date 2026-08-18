@@ -1,28 +1,13 @@
 ---
 name: marketing-brief
-version: 1.0.0
-description: Turn supplied launch inputs into a concise, evidence-bound marketing brief without research or invented claims.
-references:
-  - path: references/RUN-marketing-brief-workflow.md
-    role: runbook
+description: Turn approved launch or campaign inputs into a concise, evidence-bound marketing brief. Use when the user asks to brief a launch, campaign, or product change; do not research missing facts or invent claims.
 ---
 
 # Marketing Brief
 
-## Role
+1. Read `docs/STD-evidence-privacy-v1.0.md`.
+2. Follow `references/RUN-marketing-brief-workflow.md`.
+3. Use `assets/output-template.md` for the deliverable.
+4. Use `examples/EX-synthetic.md` only to understand expected depth.
 
-Create one decision-ready marketing brief from source material the user provides. Preserve
-uncertainty: missing facts remain `[Missing]`; they are never inferred.
-
-## Triggers
-
-- "write a marketing brief"
-- "brief this launch"
-- "turn these notes into a brief"
-
-## Output
-
-Use the structure in the runbook: audience, problem, change, value, proof, positioning,
-launch tier, risks, and open questions. Return separate briefs for unrelated launches.
-
-Follow `references/RUN-marketing-brief-workflow.md`.
+Preserve uncertainty with `[Missing]`. Separate unrelated launches into separate briefs.

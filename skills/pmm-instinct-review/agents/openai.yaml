@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM Instinct Review"
+  short_description: "Review candidate lessons before promotion"
+  default_prompt: "Use $pmm-instinct-review to review these candidate lessons and propose safe promotions."

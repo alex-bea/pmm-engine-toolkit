@@ -1,0 +1,8 @@
+sources:
+  - name: local-notes
+    path: inputs/daily-notes.md
+    required: true
+  - name: local-tracker
+    path: state/work/tracker.yaml
+    required: false
+dismissed_items_path: state/daily-starter/dismissed.yaml

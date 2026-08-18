@@ -1,0 +1,4 @@
+interface:
+  display_name: "Guidance Review"
+  short_description: "Check copy against approved claims"
+  default_prompt: "Use $guidance-review to review this draft against the supplied claims guide."

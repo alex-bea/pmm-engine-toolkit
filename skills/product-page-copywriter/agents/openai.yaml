@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Page Copywriter"
+  short_description: "Draft sourced product page copy"
+  default_prompt: "Use $product-page-copywriter to draft a page from these approved inputs."

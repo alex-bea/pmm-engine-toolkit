@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM Launch Scaffolder"
+  short_description: "Create a complete evidence-bound launch workspace"
+  default_prompt: "Use $pmm-launch-scaffolder to scaffold a launch plan from these approved inputs."

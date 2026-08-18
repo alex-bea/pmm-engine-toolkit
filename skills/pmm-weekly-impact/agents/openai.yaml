@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM Weekly Impact"
+  short_description: "Turn weekly evidence into an impact review"
+  default_prompt: "Use $pmm-weekly-impact to summarize this week's PMM impact and next bets."

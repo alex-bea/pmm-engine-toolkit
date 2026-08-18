@@ -1,30 +1,13 @@
 ---
 name: sales-one-pager
-version: 1.0.0
-description: Create a concise prospect-facing one-pager from approved product and customer inputs without research or invented claims.
-references:
-  - path: references/RUN-sales-one-pager-workflow.md
-    role: runbook
+description: Create a concise prospect-facing one-pager from approved product and customer inputs. Use for a product, comparison, or prospect brief; do not research or invent claims, customer proof, pricing, or competitor assertions.
 ---
 
 # Sales One-Pager
 
-## Role
+1. Read `docs/STD-evidence-privacy-v1.0.md`.
+2. Follow `references/RUN-sales-one-pager-workflow.md`.
+3. Render with `assets/output-template.md`.
+4. Use `examples/EX-synthetic.md` only as a formatting example.
 
-Convert approved source material into either a prospect-specific or product-comparison
-one-pager. Treat the supplied positioning sheet as authoritative; mark missing evidence
-instead of filling gaps.
-
-## Triggers
-
-- "write a sales one-pager"
-- "create a product one-pager"
-- "prepare a prospect brief"
-
-## Output
-
-Return a single one-pager with the problem, relevant capability, evidence, differentiation,
-implementation considerations, and a clear next step. Do not use customer names, logos,
-pricing, or competitor assertions without explicit approval.
-
-Follow `references/RUN-sales-one-pager-workflow.md`.
+Treat the supplied positioning as authoritative and mark missing evidence `[Missing]`.

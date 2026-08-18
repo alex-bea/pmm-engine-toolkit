@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sales One-pager"
+  short_description: "Create an approved-input sales one-pager"
+  default_prompt: "Use $sales-one-pager to create a one-pager from this positioning and evidence."

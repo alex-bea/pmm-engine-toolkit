@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pre-read Sharpener"
+  short_description: "Make executive pre-reads decision-ready"
+  default_prompt: "Use $pre-read-sharpener to tighten this draft around the decision."

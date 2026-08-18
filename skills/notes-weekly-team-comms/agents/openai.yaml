@@ -1,0 +1,4 @@
+interface:
+  display_name: "Notes to Weekly Team Comms"
+  short_description: "Transform notes into weekly team communications"
+  default_prompt: "Use $notes-weekly-team-comms to turn these notes into a weekly update."

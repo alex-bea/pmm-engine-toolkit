@@ -1,0 +1,11 @@
+meeting:
+  name: "[Meeting name]"
+  purpose: "[Purpose]"
+  cadence: weekly
+source:
+  type: local-file
+  path: inputs/meeting-notes.md
+output:
+  path: outputs/meeting-notes/
+  review_required: true
+retention_days: 90

@@ -1,39 +1,17 @@
 ---
 name: guidance-review
-version: 1.0.0
-description: Review marketing copy against a supplied claims guide and return a prioritized, evidence-based revision list.
-references:
-  - path: references/RUN-guidance-review-workflow.md
-    role: runbook
+description: Review marketing copy against a user-supplied claims guide and return prioritized, evidence-based revisions. Use for claim checks, disclosure checks, copy compliance review, or approval-readiness review; this workflow is not legal advice.
 ---
 
 # Guidance Review
 
-## Role
+Review the draft only against supplied or explicitly approved guidance. If no claims guide
+is available, perform a generic risk review and label the result `needs approved claims guide`.
 
-Review marketing copy for claim accuracy, required disclosures, unsupported absolutes, and
-audience clarity. Use only the copy and claims guide supplied for the review. This is a
-writing-quality workflow, not legal advice.
+1. Read `docs/STD-evidence-privacy-v1.0.md` and `docs/STD-approval-gates-v1.0.md`.
+2. Read `references/RUN-guidance-review-workflow.md`.
+3. Render findings with `assets/output-template.md`.
+4. Use `examples/EX-synthetic.md` only as a formatting example, never as factual guidance.
 
-## Triggers
-
-- "review this marketing copy"
-- "run guidance review"
-- "check these claims"
-
-## Inputs
-
-- draft copy
-- a product- or organization-approved claims guide
-- the intended audience and publication channel
-
-If the claims guide is missing, review for generic risks only and label the result
-`needs approved claims guide`.
-
-## Output
-
-Return a table of findings with severity, quoted source text, concern, and a proposed
-revision. Do not approve regulated, financial, health, legal, security, or availability
-claims without an owner-approved source.
-
-Follow `references/RUN-guidance-review-workflow.md`.
+Do not approve regulated, financial, health, legal, security, or availability claims without
+an owner-approved source and qualified review.

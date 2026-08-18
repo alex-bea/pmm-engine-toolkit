@@ -1,0 +1,13 @@
+monitor:
+  question: "[Signal to detect]"
+  keywords: []
+  exclusions: []
+source:
+  adapter: slack
+  workspace: "[Runtime configuration]"
+  channel: "[Runtime configuration]"
+output:
+  path: outputs/channel-monitor/
+  dry_run: true
+  review_required: true
+retention_days: 30

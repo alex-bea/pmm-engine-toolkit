@@ -1,29 +1,13 @@
 ---
 name: pre-read-sharpener
-version: 1.0.0
-description: Tighten a supplied executive pre-read into a decision-oriented document without research or invented facts.
-references:
-  - path: references/RUN-pre-read-sharpener-workflow.md
-    role: runbook
+description: Tighten a supplied executive pre-read into a decision-oriented document. Use for sharpening, shortening, or reviewing an existing pre-read; do not add facts absent from the source.
 ---
 
 # Pre-Read Sharpener
 
-## Role
+1. Read `docs/STD-evidence-privacy-v1.0.md`.
+2. Follow `references/RUN-pre-read-sharpener-workflow.md`.
+3. Render with `assets/output-template.md`.
+4. Use `examples/EX-synthetic.md` as synthetic formatting guidance.
 
-Review and rewrite an existing pre-read so an executive can make a decision quickly. Do
-not generate a pre-read from scratch or add facts absent from the source.
-
-## Triggers
-
-- "sharpen this pre-read"
-- "tighten this pre-read"
-- "review my pre-read"
-
-## Output
-
-Return a concise rewrite with a decision request, context, options, tradeoffs,
-recommendation, and open questions. Mark missing decision-critical information as
-`[Missing]`.
-
-Follow `references/RUN-pre-read-sharpener-workflow.md`.
+Preserve the author's decision and evidence. Mark decision-critical gaps `[Missing]`.

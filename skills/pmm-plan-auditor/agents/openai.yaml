@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM Plan Auditor"
+  short_description: "Audit plan files against tracker state"
+  default_prompt: "Use $pmm-plan-auditor to find stale or unmapped plans in this repository."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Strategic Narrative Coach"
+  short_description: "Build and pressure-test positioning logic"
+  default_prompt: "Use $strategic-narrative-coach to stress-test this product narrative."

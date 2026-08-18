@@ -1,0 +1,4 @@
+interface:
+  display_name: "Daily Starter"
+  short_description: "Build a focused daily brief from local signals"
+  default_prompt: "Use $daily-starter to turn these local signals into today's action brief."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meeting Notes Scaffolder"
+  short_description: "Generate reusable meeting-note capture workflows"
+  default_prompt: "Use $meeting-notes-scaffolder to scaffold notes capture for this recurring meeting."

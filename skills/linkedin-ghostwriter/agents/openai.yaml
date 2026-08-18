@@ -1,0 +1,4 @@
+interface:
+  display_name: "LinkedIn Ghostwriter"
+  short_description: "Draft sourced posts in a consented voice"
+  default_prompt: "Use $linkedin-ghostwriter to draft a post from this voice profile and source material."

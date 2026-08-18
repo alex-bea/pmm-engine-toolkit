@@ -1,0 +1,14 @@
+roadmaps:
+  - id: roadmap-growth
+    title: Sustainable growth
+epics:
+  - id: epic-onboarding
+    title: Improve onboarding clarity
+    roadmap: roadmap-growth
+tasks:
+  - id: task-research
+    title: Synthesize onboarding interviews
+    epic: epic-onboarding
+    status: active
+    acceptance_criteria:
+      - Findings cite the supplied interview notes.

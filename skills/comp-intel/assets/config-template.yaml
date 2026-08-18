@@ -1,0 +1,11 @@
+scope:
+  market: "[Define market]"
+  competitors: []
+sources:
+  - name: official-product-pages
+    type: web
+    allowed: true
+  - name: licensed-research
+    type: local
+    allowed: false
+confidence_threshold: medium

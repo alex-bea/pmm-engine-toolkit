@@ -1,0 +1,4 @@
+interface:
+  display_name: "Slack Monitor Scaffolder"
+  short_description: "Generate a safe channel-monitor configuration"
+  default_prompt: "Use $slack-monitor-scaffolder to scaffold a review-first channel monitor."

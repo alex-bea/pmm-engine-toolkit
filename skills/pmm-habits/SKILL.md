@@ -1,33 +1,13 @@
 ---
 name: pmm-habits
-version: 1.0.0
-description: Run a reflective habits review against evidence the user provides; identify concrete next actions without accessing private services.
-references:
-  - path: references/RUN-pmm-habits-workflow.md
-    role: runbook
+description: Run a reflective PMM habits review against user-provided weekly evidence and identify concrete behavior changes. Use for habit checks, reflection, or weekly practice selection; do not access private services or invent missed opportunities.
 ---
 
 # PMM Habits
 
-## Role
+1. Read `docs/STD-evidence-privacy-v1.0.md`.
+2. Follow `references/RUN-pmm-habits-workflow.md`.
+3. Render one row per habit with `assets/output-template.md`.
+4. Use `examples/EX-synthetic.md` as a format-only example.
 
-Turn a user's stated professional habits and a supplied weekly evidence set into a concise
-reflection. This skill does not access chat history, calendars, CRMs, or task tools.
-
-## Triggers
-
-- "run my habits check"
-- "review my habits"
-- "what should I apply this week"
-
-## Inputs
-
-- a habits list with observable behaviors
-- a user-provided evidence set, such as notes, decisions, or drafts
-
-## Output
-
-For each habit, state the evidence, the relevant situation, and one next action. Never
-invent a missed opportunity or attribute a statement to a person not present in the input.
-
-Follow `references/RUN-pmm-habits-workflow.md`.
+For each habit, state the evidence, relevant situation, and one observable next action.

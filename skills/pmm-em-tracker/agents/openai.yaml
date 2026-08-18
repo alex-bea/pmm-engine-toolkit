@@ -1,0 +1,4 @@
+interface:
+  display_name: "PMM EM Tracker"
+  short_description: "Maintain a local roadmap, epic, and task tracker"
+  default_prompt: "Use $pmm-em-tracker to validate and update this repository's work tracker."
