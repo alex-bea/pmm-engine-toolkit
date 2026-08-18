@@ -53,5 +53,6 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting and
 
 ## License
 
-This staging repository is intentionally not licensed for public release until its owner
-selects and records the appropriate license.
+Copyright 2026 Alexander Bea.
+
+Licensed under the [Apache License 2.0](LICENSE).

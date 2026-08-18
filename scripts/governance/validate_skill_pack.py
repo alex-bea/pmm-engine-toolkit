@@ -19,6 +19,7 @@ SKILLS = {
     "pmm-instinct-review",
 }
 REQUIRED_SHARED = {
+    "LICENSE",
     "docs/STD-evidence-privacy-v1.0.md",
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
@@ -54,6 +55,10 @@ def main() -> int:
     for rel in REQUIRED_SHARED:
         if not (ROOT / rel).is_file():
             errors.append(f"missing shared dependency: {rel}")
+
+    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8") if (ROOT / "LICENSE").is_file() else ""
+    if "Apache License" not in license_text or "Version 2.0, January 2004" not in license_text:
+        errors.append("LICENSE is not the Apache License 2.0 text")
 
     for name in sorted(SKILLS):
         skill = ROOT / "skills" / name

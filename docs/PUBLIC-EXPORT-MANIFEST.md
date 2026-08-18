@@ -37,5 +37,6 @@ python3 scripts/governance/validate_skill_pack.py
 python3 -m unittest discover -s tests
 ```
 
-Before creating a public remote, choose a license, perform an independent secrets scan,
-review repository name and ownership, and confirm publication authorization.
+The repository is licensed under Apache-2.0. Before creating a public remote, perform an
+independent secrets scan, review repository name and ownership, and confirm publication
+authorization.
