@@ -27,6 +27,8 @@ Run the complete validation suite before opening a pull request:
 .venv/bin/python -m unittest discover -s tests
 .venv/bin/python scripts/governance/validate_github_actions.py
 .venv/bin/python scripts/governance/validate_skill_pack.py
+.venv/bin/python scripts/governance/configure_github_security.py \
+  --repo example/pmm-engine-toolkit --plan
 ```
 
 ## Change requirements

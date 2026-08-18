@@ -46,5 +46,7 @@ The repository is licensed under Apache-2.0. The independent all-ref and tracked
 secrets scan is recorded in [`security/SECRET-AUDIT-2026-08-18.md`](security/SECRET-AUDIT-2026-08-18.md).
 The per-artifact provenance and redistribution review is recorded in
 [`legal/IP-RIGHTS-REVIEW-2026-08-18.md`](legal/IP-RIGHTS-REVIEW-2026-08-18.md). Before
-creating a public remote, confirm repository name and ownership, and enable GitHub secret
-scanning and push protection.
+creating a public remote, confirm repository name and ownership. Then apply and verify the
+versioned branch, Actions, CodeQL, dependency, secret-scanning, and vulnerability-reporting
+baseline in
+[`security/GITHUB-SECURITY-CONTROLS.md`](security/GITHUB-SECURITY-CONTROLS.md).

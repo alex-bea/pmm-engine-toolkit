@@ -10,6 +10,10 @@ fixes. Older releases are supported only when a maintainer explicitly says other
 Do not disclose a suspected vulnerability in a public issue, discussion, or pull request.
 Use the repository's private security-advisory reporting channel.
 
+Private vulnerability reporting is a required launch control and is verified alongside
+secret scanning, push protection, dependency alerts, and CodeQL. See
+[`docs/security/GITHUB-SECURITY-CONTROLS.md`](docs/security/GITHUB-SECURITY-CONTROLS.md).
+
 Include:
 
 - the affected version or commit;

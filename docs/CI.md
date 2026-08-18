@@ -4,17 +4,19 @@
 
 The public repository runs these checks on pull requests:
 
-- `CI / Tests (Python 3.10)` through `CI / Tests (Python 3.14)`;
-- `CI / Governance`; and
-- `Dependency review / Dependency review` when dependency or workflow files change.
+- `Tests (Python 3.10)` through `Tests (Python 3.14)`;
+- `Governance`; and
+- `CodeQL`; and
+- `Dependency review` when dependency or workflow files change.
 
-The repository-settings gate should require the five test jobs and governance job before
-merge. Dependency review is path-filtered and should not be configured as an always-required
-check because GitHub will leave it pending on unrelated pull requests.
+The repository-settings gate requires the five test jobs, governance, and CodeQL before
+merge. Dependency review is path-filtered and is not configured as an always-required check
+because GitHub will leave it absent on unrelated pull requests.
 
 ## Security properties
 
-- Workflow permissions are read-only and no job references repository secrets.
+- Default workflow permissions are read-only and no job references repository secrets.
+- CodeQL alone receives `security-events: write`, narrowly scoped to uploading analyses.
 - Every external action is pinned to a full 40-character commit SHA with its release tag in
   a comment for auditability.
 - Checkout credentials are not persisted beyond the checkout step.
@@ -53,4 +55,5 @@ zizmor .
 ```
 
 Repository-level branch protection, secret scanning, push protection, and Actions policy
-settings are handled by the separate GitHub security-controls gate.
+settings are declared and automated in
+[`security/GITHUB-SECURITY-CONTROLS.md`](security/GITHUB-SECURITY-CONTROLS.md).

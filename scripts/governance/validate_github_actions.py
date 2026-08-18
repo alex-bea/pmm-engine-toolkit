@@ -11,14 +11,15 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_DIR = ROOT / ".github" / "workflows"
-EXPECTED_WORKFLOWS = {"ci.yml", "dependency-review.yml"}
+EXPECTED_WORKFLOWS = {"ci.yml", "codeql.yml", "dependency-review.yml"}
 PINNED_ACTIONS = {
     "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
     "actions/setup-python": "5fda3b95a4ea91299a34e894583c3862153e4b97",
     "actions/dependency-review-action": "a1d282b36b6f3519aa1f3fc636f609c47dddb294",
+    "github/codeql-action/init": "ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd",
+    "github/codeql-action/analyze": "ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd",
 }
 USES_RE = re.compile(r"^\s*-?\s*uses:\s*([^@\s]+)@([^\s#]+)", re.MULTILINE)
-WRITE_PERMISSION_RE = re.compile(r"^\s+[a-z][a-z-]*:\s*write\s*$", re.MULTILINE)
 RUN_EVENT_CONTEXT_RE = re.compile(
     r"(?:run:\s*[^\n]*|run:\s*\|(?P<body>(?:\n\s+[^\n]+)+))",
     re.MULTILINE,
@@ -39,10 +40,20 @@ def validate_workflow(path: Path) -> list[str]:
         errors.append(f"{path.name}: pull_request_target is prohibited")
     if "${{ secrets." in text:
         errors.append(f"{path.name}: CI workflows must not reference repository secrets")
-    if not re.search(r"^permissions:\n\s+contents:\s+read\s*$", text, re.MULTILINE):
-        errors.append(f"{path.name}: top-level permissions must set contents: read")
-    if WRITE_PERMISSION_RE.search(text):
-        errors.append(f"{path.name}: write permission is prohibited")
+    expected_permissions = {"contents": "read"}
+    if path.name == "codeql.yml":
+        expected_permissions["security-events"] = "write"
+    if parsed.get("permissions") != expected_permissions:
+        errors.append(
+            f"{path.name}: top-level permissions must be exactly {expected_permissions}"
+        )
+    job_permissions = [
+        job.get("permissions")
+        for job in parsed.get("jobs", {}).values()
+        if isinstance(job, dict) and "permissions" in job
+    ]
+    if job_permissions:
+        errors.append(f"{path.name}: job-level permission overrides are prohibited")
     if not re.search(r"^concurrency:\s*$", text, re.MULTILINE):
         errors.append(f"{path.name}: concurrency cancellation policy is required")
     if "runs-on: ubuntu-24.04" not in text:
@@ -99,4 +110,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
