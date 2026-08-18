@@ -7,9 +7,16 @@ changes understandable:
   explicit deferred and declined scope.
 - **Diffguard Lite** — a local Git-diff analyzer for Python and JavaScript complexity,
   file size, churn, and test health.
+- **Writing workflows** — guidance review, marketing briefs, sales one-pagers, product
+  pages, executive pre-reads, strategic narratives, professional habits, and consented
+  LinkedIn ghostwriting.
 
 This repository deliberately contains no customer data, operating outputs, product-source
 registries, runtime configuration, integrations, or private Git history.
+
+The writing skills intentionally use generic templates. Supply your own approved claims
+guide, positioning, examples, legal review, and consented voice profile rather than relying
+on embedded company, customer, or individual data.
 
 ## Quick start
 
