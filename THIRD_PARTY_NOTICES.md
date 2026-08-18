@@ -23,6 +23,14 @@ Users receive those packages under their upstream license terms. Any future rele
 vendors dependency code or binaries must add the applicable copyright and license notices
 before distribution.
 
+CI also installs the following hash-locked build tools separately; they are not vendored:
+
+| Build tool | Inspected version | Declared license expression |
+| --- | --- | --- |
+| packaging | 26.3 | Apache-2.0 OR BSD-2-Clause |
+| setuptools | 84.0.0 | MIT |
+| wheel | 0.48.0 | MIT |
+
 ## Names and trademarks
 
 Git, GitHub, OpenAI, LinkedIn, Slack, PyYAML, Radon, cognitive-complexity, and other product
@@ -32,4 +40,3 @@ It is not affiliated with or endorsed by those owners.
 
 External hyperlinks identify public reference material only; linked content is not copied
 into or licensed as part of this repository.
-

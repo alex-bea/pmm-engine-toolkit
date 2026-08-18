@@ -31,7 +31,7 @@ report's SHA-256 is recorded there so the review result remains auditable withou
 | --- | --- | --- |
 | Project-authored code, documentation, configuration, templates, and synthetic examples | No third-party attribution marker or copied asset was found. | Include under the repository's Apache-2.0 license. |
 | Apache License 2.0 text | The root `LICENSE` is the official standard license text. | Include verbatim as the project's licensing instrument. |
-| Python dependencies | `requirements.txt` names three separately installed packages; no dependency code or binary is vendored. | Include the manifest and record audit-time upstream licenses in [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). |
+| Python dependencies | Runtime and CI build manifests name separately installed packages; no dependency code or binary is vendored. | Include the manifests and record audit-time upstream licenses in [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). |
 | Product and service names | GitHub, OpenAI, LinkedIn, Slack, Git, and package names appear as compatibility or workflow references. No logos, screenshots, slogans, or brand collateral are present. | Retain as nominative references with the non-affiliation notice in `NOTICE` and [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). |
 | External links | The Code of Conduct and legal notices link to public reference pages. No linked page content is embedded. | Retain as references only. |
 | Machine-generated security evidence | The committed Gitleaks reports are empty JSON arrays. | Include as factual audit evidence. |

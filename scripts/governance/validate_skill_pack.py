@@ -30,6 +30,11 @@ REQUIRED_SHARED = {
     "SECURITY.md",
     "SUPPORT.md",
     "THIRD_PARTY_NOTICES.md",
+    ".github/dependabot.yml",
+    ".github/workflows/ci.yml",
+    ".github/workflows/dependency-review.yml",
+    "docs/CI.md",
+    "docs/ci/CI-HARDENING-2026-08-18.md",
     "docs/legal/IP-INVENTORY.csv",
     "docs/legal/IP-RIGHTS-REVIEW-2026-08-18.md",
     "docs/legal/scancode-summary-2026-08-18.json",
@@ -39,6 +44,9 @@ REQUIRED_SHARED = {
     "docs/STD-evidence-privacy-v1.0.md",
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
+    "requirements-build.lock",
+    "requirements-build.txt",
+    "requirements.lock",
 }
 AUDIT_REPORTS = {
     "docs/security/gitleaks-history-2026-08-18.json",

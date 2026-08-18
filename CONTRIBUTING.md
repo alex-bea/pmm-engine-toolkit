@@ -17,13 +17,15 @@ Use Git and Python 3.10 or newer:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m pip install --require-hashes --only-binary=:all: -r requirements-build.lock
+.venv/bin/python -m pip install --require-hashes --no-build-isolation -r requirements.lock
 ```
 
 Run the complete validation suite before opening a pull request:
 
 ```bash
 .venv/bin/python -m unittest discover -s tests
+.venv/bin/python scripts/governance/validate_github_actions.py
 .venv/bin/python scripts/governance/validate_skill_pack.py
 ```
 

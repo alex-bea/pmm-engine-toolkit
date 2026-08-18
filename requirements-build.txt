@@ -1,0 +1,3 @@
+# Build tooling needed for the hash-verified cognitive-complexity source build.
+setuptools>=84.0
+wheel>=0.46

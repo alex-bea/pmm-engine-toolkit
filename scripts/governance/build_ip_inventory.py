@@ -60,13 +60,23 @@ def classify(path: Path) -> dict[str, str]:
             "disposition": "include",
         }
 
-    if rel == "requirements.txt":
+    if rel in {"requirements.txt", "requirements-build.txt"}:
         return {
             "path": rel,
             "artifact_class": "dependency-manifest",
             "provenance_basis": "Project-authored dependency declaration.",
             "third_party_content": "Nominative package names and version constraints; no vendored code.",
             "redistribution_basis": "Manifest is project-authored; packages retain upstream license terms.",
+            "disposition": "include",
+        }
+
+    if rel in {"requirements.lock", "requirements-build.lock"}:
+        return {
+            "path": rel,
+            "artifact_class": "generated-dependency-lock",
+            "provenance_basis": "Generated from requirements.txt by uv with distribution hashes.",
+            "third_party_content": "Package names, versions, and integrity hashes; no vendored code.",
+            "redistribution_basis": "Generated factual manifest; packages retain upstream license terms.",
             "disposition": "include",
         }
 

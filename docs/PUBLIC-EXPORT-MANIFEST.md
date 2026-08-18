@@ -39,6 +39,9 @@ python3 scripts/governance/validate_skill_pack.py
 python3 -m unittest discover -s tests
 ```
 
+Public CI is defined by SHA-pinned, least-privilege workflows under `.github/workflows/`;
+its security properties and required checks are documented in [`CI.md`](CI.md).
+
 The repository is licensed under Apache-2.0. The independent all-ref and tracked-tree
 secrets scan is recorded in [`security/SECRET-AUDIT-2026-08-18.md`](security/SECRET-AUDIT-2026-08-18.md).
 The per-artifact provenance and redistribution review is recorded in
