@@ -36,6 +36,12 @@ The PM Prioritizer skill is self-contained under `skills/pm-prioritizer/`. Load 
 `SKILL.md` together with its listed reference files in an agent runtime that supports
 repository-local skills.
 
+## Skill authoring
+
+The included [skill catalog](docs/SKILL-CATALOG.md), [skill-structure standard](docs/STD-skill-structure-v1.0.md),
+and [format templates](docs/templates/) are the public reference set for extending this
+toolkit without copying private operating context.
+
 ## Security and contributions
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and
