@@ -39,6 +39,7 @@ python3 scripts/governance/validate_skill_pack.py
 python3 -m unittest discover -s tests
 ```
 
-The repository is licensed under Apache-2.0. Before creating a public remote, perform an
-independent secrets scan, review repository name and ownership, and confirm publication
-authorization.
+The repository is licensed under Apache-2.0. The independent all-ref and tracked-tree
+secrets scan is recorded in [`security/SECRET-AUDIT-2026-08-18.md`](security/SECRET-AUDIT-2026-08-18.md).
+Before creating a public remote, review repository name and ownership, confirm publication
+authorization, and enable GitHub secret scanning and push protection.

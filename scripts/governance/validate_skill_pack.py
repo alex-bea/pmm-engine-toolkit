@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -26,9 +27,16 @@ REQUIRED_SHARED = {
     "PRIVACY.md",
     "SECURITY.md",
     "SUPPORT.md",
+    "docs/security/SECRET-AUDIT-2026-08-18.md",
+    "docs/security/gitleaks-history-2026-08-18.json",
+    "docs/security/gitleaks-tracked-tree-2026-08-18.json",
     "docs/STD-evidence-privacy-v1.0.md",
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
+}
+AUDIT_REPORTS = {
+    "docs/security/gitleaks-history-2026-08-18.json",
+    "docs/security/gitleaks-tracked-tree-2026-08-18.json",
 }
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -62,6 +70,18 @@ def main() -> int:
     for rel in REQUIRED_SHARED:
         if not (ROOT / rel).is_file():
             errors.append(f"missing shared dependency: {rel}")
+
+    for rel in AUDIT_REPORTS:
+        path = ROOT / rel
+        if not path.is_file():
+            continue
+        try:
+            findings = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"invalid secrets-audit report {rel}: {exc}")
+            continue
+        if findings != []:
+            errors.append(f"secrets-audit report contains findings: {rel}")
 
     license_text = (ROOT / "LICENSE").read_text(encoding="utf-8") if (ROOT / "LICENSE").is_file() else ""
     if "Apache License" not in license_text or "Version 2.0, January 2004" not in license_text:
