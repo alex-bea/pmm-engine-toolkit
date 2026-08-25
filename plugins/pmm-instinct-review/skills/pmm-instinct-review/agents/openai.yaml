@@ -1,0 +1,6 @@
+interface:
+  display_name: "PMM Instinct Review"
+  short_description: "Review and promote Codex working preferences"
+  default_prompt: "Use $pmm-instinct-review to show continuous learning status and the pending review backlog."
+policy:
+  allow_implicit_invocation: true

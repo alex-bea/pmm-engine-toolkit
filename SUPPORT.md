@@ -13,6 +13,16 @@ default branch or release. Include your operating system, Python version, exact 
 minimal input, expected behavior, observed behavior, and relevant output with secrets and
 personal information removed.
 
+For `pmm-instinct-review`, include the output of `continuous learning status`, the queue state,
+the operating-system and Python versions, and whether Codex was resolved from `PATH`, ChatGPT,
+or the Codex app. Never attach native or normalized transcripts, audit evidence, tokens, or
+employer-confidential content. A failed model job is intentionally retryable; use
+`retry failed extraction` after correcting the reported model or executable issue.
+
+Hook trust is controlled by Codex. Open `/hooks` after installation and review the distinct
+`SessionStart` and `SessionEnd` entries. Installation, hook trust, and learning enablement are
+three separate steps.
+
 ## Support boundary
 
 This is a community-maintained open-source project with no guaranteed response or service

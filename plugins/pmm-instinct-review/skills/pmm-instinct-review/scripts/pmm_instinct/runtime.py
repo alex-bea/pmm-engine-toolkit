@@ -1,0 +1,1680 @@
+"""Standard-library-only runtime for the PMM Instinct Review Codex plugin."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from dataclasses import dataclass, replace
+from datetime import date, datetime, timezone
+from pathlib import Path
+from typing import Any, Iterable
+
+
+DEFAULT_CONFIG: dict[str, Any] = {
+    "schema_version": 1,
+    "enabled": False,
+    "privacy_acknowledged_at": None,
+    "min_user_messages": 5,
+    "max_turns": 200,
+    "max_normalized_chars": 120000,
+    "retention": "until_reviewed",
+    "extractor_model": None,
+    "extractor_reasoning_effort": "medium",
+    "max_attempts": 3,
+}
+ALLOWED_TYPES = ("correction", "confirmation", "voice", "scope", "workflow")
+TYPE_WEIGHTS = {"voice": 10, "workflow": 6, "scope": 5, "correction": 4, "confirmation": 3}
+CONTEXT_WRAPPER_RE = re.compile(
+    r"^(?:\s*<(?:environment_context|recommended_plugins|app-context|skills_instructions|"
+    r"plugins_instructions|permissions instructions|model-switch|model_switch)>.*?</(?:"
+    r"environment_context|recommended_plugins|app-context|skills_instructions|plugins_instructions|"
+    r"permissions instructions|model-switch|model_switch)>\s*)+$",
+    re.DOTALL | re.IGNORECASE,
+)
+PEM_RE = re.compile(
+    r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----.*?"
+    r"-----END (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----",
+    re.DOTALL,
+)
+BEARER_RE = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}")
+KNOWN_TOKEN_RE = re.compile(
+    r"\b(?:sk-(?:ant-)?[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9]{20,}|"
+    r"xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[0-9A-Z]{16})\b"
+)
+ENV_SECRET_RE = re.compile(
+    r"(?im)^(\s*(?:export\s+)?[A-Za-z_][A-Za-z0-9_]*(?:KEY|TOKEN|SECRET|PASSWORD)"
+    r"[A-Za-z0-9_]*\s*=)\s*[^\n]*$"
+)
+FIELD_RE = re.compile(r"^\*\*([^*]+):\*\*[ \t]*(.*)$", re.MULTILINE)
+FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---\n?(.*)$", re.DOTALL)
+
+
+@dataclass(frozen=True)
+class RuntimePaths:
+    codex_home: Path
+    store: Path
+    sessions: Path
+    queue: Path
+    instincts: Path
+    logs: Path
+    state: Path
+    config: Path
+    global_agents: Path
+
+
+@dataclass(frozen=True)
+class Turn:
+    index: int
+    role: str
+    text: str
+
+
+@dataclass(frozen=True)
+class NormalizationResult:
+    session_id: str
+    cwd: str
+    timestamp: str
+    model: str
+    source_format: str
+    eligible_main_thread: bool
+    turns: tuple[Turn, ...]
+    user_messages: int
+    normalized_chars: int
+
+
+@dataclass(frozen=True)
+class Audit:
+    path: Path
+    session_id: str
+    processed: bool
+    cwd: str
+    normalized_path: Path | None
+    suggestions_path: Path
+    audit_date: date | None
+
+
+@dataclass(frozen=True)
+class Candidate:
+    session_id: str
+    audit_path: Path
+    audit_date: date | None
+    candidate_type: str
+    rule: str
+    evidence: str
+    context: str
+    source_skill: str
+    cwd: str
+
+
+@dataclass(frozen=True)
+class Cluster:
+    cluster_id: str
+    candidate_type: str
+    normalized_rule: str
+    rule: str
+    evidence: str
+    context: str
+    support_count: int
+    session_ids: tuple[str, ...]
+    audit_paths: tuple[Path, ...]
+    source_skills: tuple[str, ...]
+    session_cwds: tuple[str, ...]
+    earliest: date | None
+    latest: date | None
+    impact_score: int
+    impact_tier: str
+    match_state: str = "new"
+
+
+@dataclass(frozen=True)
+class Instinct:
+    path: Path
+    instinct_id: str
+    instinct_type: str
+    confidence: float
+    created: date
+    last_seen: date
+    seen_count: int
+    status: str
+    rule: str
+    source_skill: str
+    source_cwds: tuple[str, ...]
+    promoted_to: tuple[str, ...]
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def iso_now() -> str:
+    return utc_now().isoformat(timespec="seconds")
+
+
+def resolve_paths(codex_home: str | Path | None = None) -> RuntimePaths:
+    root = Path(codex_home).expanduser() if codex_home else Path.home() / ".codex"
+    store = root / "instinct-review"
+    return RuntimePaths(
+        codex_home=root,
+        store=store,
+        sessions=store / "sessions",
+        queue=store / "queue",
+        instincts=store / "instincts",
+        logs=store / "logs",
+        state=store / "state",
+        config=store / "config.json",
+        global_agents=root / "AGENTS.md",
+    )
+
+
+def atomic_write_text(path: str | Path, text: str) -> Path:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
+    temporary.write_text(text, encoding="utf-8")
+    temporary.chmod(0o600)
+    temporary.replace(destination)
+    return destination
+
+
+def atomic_write_json(path: str | Path, payload: dict[str, Any]) -> Path:
+    return atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def ensure_store(paths: RuntimePaths, *, create_config: bool = True) -> None:
+    for directory in (paths.store, paths.sessions, paths.queue, paths.instincts, paths.logs, paths.state):
+        directory.mkdir(parents=True, exist_ok=True)
+        directory.chmod(0o700)
+    if create_config and not paths.config.exists():
+        atomic_write_json(paths.config, dict(DEFAULT_CONFIG))
+    if paths.config.exists():
+        paths.config.chmod(0o600)
+
+
+def load_config(paths: RuntimePaths, *, create: bool = False) -> dict[str, Any]:
+    if create:
+        ensure_store(paths)
+    config = dict(DEFAULT_CONFIG)
+    if not paths.config.exists():
+        return config
+    try:
+        payload = json.loads(paths.config.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"invalid instinct-review config: {type(error).__name__}") from error
+    if not isinstance(payload, dict):
+        raise ValueError("invalid instinct-review config: expected object")
+    config.update(payload)
+    return config
+
+
+def update_config(paths: RuntimePaths, **updates: Any) -> dict[str, Any]:
+    config = load_config(paths, create=True)
+    config.update(updates)
+    atomic_write_json(paths.config, config)
+    return config
+
+
+def redact_text(text: str) -> str:
+    value = PEM_RE.sub("[REDACTED PRIVATE KEY]", text)
+    value = BEARER_RE.sub("Bearer [REDACTED TOKEN]", value)
+    value = KNOWN_TOKEN_RE.sub("[REDACTED TOKEN]", value)
+    return ENV_SECRET_RE.sub(r"\1[REDACTED]", value)
+
+
+def sanitize_turn_text(text: str) -> str:
+    stripped = text.strip()
+    if not stripped or CONTEXT_WRAPPER_RE.fullmatch(stripped):
+        return ""
+    return redact_text(stripped).strip()
+
+
+def _content_text(content: Any, *, assistant: bool) -> str:
+    if isinstance(content, str):
+        return content.strip()
+    if not isinstance(content, list):
+        return ""
+    allowed = {"output_text", "text"} if assistant else {"input_text", "text"}
+    parts: list[str] = []
+    for item in content:
+        if not isinstance(item, dict) or item.get("type") not in allowed:
+            continue
+        value = item.get("text")
+        if isinstance(value, str) and value.strip():
+            parts.append(value.strip())
+    return "\n".join(parts)
+
+
+def _metadata(payload: dict[str, Any], path: Path) -> tuple[str, str, str, str, bool]:
+    session_id = str(payload.get("id") or payload.get("session_id") or "").strip()
+    if not session_id:
+        match = re.search(r"([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})", path.name, re.I)
+        session_id = match.group(1) if match else path.stem
+    source = payload.get("source")
+    thread_source = str(payload.get("thread_source") or "").lower()
+    is_subagent = bool(payload.get("parent_thread_id")) or thread_source == "subagent" or isinstance(source, dict)
+    return (
+        session_id,
+        str(payload.get("cwd") or "").strip(),
+        str(payload.get("timestamp") or "").strip(),
+        str(payload.get("model") or "").strip(),
+        not is_subagent,
+    )
+
+
+def _limit_turns(turns: list[tuple[str, str]], *, max_turns: int, max_chars: int) -> list[tuple[str, str]]:
+    if max_turns > 0:
+        turns = turns[-max_turns:]
+    if max_chars <= 0:
+        return []
+    kept: list[tuple[str, str]] = []
+    used = 0
+    for role, text in reversed(turns):
+        remaining = max_chars - used
+        if remaining <= 0:
+            break
+        if len(text) <= remaining:
+            kept.append((role, text))
+            used += len(text)
+            continue
+        if not kept:
+            marker = "[TRUNCATED]\n"
+            tail = max(0, remaining - len(marker))
+            kept.append((role, marker + text[-tail:] if tail else marker[:remaining]))
+        break
+    return list(reversed(kept))
+
+
+def normalize_transcript(
+    path: str | Path,
+    *,
+    max_turns: int = 200,
+    max_chars: int = 120000,
+) -> NormalizationResult:
+    transcript = Path(path)
+    if not transcript.is_file():
+        raise FileNotFoundError(f"Codex transcript not found: {transcript}")
+    metadata: dict[str, Any] = {}
+    event_turns: list[tuple[str, str]] = []
+    fallback_turns: list[tuple[str, str]] = []
+    saw_event = False
+    with transcript.open(encoding="utf-8", errors="replace") as handle:
+        for raw in handle:
+            if not raw.strip():
+                continue
+            try:
+                record = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(record, dict) or not isinstance(record.get("payload"), dict):
+                continue
+            payload = record["payload"]
+            if record.get("type") == "session_meta" and not metadata:
+                metadata = payload
+                continue
+            if record.get("type") == "event_msg":
+                subtype = payload.get("type")
+                if subtype not in {"user_message", "agent_message"}:
+                    continue
+                saw_event = True
+                raw_text = payload.get("message")
+                text = sanitize_turn_text(raw_text if isinstance(raw_text, str) else "")
+                if text:
+                    event_turns.append(("user" if subtype == "user_message" else "assistant", text))
+                continue
+            if record.get("type") != "response_item" or payload.get("type") != "message":
+                continue
+            role = str(payload.get("role") or "")
+            if role not in {"user", "assistant"}:
+                continue
+            text = sanitize_turn_text(_content_text(payload.get("content"), assistant=role == "assistant"))
+            if text:
+                fallback_turns.append((role, text))
+    selected = event_turns if saw_event else fallback_turns
+    deduplicated: list[tuple[str, str]] = []
+    for turn in selected:
+        if not deduplicated or deduplicated[-1] != turn:
+            deduplicated.append(turn)
+    user_messages = sum(role == "user" for role, _ in deduplicated)
+    limited = _limit_turns(deduplicated, max_turns=max_turns, max_chars=max_chars)
+    turns = tuple(Turn(index, role, text) for index, (role, text) in enumerate(limited, start=1))
+    session_id, cwd, timestamp, model, eligible = _metadata(metadata, transcript)
+    return NormalizationResult(
+        session_id=session_id,
+        cwd=cwd,
+        timestamp=timestamp,
+        model=model,
+        source_format="codex-rollout-event-msg-v1" if saw_event else "codex-rollout-response-item-v1",
+        eligible_main_thread=eligible,
+        turns=turns,
+        user_messages=user_messages,
+        normalized_chars=sum(len(turn.text) for turn in turns),
+    )
+
+
+def serialize_turns(turns: Iterable[Turn]) -> str:
+    return "".join(
+        json.dumps({"schema_version": 1, "index": turn.index, "role": turn.role, "text": turn.text}, ensure_ascii=False) + "\n"
+        for turn in turns
+    )
+
+
+def load_turns(path: str | Path) -> list[Turn]:
+    turns: list[Turn] = []
+    with Path(path).open(encoding="utf-8") as handle:
+        for raw in handle:
+            try:
+                payload = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+                continue
+            role = str(payload.get("role") or "")
+            text = str(payload.get("text") or "").strip()
+            if role in {"user", "assistant"} and text:
+                turns.append(Turn(len(turns) + 1, role, text))
+    return turns
+
+
+def safe_session_id(value: str) -> str:
+    safe = re.sub(r"[^A-Za-z0-9._-]", "-", value).strip("-.")
+    return (safe or "unknown")[:100]
+
+
+def _audit_stamp(result: NormalizationResult) -> str:
+    parsed: datetime | None = None
+    if result.timestamp:
+        try:
+            parsed = datetime.fromisoformat(result.timestamp.replace("Z", "+00:00"))
+        except ValueError:
+            pass
+    return (parsed or utc_now()).astimezone().strftime("%Y-%m-%d-%H%M")
+
+
+def _existing_audit(paths: RuntimePaths, session_id: str) -> Path | None:
+    for path in paths.sessions.glob("*-audit.md") if paths.sessions.exists() else ():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if re.search(rf"^\*\*session_id:\*\*[ \t]*{re.escape(session_id)}[ \t]*$", text, re.MULTILINE):
+            return path
+    return None
+
+
+def capture_session(
+    paths: RuntimePaths,
+    *,
+    session_id: str,
+    transcript_path: str | Path,
+    cwd: str = "",
+    model: str = "",
+    force: bool = False,
+) -> dict[str, Any]:
+    if os.environ.get("PMM_INSTINCT_EXTRACTOR") == "1":
+        return {"status": "skipped", "reason": "extractor-run", "session_id": session_id}
+    config = load_config(paths, create=force)
+    if not force and not config.get("enabled"):
+        return {"status": "skipped", "reason": "disabled", "session_id": session_id}
+    if not config.get("privacy_acknowledged_at"):
+        return {"status": "skipped", "reason": "privacy-not-acknowledged", "session_id": session_id}
+    native = Path(transcript_path).expanduser()
+    normalized = normalize_transcript(
+        native,
+        max_turns=int(config["max_turns"]),
+        max_chars=int(config["max_normalized_chars"]),
+    )
+    resolved_id = normalized.session_id or session_id.strip()
+    if not normalized.eligible_main_thread:
+        return {"status": "skipped", "reason": "not-main-thread", "session_id": resolved_id}
+    if normalized.user_messages < int(config["min_user_messages"]):
+        return {"status": "skipped", "reason": "below-minimum-user-messages", "session_id": resolved_id}
+    ensure_store(paths)
+    safe_id = safe_session_id(resolved_id)
+    normalized_path = paths.sessions / f"{safe_id}-normalized.jsonl"
+    suggestions_path = paths.sessions / f"{safe_id}-suggestions.md"
+    audit_path = paths.sessions / f"{_audit_stamp(normalized)}-{safe_id}-audit.md"
+    queue_path = paths.queue / f"{safe_id}.json"
+    actual_cwd = cwd.strip() or normalized.cwd
+    effective_model = str(config.get("extractor_model") or model or normalized.model or "").strip()
+    existing = _existing_audit(paths, resolved_id)
+    if existing:
+        existing_audit = load_audit(existing)
+        if existing_audit.processed or queue_path.is_file():
+            return {"status": "exists", "reason": "idempotent", "session_id": resolved_id, "audit_path": str(existing)}
+        normalized_path = existing_audit.normalized_path or normalized_path
+        suggestions_path = existing_audit.suggestions_path
+        if not normalized_path.is_file():
+            atomic_write_text(normalized_path, serialize_turns(normalized.turns))
+        now = iso_now()
+        atomic_write_json(
+            queue_path,
+            {
+                "schema_version": 1,
+                "session_id": resolved_id,
+                "state": "queued",
+                "attempts": 0,
+                "created_at": now,
+                "updated_at": now,
+                "started_at": None,
+                "finished_at": None,
+                "native_transcript_path": str(native),
+                "normalized_transcript_path": str(normalized_path),
+                "audit_path": str(existing),
+                "suggestions_path": str(suggestions_path),
+                "source_format": normalized.source_format,
+                "extractor_model": effective_model,
+                "error": None,
+                "recovered": True,
+            },
+        )
+        return {
+            "status": "queued",
+            "reason": "recovered-partial-capture",
+            "session_id": resolved_id,
+            "audit_path": str(existing),
+            "normalized_path": str(normalized_path),
+            "queue_path": str(queue_path),
+        }
+    atomic_write_text(normalized_path, serialize_turns(normalized.turns))
+    audit = "\n".join(
+        [
+            f"# Session Audit — {_audit_stamp(normalized)}-{safe_id}",
+            "processed: false",
+            f"**session_id:** {resolved_id}",
+            f"**user_messages:** {normalized.user_messages}",
+            f"**transcript_path:** {native}",
+            f"**normalized_transcript_path:** {normalized_path}",
+            f"**suggestions_path:** {suggestions_path}",
+            f"**source_transcript_format:** {normalized.source_format}",
+            "**source_runtime:** codex",
+            f"**extractor_model:** {effective_model}",
+            f"**cwd:** {actual_cwd}",
+            "**skill:**",
+            "",
+        ]
+    )
+    atomic_write_text(audit_path, audit)
+    now = iso_now()
+    atomic_write_json(
+        queue_path,
+        {
+            "schema_version": 1,
+            "session_id": resolved_id,
+            "state": "queued",
+            "attempts": 0,
+            "created_at": now,
+            "updated_at": now,
+            "started_at": None,
+            "finished_at": None,
+            "native_transcript_path": str(native),
+            "normalized_transcript_path": str(normalized_path),
+            "audit_path": str(audit_path),
+            "suggestions_path": str(suggestions_path),
+            "source_format": normalized.source_format,
+            "extractor_model": effective_model,
+            "error": None,
+        },
+    )
+    return {
+        "status": "queued",
+        "session_id": resolved_id,
+        "audit_path": str(audit_path),
+        "normalized_path": str(normalized_path),
+        "queue_path": str(queue_path),
+    }
+
+
+def read_queue(paths: RuntimePaths) -> list[tuple[Path, dict[str, Any]]]:
+    records: list[tuple[Path, dict[str, Any]]] = []
+    if not paths.queue.exists():
+        return records
+    for path in sorted(paths.queue.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(payload, dict):
+            records.append((path, payload))
+    return records
+
+
+def queue_counts(paths: RuntimePaths) -> dict[str, int]:
+    counts = {state: 0 for state in ("queued", "running", "succeeded", "failed")}
+    for _, record in read_queue(paths):
+        state = str(record.get("state") or "")
+        if state in counts:
+            counts[state] += 1
+    return counts
+
+
+def sanitize_error(error: BaseException | str) -> str:
+    if isinstance(error, str):
+        value = error
+    elif isinstance(error, (RuntimeError, ValueError, FileNotFoundError)):
+        value = f"{type(error).__name__}: {error}"
+    else:
+        value = type(error).__name__
+    value = re.sub(r"[\r\n]+", " ", redact_text(value)).strip()
+    return value[:300] or "unknown-error"
+
+
+def write_log(paths: RuntimePaths, session_id: str, event: str) -> None:
+    ensure_store(paths)
+    safe_event = re.sub(r"[^A-Za-z0-9_.:= /-]", "?", event)[:300]
+    log_path = paths.logs / f"{safe_session_id(session_id)}.log"
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write(f"{iso_now()} {safe_event}\n")
+    log_path.chmod(0o600)
+
+
+def skill_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def plugin_root() -> Path:
+    return Path(__file__).resolve().parents[4]
+
+
+def _skill_slug_from_file(path: Path) -> str | None:
+    try:
+        head = path.read_text(encoding="utf-8")[:8000]
+    except OSError:
+        return None
+    match = re.search(r"(?m)^name:\s*['\"]?([a-z0-9][a-z0-9-]{0,63})['\"]?\s*$", head)
+    return match.group(1) if match else None
+
+
+def _skill_search_roots(paths: RuntimePaths, cwd: str | Path | None = None) -> list[Path]:
+    roots = [paths.codex_home / "skills", plugin_root() / "skills"]
+    current = Path(cwd).expanduser().resolve() if cwd else None
+    if current:
+        roots.extend(parent / ".codex" / "skills" for parent in (current, *current.parents))
+        roots.extend(parent / "skills" for parent in (current, *current.parents))
+    return roots
+
+
+def discover_skills(paths: RuntimePaths, cwd: str | Path | None = None) -> dict[str, tuple[Path, ...]]:
+    discovered: dict[str, set[Path]] = {}
+    seen_roots: set[Path] = set()
+    for root in _skill_search_roots(paths, cwd):
+        resolved_root = root.resolve()
+        if resolved_root in seen_roots or not root.is_dir():
+            continue
+        seen_roots.add(resolved_root)
+        for descriptor in root.glob("*/SKILL.md"):
+            slug = _skill_slug_from_file(descriptor)
+            if slug:
+                discovered.setdefault(slug, set()).add(descriptor.parent.resolve())
+    return {slug: tuple(sorted(locations)) for slug, locations in sorted(discovered.items())}
+
+
+def derive_source_skill(turns: Iterable[Turn], valid_slugs: Iterable[str]) -> str | None:
+    slugs = tuple(sorted(set(valid_slugs), key=lambda item: (-len(item), item)))
+    joined = "\n".join(turn.text for turn in turns)
+    for slug in slugs:
+        if re.search(rf"(?:\$|/){re.escape(slug)}\b", joined, re.IGNORECASE):
+            return slug
+    for slug in slugs:
+        if re.search(rf"(?<![A-Za-z0-9-]){re.escape(slug)}(?![A-Za-z0-9-])", joined, re.IGNORECASE):
+            return slug
+    return None
+
+
+def validate_extractor_payload(payload: Any) -> list[dict[str, str]]:
+    if not isinstance(payload, dict) or set(payload) != {"candidates"}:
+        raise ValueError("extractor output must contain only candidates")
+    candidates = payload.get("candidates")
+    if not isinstance(candidates, list) or len(candidates) > 5:
+        raise ValueError("extractor candidates must be a list of at most five items")
+    validated: list[dict[str, str]] = []
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or set(candidate) != {"type", "rule", "evidence", "context"}:
+            raise ValueError("invalid extractor candidate fields")
+        candidate_type = candidate.get("type")
+        values = (candidate.get("rule"), candidate.get("evidence"), candidate.get("context"))
+        if candidate_type not in ALLOWED_TYPES or not all(isinstance(item, str) for item in values):
+            raise ValueError("invalid extractor candidate")
+        rule, evidence, context = (" ".join(str(item).split()).strip() for item in values)
+        if not rule or len(evidence) > 160 or len(context) > 300:
+            raise ValueError("extractor candidate violates length constraints")
+        validated.append({"type": candidate_type, "rule": rule, "evidence": evidence, "context": context})
+    return validated
+
+
+def render_suggestions(session_id: str, candidates: list[dict[str, str]], source_skill: str | None) -> str:
+    lines = [
+        "---",
+        f"# Instinct Suggestions — {session_id}",
+        f"**generated:** {iso_now()}",
+        f"**candidates:** {len(candidates)}",
+        f"**skill:** {source_skill or ''}",
+        "**source_runtime:** codex",
+        "",
+    ]
+    for index, candidate in enumerate(candidates, start=1):
+        lines.extend(
+            [
+                f"## Candidate {index}",
+                f"**type:** {candidate['type']}",
+                f"**rule:** {candidate['rule']}",
+                f"**evidence:** {candidate['evidence']}",
+                f"**context:** {candidate['context']}",
+            ]
+        )
+        if source_skill:
+            lines.append(f"**skill:** {source_skill}")
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def resolve_codex_executable(config: dict[str, Any], explicit: str | None = None) -> str | None:
+    configured = explicit or str(config.get("codex_binary") or "").strip()
+    if configured:
+        candidate = Path(configured).expanduser()
+        return str(candidate) if candidate.is_file() and os.access(candidate, os.X_OK) else None
+    on_path = shutil.which("codex")
+    if on_path:
+        return on_path
+    for candidate in (
+        Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
+        Path("/Applications/Codex.app/Contents/Resources/codex"),
+    ):
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
+def extractor_command(
+    *,
+    codex_binary: str,
+    model: str,
+    reasoning_effort: str,
+    schema_path: Path,
+    output_path: Path,
+    cwd: Path,
+) -> list[str]:
+    return [
+        codex_binary,
+        "exec",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--skip-git-repo-check",
+        "--sandbox",
+        "read-only",
+        "--model",
+        model,
+        "--config",
+        f'model_reasoning_effort="{reasoning_effort}"',
+        "--output-schema",
+        str(schema_path),
+        "--output-last-message",
+        str(output_path),
+        "--cd",
+        str(cwd),
+        "-",
+    ]
+
+
+def run_extractor_job(
+    paths: RuntimePaths,
+    record: dict[str, Any],
+    *,
+    codex_binary: str | None = None,
+    runner: Any = subprocess.run,
+) -> list[dict[str, str]]:
+    config = load_config(paths)
+    model = str(record.get("extractor_model") or "").strip()
+    if not model:
+        raise RuntimeError("extractor model unavailable in SessionEnd event and configuration")
+    normalized_path = Path(str(record.get("normalized_transcript_path") or ""))
+    turns = load_turns(normalized_path)
+    audit_path = Path(str(record.get("audit_path") or ""))
+    cwd = load_audit(audit_path).cwd if audit_path.is_file() else ""
+    discovered = discover_skills(paths, cwd)
+    source_skill = derive_source_skill(turns, discovered)
+    prompt_path = skill_root() / "assets" / "extractor-prompt.md"
+    schema_path = skill_root() / "assets" / "extractor-schema.json"
+    if not prompt_path.is_file() or not schema_path.is_file():
+        raise RuntimeError("extractor prompt or schema unavailable")
+    instruction = prompt_path.read_text(encoding="utf-8").replace(
+        "{{VALID_SKILL_SLUGS}}", ", ".join(discovered)
+    )
+    transcript_payload = serialize_turns(turns)
+    stdin_payload = (
+        instruction
+        + "\n\n<untrusted_transcript_jsonl>\n"
+        + transcript_payload
+        + "</untrusted_transcript_jsonl>\n"
+    )
+    resolved_codex = resolve_codex_executable(config, codex_binary)
+    if not resolved_codex:
+        raise RuntimeError("codex executable unavailable")
+    with tempfile.TemporaryDirectory(prefix="pmm-instinct-extractor-") as temporary:
+        extractor_cwd = Path(temporary)
+        output_path = extractor_cwd / "output.json"
+        command = extractor_command(
+            codex_binary=resolved_codex,
+            model=model,
+            reasoning_effort=str(config.get("extractor_reasoning_effort") or "medium"),
+            schema_path=schema_path,
+            output_path=output_path,
+            cwd=extractor_cwd,
+        )
+        environment = os.environ.copy()
+        environment["PMM_INSTINCT_EXTRACTOR"] = "1"
+        completed = runner(
+            command,
+            input=stdin_payload,
+            text=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=environment,
+            timeout=900,
+            check=False,
+        )
+        if completed.returncode != 0:
+            raise RuntimeError(f"codex exec exited with status {completed.returncode}")
+        try:
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError("extractor produced invalid JSON") from error
+    candidates = validate_extractor_payload(payload)
+    suggestions_path = Path(str(record["suggestions_path"]))
+    atomic_write_text(suggestions_path, render_suggestions(str(record["session_id"]), candidates, source_skill))
+    return candidates
+
+
+def transition_queue(path: Path, record: dict[str, Any], **updates: Any) -> dict[str, Any]:
+    changed = dict(record)
+    changed.update(updates)
+    changed["updated_at"] = iso_now()
+    atomic_write_json(path, changed)
+    return changed
+
+
+def worker_lock(paths: RuntimePaths) -> Path | None:
+    ensure_store(paths)
+    lock = paths.state / "worker.lock"
+    try:
+        descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        try:
+            payload = json.loads(lock.read_text(encoding="utf-8"))
+            os.kill(int(payload.get("pid", 0)), 0)
+            return None
+        except (OSError, ValueError, TypeError, json.JSONDecodeError):
+            lock.unlink(missing_ok=True)
+            return worker_lock(paths)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        json.dump({"pid": os.getpid(), "created_at": iso_now()}, handle)
+    return lock
+
+
+def drain_queue(
+    paths: RuntimePaths,
+    *,
+    session_id: str | None = None,
+    codex_binary: str | None = None,
+    runner: Any = subprocess.run,
+) -> dict[str, int | str]:
+    lock = worker_lock(paths)
+    if lock is None:
+        return {"status": "locked", "processed": 0, "succeeded": 0, "failed": 0}
+    processed = succeeded = failed = 0
+    try:
+        max_attempts = int(load_config(paths).get("max_attempts", 3))
+        for queue_path, record in read_queue(paths):
+            if session_id and str(record.get("session_id")) != session_id:
+                continue
+            attempts = int(record.get("attempts", 0))
+            if record.get("state") not in {"queued", "failed", "running"} or attempts >= max_attempts:
+                continue
+            processed += 1
+            record = transition_queue(
+                queue_path,
+                record,
+                state="running",
+                attempts=attempts + 1,
+                started_at=iso_now(),
+                finished_at=None,
+                error=None,
+            )
+            write_log(paths, str(record.get("session_id")), f"attempt={attempts + 1} state=running")
+            try:
+                candidates = run_extractor_job(paths, record, codex_binary=codex_binary, runner=runner)
+            except Exception as error:  # Worker must preserve the retryable queue on every failure.
+                failed += 1
+                sanitized = sanitize_error(error)
+                transition_queue(queue_path, record, state="failed", finished_at=iso_now(), error=sanitized)
+                write_log(paths, str(record.get("session_id")), f"state=failed error={sanitized}")
+                continue
+            succeeded += 1
+            transition_queue(
+                queue_path,
+                record,
+                state="succeeded",
+                finished_at=iso_now(),
+                error=None,
+                candidate_count=len(candidates),
+            )
+            write_log(paths, str(record.get("session_id")), f"state=succeeded candidates={len(candidates)}")
+    finally:
+        lock.unlink(missing_ok=True)
+    return {"status": "complete", "processed": processed, "succeeded": succeeded, "failed": failed}
+
+
+def retry_failed(paths: RuntimePaths, session_id: str | None = None) -> int:
+    retried = 0
+    for queue_path, record in read_queue(paths):
+        if record.get("state") != "failed" or (session_id and str(record.get("session_id")) != session_id):
+            continue
+        transition_queue(
+            queue_path,
+            record,
+            state="queued",
+            attempts=0,
+            started_at=None,
+            finished_at=None,
+            error=None,
+            manual_retries=int(record.get("manual_retries", 0)) + 1,
+        )
+        retried += 1
+    return retried
+
+
+def start_detached_worker(paths: RuntimePaths, cli_path: str | Path) -> bool:
+    config = load_config(paths)
+    max_attempts = int(config.get("max_attempts", 3))
+    if not any(
+        record.get("state") in {"queued", "failed", "running"} and int(record.get("attempts", 0)) < max_attempts
+        for _, record in read_queue(paths)
+    ):
+        return False
+    environment = os.environ.copy()
+    environment["PMM_INSTINCT_EXTRACTOR"] = "1"
+    subprocess.Popen(
+        [sys.executable, str(Path(cli_path).resolve()), "--codex-home", str(paths.codex_home), "worker", "--drain"],
+        cwd=tempfile.gettempdir(),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+        close_fds=True,
+        env=environment,
+    )
+    return True
+
+
+def _markdown_fields(text: str) -> dict[str, str]:
+    return {match.group(1).strip().lower(): match.group(2).strip() for match in FIELD_RE.finditer(text)}
+
+
+def load_audit(path: str | Path) -> Audit:
+    audit_path = Path(path)
+    text = audit_path.read_text(encoding="utf-8")
+    fields = _markdown_fields(text)
+    audit_date: date | None = None
+    match = re.match(r"(\d{4}-\d{2}-\d{2})", audit_path.name)
+    if match:
+        try:
+            audit_date = date.fromisoformat(match.group(1))
+        except ValueError:
+            pass
+    normalized_raw = fields.get("normalized_transcript_path", "")
+    suggestions_raw = fields.get("suggestions_path", "")
+    session_id = fields.get("session_id", "")
+    return Audit(
+        path=audit_path,
+        session_id=session_id,
+        processed=bool(re.search(r"(?m)^processed:\s*true\s*$", text)),
+        cwd=fields.get("cwd", ""),
+        normalized_path=Path(normalized_raw) if normalized_raw else None,
+        suggestions_path=(
+            Path(suggestions_raw)
+            if suggestions_raw
+            else audit_path.parent / f"{safe_session_id(session_id)}-suggestions.md"
+        ),
+        audit_date=audit_date,
+    )
+
+
+def find_audits(paths: RuntimePaths, *, pending_only: bool = False) -> list[Audit]:
+    audits = [load_audit(path) for path in sorted(paths.sessions.glob("*-audit.md"))] if paths.sessions.exists() else []
+    return [audit for audit in audits if not audit.processed] if pending_only else audits
+
+
+def suggestion_count(path: str | Path) -> int | None:
+    suggestion_path = Path(path)
+    if not suggestion_path.is_file():
+        return None
+    fields = _markdown_fields(suggestion_path.read_text(encoding="utf-8"))
+    try:
+        return int(fields.get("candidates", "0"))
+    except ValueError:
+        return 0
+
+
+def load_candidates(audit: Audit) -> list[Candidate]:
+    if not audit.suggestions_path.is_file():
+        return []
+    text = audit.suggestions_path.read_text(encoding="utf-8")
+    file_fields = _markdown_fields(text.split("## Candidate", 1)[0])
+    chunks = re.split(r"(?m)^## Candidate\s+\d+\s*$", text)[1:]
+    candidates: list[Candidate] = []
+    for chunk in chunks:
+        fields = _markdown_fields(chunk)
+        candidate_type = fields.get("type", "")
+        rule = fields.get("rule", "")
+        if candidate_type not in ALLOWED_TYPES or not rule:
+            continue
+        candidates.append(
+            Candidate(
+                session_id=audit.session_id,
+                audit_path=audit.path,
+                audit_date=audit.audit_date,
+                candidate_type=candidate_type,
+                rule=rule,
+                evidence=fields.get("evidence", ""),
+                context=fields.get("context", ""),
+                source_skill=fields.get("skill", "") or file_fields.get("skill", ""),
+                cwd=audit.cwd,
+            )
+        )
+    return candidates
+
+
+def normalize_rule(rule: str) -> str:
+    value = " ".join(rule.lower().strip().split())
+    return re.sub(r"[^a-z0-9]+", " ", value).strip()
+
+
+def cluster_id(candidate_type: str, normalized_rule: str) -> str:
+    digest = hashlib.sha256(f"{candidate_type}\0{normalized_rule}".encode()).hexdigest()[:12]
+    return f"{candidate_type}-{digest}"
+
+
+def _review_ledger(paths: RuntimePaths) -> dict[str, Any]:
+    ledger_path = paths.state / "review-decisions.json"
+    if not ledger_path.is_file():
+        return {}
+    try:
+        payload = json.loads(ledger_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _write_review_ledger(paths: RuntimePaths, ledger: dict[str, Any]) -> None:
+    atomic_write_json(paths.state / "review-decisions.json", ledger)
+
+
+def _all_clusters(paths: RuntimePaths, *, include_decided: bool) -> list[Cluster]:
+    ledger = _review_ledger(paths)
+    grouped: dict[tuple[str, str], list[Candidate]] = {}
+    for audit in find_audits(paths, pending_only=True):
+        for candidate in load_candidates(audit):
+            normalized = normalize_rule(candidate.rule)
+            identifier = cluster_id(candidate.candidate_type, normalized)
+            decided_sessions = set(ledger.get(identifier, {}).get("session_ids", []))
+            if not include_decided and candidate.session_id in decided_sessions:
+                continue
+            grouped.setdefault((candidate.candidate_type, normalized), []).append(candidate)
+    records: list[Cluster] = []
+    for (candidate_type, normalized), items in grouped.items():
+        first = items[0]
+        support = len({item.session_id for item in items})
+        impact = TYPE_WEIGHTS.get(candidate_type, 0) + min(support, 5)
+        tier = "high" if impact >= 12 else "medium" if impact >= 8 else "low"
+        dates = sorted(item.audit_date for item in items if item.audit_date)
+        records.append(
+            Cluster(
+                cluster_id=cluster_id(candidate_type, normalized),
+                candidate_type=candidate_type,
+                normalized_rule=normalized,
+                rule=first.rule,
+                evidence=first.evidence,
+                context=first.context,
+                support_count=support,
+                session_ids=tuple(sorted({item.session_id for item in items})),
+                audit_paths=tuple(sorted({item.audit_path for item in items})),
+                source_skills=tuple(sorted({item.source_skill for item in items if item.source_skill})),
+                session_cwds=tuple(sorted({item.cwd for item in items if item.cwd})),
+                earliest=dates[0] if dates else None,
+                latest=dates[-1] if dates else None,
+                impact_score=impact,
+                impact_tier=tier,
+            )
+        )
+    instincts = load_instincts(paths)
+    instinct_rules = {normalize_rule(instinct.rule) for instinct in instincts if instinct.status == "active"}
+    return sorted(
+        [replace(item, match_state="exact" if item.normalized_rule in instinct_rules else "new") for item in records],
+        key=lambda item: (-item.impact_score, -item.support_count, item.cluster_id),
+    )
+
+
+def clusters(paths: RuntimePaths) -> list[Cluster]:
+    return _all_clusters(paths, include_decided=False)
+
+
+def confidence_for_support(support: int, *, correction: bool = False) -> float:
+    if support >= 11:
+        confidence = 0.85
+    elif support >= 6:
+        confidence = 0.70
+    elif support >= 3:
+        confidence = 0.50
+    else:
+        confidence = 0.30
+    if correction:
+        confidence += 0.05
+    return min(1.0, round(confidence, 2))
+
+
+def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
+    match = FRONTMATTER_RE.match(text)
+    if not match:
+        raise ValueError("missing instinct frontmatter")
+    metadata: dict[str, Any] = {}
+    for raw in match.group(1).splitlines():
+        if not raw.strip() or raw.lstrip().startswith("#") or ":" not in raw:
+            continue
+        key, value = raw.split(":", 1)
+        scalar = value.strip()
+        try:
+            metadata[key.strip()] = json.loads(scalar)
+        except json.JSONDecodeError:
+            metadata[key.strip()] = scalar
+    return metadata, match.group(2).strip()
+
+
+def _serialize_frontmatter(metadata: dict[str, Any], body: str) -> str:
+    lines = ["---"]
+    for key, value in metadata.items():
+        if value is None:
+            encoded = "null"
+        elif isinstance(value, (str, list, dict, bool, int, float)):
+            encoded = json.dumps(value, ensure_ascii=False)
+        else:
+            encoded = json.dumps(str(value), ensure_ascii=False)
+        lines.append(f"{key}: {encoded}")
+    lines.extend(["---", "", body.strip(), ""])
+    return "\n".join(lines)
+
+
+def _body_rule(body: str) -> str:
+    return body.split("\n\n", 1)[0].strip()
+
+
+def load_instincts(paths: RuntimePaths) -> list[Instinct]:
+    instincts: list[Instinct] = []
+    if not paths.instincts.exists():
+        return instincts
+    for path in sorted(paths.instincts.glob("pmm-instinct-*.md")):
+        try:
+            metadata, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
+            created = date.fromisoformat(str(metadata.get("created")))
+            last_seen = date.fromisoformat(str(metadata.get("last_seen") or metadata.get("created")))
+            source_cwds = metadata.get("source_cwds") or []
+            promoted = metadata.get("promoted_to") or []
+            if isinstance(source_cwds, str):
+                source_cwds = [source_cwds] if source_cwds else []
+            if isinstance(promoted, str):
+                promoted = [promoted] if promoted else []
+            instincts.append(
+                Instinct(
+                    path=path,
+                    instinct_id=str(metadata.get("id") or path.stem),
+                    instinct_type=str(metadata.get("type") or "workflow"),
+                    confidence=float(metadata.get("confidence", 0)),
+                    created=created,
+                    last_seen=last_seen,
+                    seen_count=int(metadata.get("seen_count", 1)),
+                    status=str(metadata.get("status") or "active"),
+                    rule=_body_rule(body),
+                    source_skill=str(metadata.get("source_skill") or ""),
+                    source_cwds=tuple(str(item) for item in source_cwds if str(item)),
+                    promoted_to=tuple(str(item) for item in promoted if str(item)),
+                )
+            )
+        except (OSError, ValueError, TypeError):
+            continue
+    return instincts
+
+
+def next_instinct_id(instincts: Iterable[Instinct], created: date | None = None) -> str:
+    day = created or date.today()
+    prefix = f"pmm-instinct-{day.isoformat()}-"
+    numbers = []
+    for instinct in instincts:
+        if instinct.instinct_id.startswith(prefix):
+            try:
+                numbers.append(int(instinct.instinct_id.rsplit("-", 1)[1]))
+            except ValueError:
+                pass
+    return f"{prefix}{max(numbers, default=0) + 1:03d}"
+
+
+def _write_new_instinct(paths: RuntimePaths, cluster: Cluster, rule: str | None = None) -> Path:
+    ensure_store(paths)
+    instincts = load_instincts(paths)
+    created = date.today()
+    identifier = next_instinct_id(instincts, created)
+    chosen_rule = rule or cluster.rule
+    metadata = {
+        "id": identifier,
+        "type": cluster.candidate_type,
+        "confidence": confidence_for_support(cluster.support_count, correction=cluster.candidate_type == "correction"),
+        "created": created.isoformat(),
+        "last_seen": (cluster.latest or created).isoformat(),
+        "seen_count": cluster.support_count,
+        "status": "active",
+        "source_skill": cluster.source_skills[0] if len(cluster.source_skills) == 1 else "",
+        "source_runtime": "codex",
+        "source_transcript_format": "normalized-jsonl-v1",
+        "source_cwds": list(cluster.session_cwds),
+        "promoted_to": [],
+    }
+    body = "\n\n".join(
+        [
+            chosen_rule,
+            f"**Evidence:** {cluster.evidence or 'Clustered from approved session suggestions.'}",
+            f"**Why it matters:** Confirmed across {cluster.support_count} supporting session(s).",
+        ]
+    )
+    return atomic_write_text(paths.instincts / f"{identifier}.md", _serialize_frontmatter(metadata, body))
+
+
+def _update_instinct(instinct: Instinct, cluster: Cluster) -> Path:
+    metadata, body = _parse_frontmatter(instinct.path.read_text(encoding="utf-8"))
+    seen = instinct.seen_count + cluster.support_count
+    metadata["seen_count"] = seen
+    metadata["last_seen"] = (cluster.latest or date.today()).isoformat()
+    metadata["confidence"] = confidence_for_support(seen, correction=instinct.instinct_type == "correction")
+    metadata["source_cwds"] = sorted(set(instinct.source_cwds) | set(cluster.session_cwds))
+    return atomic_write_text(instinct.path, _serialize_frontmatter(metadata, body))
+
+
+def mark_audit_processed(audit: Audit) -> None:
+    text = audit.path.read_text(encoding="utf-8")
+    if re.search(r"(?m)^processed:\s*(?:true|false)\s*$", text):
+        text = re.sub(r"(?m)^processed:\s*(?:true|false)\s*$", "processed: true", text, count=1)
+    else:
+        text = "processed: true\n" + text
+    atomic_write_text(audit.path, text)
+
+
+def resolve_audits(paths: RuntimePaths, audit_paths: Iterable[Path]) -> list[str]:
+    warnings: list[str] = []
+    for audit_path in audit_paths:
+        audit = load_audit(audit_path)
+        mark_audit_processed(audit)
+        if audit.normalized_path and audit.normalized_path.exists():
+            try:
+                audit.normalized_path.unlink()
+            except OSError as error:
+                warning = f"{audit.session_id}: {sanitize_error(error)}"
+                warnings.append(warning)
+                write_log(paths, audit.session_id, f"cleanup-warning error={sanitize_error(error)}")
+    return warnings
+
+
+def cleanup_processed(paths: RuntimePaths) -> dict[str, Any]:
+    removed = 0
+    warnings: list[str] = []
+    for audit in find_audits(paths):
+        if not audit.processed or not audit.normalized_path or not audit.normalized_path.exists():
+            continue
+        try:
+            audit.normalized_path.unlink()
+            removed += 1
+        except OSError as error:
+            warnings.append(f"{audit.session_id}: {sanitize_error(error)}")
+    return {"removed": removed, "warnings": warnings}
+
+
+def review_cluster(
+    paths: RuntimePaths,
+    selected_id: str,
+    decision: str,
+    *,
+    edited_rule: str | None = None,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    if decision not in {"accept", "reject", "edit", "match"}:
+        raise ValueError("decision must be accept, reject, edit, or match")
+    if not confirm:
+        raise PermissionError("review requires --confirm")
+    selected = next((item for item in clusters(paths) if item.cluster_id == selected_id), None)
+    if not selected:
+        raise ValueError(f"cluster not found: {selected_id}")
+    if decision == "edit" and not (edited_rule or "").strip():
+        raise ValueError("edit requires a non-empty edited rule")
+    matching = next(
+        (item for item in load_instincts(paths) if item.status == "active" and normalize_rule(item.rule) == selected.normalized_rule),
+        None,
+    )
+    instinct_path: Path | None = None
+    if decision == "match":
+        if not matching:
+            raise ValueError("match decision requires an exact active instinct")
+        instinct_path = _update_instinct(matching, selected)
+    elif decision in {"accept", "edit"}:
+        if matching:
+            raise ValueError("an exact active instinct exists; use match")
+        instinct_path = _write_new_instinct(paths, selected, (edited_rule or "").strip() or None)
+    ledger = _review_ledger(paths)
+    previous_sessions = set(ledger.get(selected.cluster_id, {}).get("session_ids", []))
+    ledger[selected.cluster_id] = {
+        "decision": decision,
+        "session_ids": sorted(previous_sessions | set(selected.session_ids)),
+        "reviewed_at": iso_now(),
+        "instinct_path": str(instinct_path) if instinct_path else None,
+    }
+    _write_review_ledger(paths, ledger)
+    resolved_paths: list[Path] = []
+    for audit_path in selected.audit_paths:
+        audit = load_audit(audit_path)
+        audit_candidates = load_candidates(audit)
+        if audit_candidates and all(
+            candidate.session_id
+            in set(
+                ledger.get(
+                    cluster_id(candidate.candidate_type, normalize_rule(candidate.rule)), {}
+                ).get("session_ids", [])
+            )
+            for candidate in audit_candidates
+        ):
+            resolved_paths.append(audit_path)
+    warnings = resolve_audits(paths, resolved_paths)
+    return {
+        "cluster_id": selected.cluster_id,
+        "decision": decision,
+        "instinct_path": str(instinct_path) if instinct_path else None,
+        "resolved_audits": [str(path) for path in resolved_paths],
+        "cleanup_warnings": warnings,
+    }
+
+
+def resolve_zero_candidate_audits(paths: RuntimePaths, *, confirm: bool = False) -> dict[str, Any]:
+    if not confirm:
+        raise PermissionError("zero-candidate resolution requires --confirm")
+    audits = [
+        audit
+        for audit in find_audits(paths, pending_only=True)
+        if suggestion_count(audit.suggestions_path) == 0
+    ]
+    warnings = resolve_audits(paths, [audit.path for audit in audits])
+    return {"resolved": len(audits), "cleanup_warnings": warnings}
+
+
+def backlog(paths: RuntimePaths) -> dict[str, Any]:
+    pending = find_audits(paths, pending_only=True)
+    items = clusters(paths)
+    zero = sum(suggestion_count(audit.suggestions_path) == 0 for audit in pending)
+    missing = sum(suggestion_count(audit.suggestions_path) is None for audit in pending)
+    unresolved = sum(bool(audit.normalized_path and audit.normalized_path.exists()) for audit in pending)
+    return {
+        "pending_audits": len(pending),
+        "positive_clusters": len(items),
+        "positive_suggestions": sum((suggestion_count(audit.suggestions_path) or 0) for audit in pending),
+        "zero_candidate_audits": zero,
+        "missing_suggestions": missing,
+        "unresolved_normalized_transcripts": unresolved,
+        "clusters": [
+            {
+                "cluster_id": item.cluster_id,
+                "type": item.candidate_type,
+                "rule": item.rule,
+                "evidence": item.evidence,
+                "context": item.context,
+                "support_count": item.support_count,
+                "source_skills": list(item.source_skills),
+                "session_cwds": list(item.session_cwds),
+                "impact_score": item.impact_score,
+                "impact_tier": item.impact_tier,
+                "match_state": item.match_state,
+            }
+            for item in items
+        ],
+    }
+
+
+def _nearest_repository(path: str | Path) -> Path | None:
+    current = Path(path).expanduser().resolve()
+    if current.is_file():
+        current = current.parent
+    for candidate in (current, *current.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return None
+
+
+def _project_agents_path(instinct: Instinct, explicit_project: str | Path | None = None) -> Path | None:
+    if explicit_project:
+        root = _nearest_repository(explicit_project) or Path(explicit_project).expanduser().resolve()
+    else:
+        repositories = {_nearest_repository(item) for item in instinct.source_cwds if Path(item).expanduser().exists()}
+        repositories.discard(None)
+        if len(repositories) != 1:
+            return None
+        root = next(iter(repositories))
+    assert root is not None
+    cwd = Path(instinct.source_cwds[0]).expanduser().resolve() if instinct.source_cwds else root
+    if root not in (cwd, *cwd.parents):
+        cwd = root
+    for candidate in (cwd, *cwd.parents):
+        if root not in (candidate, *candidate.parents):
+            break
+        existing = candidate / "AGENTS.md"
+        if existing.is_file():
+            return existing
+        if candidate == root:
+            break
+    return root / "AGENTS.md"
+
+
+def _skill_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
+    if not instinct.source_skill:
+        return None
+    discovered: set[Path] = set()
+    for cwd in instinct.source_cwds or (None,):
+        discovered.update(discover_skills(paths, cwd).get(instinct.source_skill, ()))
+    plugin_cache = (paths.codex_home / "plugins" / "cache").resolve()
+    bundled = plugin_root().resolve()
+    eligible: list[Path] = []
+    for location in discovered:
+        resolved = location.resolve()
+        if plugin_cache in (resolved, *resolved.parents) or bundled in (resolved, *resolved.parents):
+            continue
+        descriptor = resolved / "SKILL.md"
+        if descriptor.is_file() and os.access(descriptor, os.W_OK):
+            eligible.append(descriptor)
+    return eligible[0] if len(eligible) == 1 else None
+
+
+def instruction_contains_rule(path: str | Path, rule: str) -> bool:
+    destination = Path(path)
+    if not destination.is_file():
+        return False
+    return normalize_rule(rule) in normalize_rule(destination.read_text(encoding="utf-8"))
+
+
+def default_promotion_destination(instinct: Instinct, project: str | Path | None = None) -> str:
+    return "project" if _project_agents_path(instinct, project) is not None else "global"
+
+
+def promotion_preview(
+    paths: RuntimePaths,
+    instinct_id: str,
+    *,
+    destination: str | None = None,
+    project: str | Path | None = None,
+    edited_rule: str | None = None,
+) -> dict[str, Any]:
+    instinct = next((item for item in load_instincts(paths) if item.instinct_id == instinct_id), None)
+    if not instinct:
+        raise ValueError(f"instinct not found: {instinct_id}")
+    if instinct.status != "active" or instinct.confidence < 0.5:
+        raise ValueError("instinct is not eligible for promotion (active and confidence >= 0.5 required)")
+    requested = destination or default_promotion_destination(instinct, project)
+    rule = (edited_rule or instinct.rule).strip()
+    if not rule:
+        raise ValueError("promotion rule cannot be blank")
+    if requested == "no":
+        return {"instinct_id": instinct_id, "decision": "no", "applied": False, "targets": []}
+    if requested == "edit":
+        if not edited_rule:
+            raise ValueError("edit requires --edited-rule")
+        requested = default_promotion_destination(instinct, project)
+    targets: list[Path] = []
+    if requested in {"project", "both"}:
+        project_path = _project_agents_path(instinct, project)
+        if not project_path:
+            raise ValueError("one repository could not be resolved; supply --project or choose global")
+        targets.append(project_path)
+    if requested in {"global", "both"}:
+        targets.append(paths.global_agents)
+    if requested == "skill":
+        skill_path = _skill_destination(paths, instinct)
+        if not skill_path:
+            raise ValueError("one exact writable project/user skill could not be resolved")
+        targets.append(skill_path)
+    if requested not in {"project", "global", "both", "skill"}:
+        raise ValueError("destination must be project, global, both, skill, edit, or no")
+    insertion = f"- {rule}"
+    return {
+        "instinct_id": instinct_id,
+        "decision": requested,
+        "rule": rule,
+        "insertion": insertion,
+        "targets": [
+            {"path": str(target), "duplicate": instruction_contains_rule(target, rule)} for target in targets
+        ],
+        "applied": False,
+    }
+
+
+def _append_guidance(path: Path, insertion: str) -> None:
+    existing = path.read_text(encoding="utf-8") if path.exists() else "# Instructions\n"
+    if "## Learned guidance" not in existing:
+        existing = existing.rstrip() + "\n\n## Learned guidance\n"
+    mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
+    destination = path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
+    temporary.write_text(existing.rstrip() + "\n" + insertion + "\n", encoding="utf-8")
+    temporary.chmod(mode)
+    temporary.replace(destination)
+
+
+def apply_promotion(
+    paths: RuntimePaths,
+    instinct_id: str,
+    *,
+    destination: str | None = None,
+    project: str | Path | None = None,
+    edited_rule: str | None = None,
+    confirm: bool = False,
+) -> dict[str, Any]:
+    if not confirm:
+        raise PermissionError("promotion requires --confirm after preview")
+    preview = promotion_preview(
+        paths,
+        instinct_id,
+        destination=destination,
+        project=project,
+        edited_rule=edited_rule,
+    )
+    if preview.get("decision") == "no":
+        return preview
+    changed: list[str] = []
+    for target in preview["targets"]:
+        if target["duplicate"]:
+            continue
+        path = Path(target["path"])
+        _append_guidance(path, str(preview["insertion"]))
+        changed.append(str(path))
+    instinct = next(item for item in load_instincts(paths) if item.instinct_id == instinct_id)
+    metadata, body = _parse_frontmatter(instinct.path.read_text(encoding="utf-8"))
+    metadata["promoted_to"] = sorted(set(instinct.promoted_to) | {item["path"] for item in preview["targets"]})
+    atomic_write_text(instinct.path, _serialize_frontmatter(metadata, body))
+    preview["applied"] = True
+    preview["changed"] = changed
+    return preview
+
+
+def discover_backfill(
+    paths: RuntimePaths,
+    *,
+    limit: int = 5,
+    older_than_minutes: int = 30,
+) -> list[dict[str, Any]]:
+    sessions_root = paths.codex_home / "sessions"
+    cutoff = utc_now().timestamp() - max(0, older_than_minutes) * 60
+    candidates: list[dict[str, Any]] = []
+    if not sessions_root.exists():
+        return candidates
+    config = load_config(paths)
+    for transcript in sorted(sessions_root.glob("**/*.jsonl"), key=lambda item: item.stat().st_mtime, reverse=True):
+        try:
+            if transcript.stat().st_mtime > cutoff:
+                continue
+            normalized = normalize_transcript(
+                transcript,
+                max_turns=int(config.get("max_turns", 200)),
+                max_chars=int(config.get("max_normalized_chars", 120000)),
+            )
+        except (OSError, ValueError):
+            continue
+        if not normalized.eligible_main_thread or normalized.user_messages < int(config.get("min_user_messages", 5)):
+            continue
+        if _existing_audit(paths, normalized.session_id):
+            continue
+        candidates.append(
+            {
+                "session_id": normalized.session_id,
+                "transcript_path": str(transcript),
+                "cwd": normalized.cwd,
+                "model": normalized.model,
+                "user_messages": normalized.user_messages,
+                "modified_at": datetime.fromtimestamp(transcript.stat().st_mtime, timezone.utc).isoformat(),
+            }
+        )
+        if len(candidates) >= limit:
+            break
+    return candidates
+
+
+def apply_backfill(paths: RuntimePaths, inventory: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not load_config(paths).get("privacy_acknowledged_at"):
+        raise PermissionError("backfill requires prior local-chat-storage acknowledgment")
+    results: list[dict[str, Any]] = []
+    for candidate in inventory:
+        results.append(
+            capture_session(
+                paths,
+                session_id=str(candidate["session_id"]),
+                transcript_path=str(candidate["transcript_path"]),
+                cwd=str(candidate.get("cwd") or ""),
+                model=str(candidate.get("model") or ""),
+                force=True,
+            )
+        )
+    return results
+
+
+def import_candidates(
+    paths: RuntimePaths,
+    source: str | Path,
+    *,
+    cwd: str = "",
+    confirm: bool = False,
+) -> dict[str, Any]:
+    if not confirm:
+        raise PermissionError("candidate import requires --confirm")
+    candidate_path = Path(source)
+    payload = json.loads(candidate_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        raise ValueError("candidate file must contain a JSON array")
+    required = {"id", "lesson", "source", "observed_on", "evidence"}
+    imported: list[str] = []
+    errors: list[str] = []
+    ensure_store(paths)
+    valid_slugs = discover_skills(paths, cwd)
+    for index, item in enumerate(payload):
+        if not isinstance(item, dict) or required - set(item):
+            errors.append(f"record {index}: missing required fields")
+            continue
+        evidence = item.get("evidence")
+        if not isinstance(evidence, list) or not evidence:
+            errors.append(f"{item.get('id')}: evidence must be a non-empty list")
+            continue
+        source_id = safe_session_id(f"import-{candidate_path.stem}-{item['id']}")
+        if _existing_audit(paths, source_id):
+            imported.append(source_id)
+            continue
+        observed = str(item.get("observed_on") or "")[:10]
+        try:
+            stamp = date.fromisoformat(observed).strftime("%Y-%m-%d-0000")
+        except ValueError:
+            errors.append(f"{item.get('id')}: invalid observed_on")
+            continue
+        suggestions_path = paths.sessions / f"{source_id}-suggestions.md"
+        audit_path = paths.sessions / f"{stamp}-{source_id}-audit.md"
+        source_skill = str(item.get("skill") or "")
+        if source_skill not in valid_slugs:
+            source_skill = ""
+        raw_type = str(item.get("type") or "workflow")
+        candidate_type = raw_type if raw_type in ALLOWED_TYPES else "workflow"
+        candidate = {
+            "type": candidate_type,
+            "rule": " ".join(str(item["lesson"]).split()),
+            "evidence": " ".join(str(evidence[0]).split())[:160],
+            "context": f"Imported from {item['source']} observed {observed}"[:300],
+        }
+        validate_extractor_payload({"candidates": [candidate]})
+        atomic_write_text(suggestions_path, render_suggestions(source_id, [candidate], source_skill or None))
+        atomic_write_text(
+            audit_path,
+            "\n".join(
+                [
+                    f"# Imported Audit — {source_id}",
+                    "processed: false",
+                    f"**session_id:** {source_id}",
+                    f"**suggestions_path:** {suggestions_path}",
+                    "**source_transcript_format:** explicit-candidate-json-v1",
+                    "**source_runtime:** codex",
+                    f"**cwd:** {cwd}",
+                    f"**skill:** {source_skill}",
+                    "",
+                ]
+            ),
+        )
+        imported.append(source_id)
+    return {"imported": imported, "errors": errors}
+
+
+def preflight(paths: RuntimePaths, *, codex_binary: str | None = None) -> dict[str, Any]:
+    config = load_config(paths)
+    schema_path = skill_root() / "assets" / "extractor-schema.json"
+    schema_valid = False
+    try:
+        schema_valid = isinstance(json.loads(schema_path.read_text(encoding="utf-8")), dict)
+    except (OSError, json.JSONDecodeError):
+        pass
+    resolved_codex = resolve_codex_executable(config, codex_binary)
+    checks = {
+        "python": sys.version_info >= (3, 11),
+        "codex": bool(resolved_codex),
+        "extractor_schema": schema_valid,
+        "model_policy": bool(config.get("extractor_model")) or config.get("extractor_model") is None,
+    }
+    return {
+        "ok": all(checks.values()),
+        "checks": checks,
+        "codex_binary": resolved_codex,
+        "extractor_model": config.get("extractor_model") or "SessionEnd event (required)",
+    }
+
+
+def runtime_status(paths: RuntimePaths) -> dict[str, Any]:
+    config = load_config(paths)
+    instincts = load_instincts(paths)
+    return {
+        "enabled": bool(config.get("enabled")),
+        "privacy_acknowledged_at": config.get("privacy_acknowledged_at"),
+        "extractor_model": config.get("extractor_model"),
+        "queue": queue_counts(paths),
+        "backlog": {key: value for key, value in backlog(paths).items() if key != "clusters"},
+        "active_instincts": sum(item.status == "active" for item in instincts),
+        "promotion_candidates": sum(item.status == "active" and item.confidence >= 0.5 for item in instincts),
+        "store": str(paths.store),
+        "preflight": preflight(paths),
+    }
