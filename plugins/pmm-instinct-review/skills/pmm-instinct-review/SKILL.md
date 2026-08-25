@@ -8,8 +8,10 @@ description: Capture, review, and promote evidence-backed working preferences fr
 Use the deterministic operator at `scripts/instinct_review.py`. Resolve paths relative to
 this `SKILL.md`; never assume the caller's working directory is the plugin directory.
 
-Read `references/RUN-workflow.md` before changing capture state, resolving a review
-cluster, or promoting an instinct.
+Read `references/DOC-product-requirements.md`,
+`references/DOC-implementation-blueprint.md`, and `references/RUN-workflow.md` before
+changing capture state, resolving a review cluster, or promoting an instinct. Use
+`references/DOC-submission-test-cases.md` when preparing or reviewing a public release.
 
 ## Safety contract
 

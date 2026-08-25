@@ -1,5 +1,9 @@
 # Codex instinct-review workflow
 
+Read `DOC-product-requirements.md` for product scope and approval gates and
+`DOC-implementation-blueprint.md` before changing behavior. This runbook owns the exact
+operator procedure.
+
 ## 1. Status and enablement
 
 Run `python3 <skill-dir>/scripts/instinct_review.py status`. Installation is not consent to

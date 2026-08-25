@@ -21,6 +21,11 @@ It stores redacted user/assistant text temporarily under `~/.codex/instinct-revi
 deletes that normalized copy after review resolution. Plugin removal preserves this user-owned
 directory.
 
+For the complete product and implementation contract, see the bundled
+[product requirements](skills/pmm-instinct-review/references/DOC-product-requirements.md),
+[implementation blueprint](skills/pmm-instinct-review/references/DOC-implementation-blueprint.md),
+and [public submission test cases](skills/pmm-instinct-review/references/DOC-submission-test-cases.md).
+
 ## Install from the toolkit marketplace
 
 ```bash

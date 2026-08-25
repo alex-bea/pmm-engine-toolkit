@@ -11,8 +11,9 @@ redistribution basis, and an `include` disposition.
 
 ## Review basis
 
-- The plugin runtime, hooks, schemas, documentation, synthetic examples, tests, marketplace
-  record, and governance changes are project-authored in the public fresh-history repository.
+- The plugin runtime, hooks, schemas, documentation, product requirements, implementation
+  blueprint, submission test cases, synthetic examples, tests, marketplace record, and
+  governance changes are project-authored in the public fresh-history repository.
 - No private chats, audits, instincts, configuration, runtime state, private repository files,
   or private Git history were copied into the release candidate.
 - The implementation uses Python's standard library only and vendors no package source,

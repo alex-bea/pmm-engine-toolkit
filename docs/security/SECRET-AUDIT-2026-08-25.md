@@ -3,16 +3,17 @@
 ## Result
 
 Passed locally. Gitleaks 8.30.1 reported zero findings in both the complete reachable Git
-history and the release-candidate working tree containing the new plugin artifacts.
+history and the final release-candidate working tree, including the plugin's product,
+implementation, and public-review documentation.
 
 ## Method and scope
 
 - Built-in Gitleaks rules; no custom configuration, baseline, ignore file, or allowlist.
 - `gitleaks:allow` comment suppression disabled.
 - Findings fully redacted in command output and reports.
-- All refs after the implementation commit: the complete reachable branch history was scanned.
+- All reachable refs: 13 commits and approximately 592 KB were scanned.
 - Release-candidate tree: every file in the working release candidate was scanned, including
-  plugin, documentation, test, marketplace, and governance files.
+  plugin, documentation, tests, marketplace, and governance files (approximately 1.07 MB).
 
 ## Evidence
 
@@ -21,8 +22,8 @@ history and the release-candidate working tree containing the new plugin artifac
 | All refs and reachable commits | [`gitleaks-all-refs-2026-08-25.json`](gitleaks-all-refs-2026-08-25.json) | 0 |
 | Release-candidate tree | [`gitleaks-tracked-tree-2026-08-25.json`](gitleaks-tracked-tree-2026-08-25.json) | 0 |
 
-The committed reports contain empty JSON arrays. The all-ref scan will be repeated after the
-implementation commit; an unchanged empty report is the expected result.
+The committed reports contain empty JSON arrays. Re-run both scans after any change to the
+published tree; an unchanged empty report is the expected result.
 
 ## Limitations and release gate
 

@@ -23,7 +23,8 @@ The repository validator enforces this contract and checks declared local depend
 
 The `plugins/pmm-instinct-review/` release candidate additionally contains a Codex plugin
 manifest, marketplace registration, plugin-relative hooks, a bundled skill, a standard-library
-Python runtime, an extractor prompt and schema, operator documentation, and synthetic tests.
+Python runtime, an extractor prompt and schema, operator documentation, product requirements,
+an implementation blueprint, public submission test cases, and synthetic tests.
 It has no dependency on a private registry or repository. The retired standalone
 `skills/pmm-instinct-review/` package is represented by the plugin's explicit candidate-file
 import command.

@@ -13,6 +13,8 @@ Status: release candidate pending pull-request approval.
   promotion previews, normalized duplicate checks, and a second approval gate.
 - Five-session calibration backfill, processed-transcript cleanup, status and queue commands,
   and compatibility import for explicit candidate JSON.
+- Public product requirements, a maintainer implementation blueprint, and five positive plus
+  three negative reviewer test cases that use only local, synthetic inputs.
 
 ## Changed
 
