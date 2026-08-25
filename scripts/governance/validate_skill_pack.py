@@ -47,6 +47,11 @@ REQUIRED_SHARED = {
     "docs/STD-evidence-privacy-v1.0.md",
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
+    "docs/STD-governance-document-metadata-v1.0.md",
+    "docs/CODEX-GOVERNANCE-PLUGIN.md",
+    "docs/CODEX-DOCUMENT-GOVERNANCE.md",
+    ".agents/plugins/marketplace.json",
+    "plugins/skill-governance/.codex-plugin/plugin.json",
     "requirements-build.lock",
     "requirements-build.txt",
     "requirements.lock",
@@ -65,6 +70,29 @@ BLOCKED = re.compile(
     re.IGNORECASE,
 )
 
+PLUGIN_ROOT = ROOT / "plugins" / "skill-governance"
+PLUGIN_SKILLS = {"govern-documents", "govern-skills", "govern-work-tracker"}
+STANDARD_MIRRORS = {
+    "govern-skills": (
+        "STD-ai-skill-governance-prd-v1.0.md",
+        "STD-approval-gates-v1.0.md",
+        "STD-evidence-privacy-v1.0.md",
+        "STD-governance-document-metadata-v1.0.md",
+        "STD-skill-dependencies-v1.0.md",
+        "STD-skill-primitives-v1.0.md",
+        "STD-skill-structure-v1.0.md",
+    ),
+    "govern-work-tracker": (
+        "STD-approval-gates-v1.0.md",
+        "STD-work-tracker-v1.0.md",
+    ),
+    "govern-documents": (
+        "STD-approval-gates-v1.0.md",
+        "STD-evidence-privacy-v1.0.md",
+        "STD-governance-document-metadata-v1.0.md",
+    ),
+}
+
 
 def frontmatter(path: Path) -> dict[str, str]:
     text = path.read_text(encoding="utf-8")
@@ -78,6 +106,125 @@ def frontmatter(path: Path) -> dict[str, str]:
     if "description" not in keys:
         raise ValueError("frontmatter needs description")
     return {"name": name_match.group(1).strip(), "description": "", "_keys": keys}
+
+
+def validate_governance_plugin(errors: list[str]) -> None:
+    manifest_path = PLUGIN_ROOT / ".codex-plugin" / "plugin.json"
+    marketplace_path = ROOT / ".agents" / "plugins" / "marketplace.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid governance plugin manifest: {exc}")
+        return
+    if manifest.get("name") != "skill-governance":
+        errors.append("governance plugin manifest name mismatch")
+    if manifest.get("version") != "0.2.0":
+        errors.append("governance plugin manifest version must be 0.2.0")
+    if manifest.get("skills") != "./skills/":
+        errors.append("governance plugin must declare ./skills/")
+    if "apps" in manifest or "mcpServers" in manifest or "hooks" in manifest:
+        errors.append("governance plugin declares an unsupported or unimplemented component")
+
+    try:
+        marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid governance marketplace: {exc}")
+        marketplace = {}
+    if marketplace.get("name") != "pmm-engine-toolkit":
+        errors.append("marketplace name must be pmm-engine-toolkit")
+    entries = marketplace.get("plugins", [])
+    plugin_entry = next(
+        (entry for entry in entries if isinstance(entry, dict) and entry.get("name") == "skill-governance"),
+        None,
+    )
+    if plugin_entry is None:
+        errors.append("marketplace is missing skill-governance")
+    else:
+        if plugin_entry.get("source") != {"source": "local", "path": "./plugins/skill-governance"}:
+            errors.append("marketplace skill-governance source mismatch")
+        if plugin_entry.get("policy") != {"installation": "AVAILABLE", "authentication": "ON_INSTALL"}:
+            errors.append("marketplace skill-governance policy mismatch")
+
+    skill_root = PLUGIN_ROOT / "skills"
+    actual = {path.name for path in skill_root.iterdir() if path.is_dir()}
+    if actual != PLUGIN_SKILLS:
+        errors.append(
+            f"governance plugin skill inventory mismatch: "
+            f"missing={sorted(PLUGIN_SKILLS-actual)} extra={sorted(actual-PLUGIN_SKILLS)}"
+        )
+    required_by_skill = {
+        "govern-skills": (
+            "agents/openai.yaml",
+            "scripts/govern_skills.py",
+            "assets/schemas/governance-manifest.schema.json",
+            "assets/schemas/skill-registry.schema.json",
+            "assets/templates/SKILL.md",
+            "assets/templates/openai.yaml",
+            "assets/templates/skill-registry.yaml",
+            "assets/templates/skill-governance-ci.yml",
+            "assets/examples/pmm-engine/EX-pmm-engine-skill-governance.md",
+        ),
+        "govern-work-tracker": (
+            "agents/openai.yaml",
+            "scripts/govern_work_tracker.py",
+            "assets/schemas/roadmap.schema.json",
+            "assets/schemas/epic.schema.json",
+            "assets/schemas/task.schema.json",
+            "assets/templates/roadmap.yaml",
+            "assets/templates/epic.yaml",
+            "assets/templates/task.yaml",
+            "assets/examples/pmm-engine/EX-pmm-engine-work-tracker.md",
+        ),
+        "govern-documents": (
+            "agents/openai.yaml",
+            "scripts/govern_documents.py",
+            "assets/templates/governed-document.md",
+            "references/RUN-document-governance-audit-v1.0.md",
+        ),
+    }
+    for name in sorted(PLUGIN_SKILLS):
+        skill = skill_root / name
+        skill_md = skill / "SKILL.md"
+        try:
+            meta = frontmatter(skill_md)
+            if set(meta["_keys"]) != {"name", "description"}:
+                errors.append(f"plugin {name}: frontmatter keys must be name and description")
+            if meta.get("name") != name:
+                errors.append(f"plugin {name}: frontmatter name mismatch")
+        except (OSError, ValueError) as exc:
+            errors.append(f"plugin {name}: {exc}")
+            continue
+        for rel in required_by_skill[name]:
+            resource = skill / rel
+            if not resource.is_file():
+                errors.append(f"plugin {name}: missing {rel}")
+            elif resource.suffix == ".json":
+                try:
+                    json.loads(resource.read_text(encoding="utf-8"))
+                except json.JSONDecodeError as exc:
+                    errors.append(f"plugin {name}: invalid JSON in {rel}: {exc}")
+        agent_text = (skill / "agents/openai.yaml").read_text(encoding="utf-8")
+        for field in ("display_name", "short_description", "default_prompt"):
+            if not re.search(rf"^\s*{field}:\s*\"[^\"]+\"\s*$", agent_text, re.MULTILINE):
+                errors.append(f"plugin {name}: agents/openai.yaml missing quoted {field}")
+        if f"${name}" not in agent_text:
+            errors.append(f"plugin {name}: default prompt must name ${name}")
+        text = skill_md.read_text(encoding="utf-8")
+        for target in PATH_RE.findall(text):
+            if not (skill / target).exists():
+                errors.append(f"plugin {name}: broken dependency `{target}`")
+        for standard in STANDARD_MIRRORS[name]:
+            canonical = ROOT / "docs" / standard
+            mirror = skill / "references" / standard
+            if not mirror.is_file():
+                errors.append(f"plugin {name}: missing standard mirror {standard}")
+            elif canonical.read_bytes() != mirror.read_bytes():
+                errors.append(f"plugin {name}: standard mirror drift {standard}")
+
+    canonical_template = ROOT / "docs/templates/DOC-skill-md-template-v1.0.md"
+    plugin_template = skill_root / "govern-skills/assets/templates/SKILL.md"
+    if canonical_template.read_bytes() != plugin_template.read_bytes():
+        errors.append("plugin govern-skills: SKILL.md template drift")
 
 
 def main() -> int:
@@ -179,6 +326,8 @@ def main() -> int:
             resolved = (ROOT / target) if target.startswith("docs/") else (skill / target)
             if not resolved.exists():
                 errors.append(f"{name}: broken dependency `{target}`")
+
+    validate_governance_plugin(errors)
 
     for path in ROOT.rglob("*"):
         if (not path.is_file() or ".git" in path.parts or ".venv" in path.parts

@@ -13,6 +13,11 @@ The repository-settings gate requires the five test jobs, governance, and CodeQL
 merge. Dependency review is path-filtered and is not configured as an always-required check
 because GitHub will leave it absent on unrelated pull requests.
 
+The governance job also validates the Codex plugin manifest, marketplace entry, all three
+installable skills, mirrored standards, dry-run behavior, advisory exit behavior, strict
+exit behavior, and approval-gated writes. Document audits remain opt-in and advisory in
+this release; no document-specific workflow is installed into adopting repositories.
+
 ## Security properties
 
 - Default workflow permissions are read-only and no job references repository secrets.

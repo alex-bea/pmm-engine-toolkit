@@ -1,0 +1,20 @@
+{
+  "name": "pmm-engine-toolkit",
+  "interface": {
+    "displayName": "PMM Engine Toolkit"
+  },
+  "plugins": [
+    {
+      "name": "skill-governance",
+      "source": {
+        "source": "local",
+        "path": "./plugins/skill-governance"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -52,3 +52,15 @@ The categories are mutually exclusive by each skill's primary job.
 All 26 packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
 and a synthetic example. Deterministic workflows also include scripts and tests. See the
 standards and templates in `docs/` before modifying a package.
+
+## Codex governance plugin
+
+The installable `skill-governance` plugin is separate from the 26 PMM workflow packages:
+
+- `govern-skills` — initialize, audit, and safely repair skill governance.
+- `govern-work-tracker` — initialize, audit, and safely repair roadmap, epic, and task
+  tracking.
+- `govern-documents` — audit opted-in Markdown metadata, declared dependencies, and local
+  links without changing document content.
+
+All three plugin skills are generic. PMM-specific material is isolated to synthetic examples.

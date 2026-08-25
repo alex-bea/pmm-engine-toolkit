@@ -9,6 +9,8 @@ marketing artifacts, synthesizing signals, and maintaining repository hygiene:
   file size, churn, and test health.
 - **Standards and templates** — public skill structure, evidence/privacy, approval-gate,
   tracker, and dependency-closure rules with reusable formats and synthetic examples.
+- **Codex governance plugin** — approval-gated initialization, advisory audits, safe
+  mechanical fixes, optional blocking CI for skills and work, and opt-in document audits.
 
 This repository deliberately contains no customer data, operating outputs, private source
 registries, account identifiers, credentials, or private Git history. Integrations are
@@ -56,6 +58,20 @@ toolkit without copying private operating context.
 
 See the [public export manifest](docs/PUBLIC-EXPORT-MANIFEST.md) for the exact package
 contract, generalization rules, and pre-publication gates.
+
+## Codex governance plugin
+
+Install the public marketplace and plugin:
+
+```bash
+codex plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
+codex plugin add skill-governance@pmm-engine-toolkit
+```
+
+The three plugin skills can also be installed independently from their GitHub directories
+with Codex's built-in `$skill-installer`. See the complete
+[installation and adoption guide](docs/CODEX-GOVERNANCE-PLUGIN.md), including the
+[document-governance baseline](docs/CODEX-DOCUMENT-GOVERNANCE.md).
 
 ## Community and governance
 

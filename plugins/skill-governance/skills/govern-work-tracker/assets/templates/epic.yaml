@@ -1,0 +1,10 @@
+{
+  "id": "onboarding-research",
+  "title": "Onboarding research",
+  "status": "todo",
+  "rank": 1,
+  "updated_at": "2026-08-21",
+  "roadmap_id": "customer-understanding",
+  "owner": "unassigned",
+  "summary": "Identify the highest-friction onboarding moments."
+}

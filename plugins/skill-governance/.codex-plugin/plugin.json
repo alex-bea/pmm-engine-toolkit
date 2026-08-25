@@ -1,0 +1,39 @@
+{
+  "name": "skill-governance",
+  "version": "0.2.0",
+  "description": "Initialize, audit, and repair portable Codex skill governance and lightweight work tracking, plus audit opted-in governed Markdown.",
+  "author": {
+    "name": "Alexander Bea",
+    "url": "https://github.com/alex-bea"
+  },
+  "homepage": "https://github.com/alex-bea/pmm-engine-toolkit/blob/main/docs/CODEX-GOVERNANCE-PLUGIN.md",
+  "repository": "https://github.com/alex-bea/pmm-engine-toolkit",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codex",
+    "governance",
+    "skills",
+    "work-tracker",
+    "documents"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Skill Governance",
+    "shortDescription": "Govern skills, documents, and repository work",
+    "longDescription": "Install a portable governance pack, audit Codex skill packages and lifecycle metadata, audit opted-in governed Markdown, and maintain a lightweight roadmap, epic, and task tracker. Audits are advisory by default and all repository writes are approval-gated.",
+    "developerName": "Alexander Bea",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/alex-bea/pmm-engine-toolkit",
+    "privacyPolicyURL": "https://github.com/alex-bea/pmm-engine-toolkit/blob/main/PRIVACY.md",
+    "defaultPrompt": [
+      "Audit this repository's Codex skills.",
+      "Audit this repository's governed Markdown documents.",
+      "Initialize skill governance here.",
+      "Check the roadmap, epics, and tasks."
+    ]
+  }
+}

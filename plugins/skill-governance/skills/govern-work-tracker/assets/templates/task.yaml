@@ -1,0 +1,17 @@
+{
+  "id": "synthesize-onboarding-interviews",
+  "title": "Synthesize onboarding interviews",
+  "status": "active",
+  "rank": 1,
+  "updated_at": "2026-08-21",
+  "epic_id": "onboarding-research",
+  "owner": "unassigned",
+  "acceptance_criteria": [
+    "Findings cite the supplied interview notes.",
+    "Contradictory evidence remains visible."
+  ],
+  "current_task": "Cluster the approved interview evidence.",
+  "next_action": "Draft the evidence-backed finding summary.",
+  "resume_from": "Open the interview evidence index and continue after cluster 4.",
+  "evidence": []
+}
