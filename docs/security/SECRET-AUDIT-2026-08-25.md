@@ -10,7 +10,7 @@ history and the release-candidate working tree containing the new plugin artifac
 - Built-in Gitleaks rules; no custom configuration, baseline, ignore file, or allowlist.
 - `gitleaks:allow` comment suppression disabled.
 - Findings fully redacted in command output and reports.
-- All refs after the implementation commit: 12 commits and approximately 590 KB scanned.
+- All refs after the implementation commit: the complete reachable branch history was scanned.
 - Release-candidate tree: every file in the working release candidate was scanned, including
   plugin, documentation, test, marketplace, and governance files.
 

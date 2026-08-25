@@ -165,6 +165,22 @@ class NormalizerTests(unittest.TestCase):
         self.assertIn("Bearer [REDACTED TOKEN]", result.turns[0].text)
         self.assertNotIn("secret-value", result.turns[0].text)
 
+    def test_context_wrapper_parser_handles_long_adversarial_inputs(self):
+        wrappers = " \n".join(
+            "<environment_context>hidden</environment_context>" for _ in range(5_000)
+        )
+        self.assertTrue(runtime._is_context_wrapper_turn(wrappers))
+        self.assertFalse(
+            runtime._is_context_wrapper_turn(
+                "<environment_context>" + (" " * 250_000)
+            )
+        )
+        self.assertFalse(
+            runtime._is_context_wrapper_turn(
+                "<environment_context>hidden</environment_context> keep this"
+            )
+        )
+
     def test_turn_and_character_limits_keep_newest(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "rollout.jsonl"

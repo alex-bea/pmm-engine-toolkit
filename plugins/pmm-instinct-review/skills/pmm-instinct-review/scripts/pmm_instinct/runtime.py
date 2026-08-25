@@ -30,12 +30,18 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 ALLOWED_TYPES = ("correction", "confirmation", "voice", "scope", "workflow")
 TYPE_WEIGHTS = {"voice": 10, "workflow": 6, "scope": 5, "correction": 4, "confirmation": 3}
-CONTEXT_WRAPPER_RE = re.compile(
-    r"^(?:\s*<(?:environment_context|recommended_plugins|app-context|skills_instructions|"
-    r"plugins_instructions|permissions instructions|model-switch|model_switch)>.*?</(?:"
-    r"environment_context|recommended_plugins|app-context|skills_instructions|plugins_instructions|"
-    r"permissions instructions|model-switch|model_switch)>\s*)+$",
-    re.DOTALL | re.IGNORECASE,
+CONTEXT_WRAPPER_MARKERS = tuple(
+    (f"<{tag}>", f"</{tag}>")
+    for tag in (
+        "environment_context",
+        "recommended_plugins",
+        "app-context",
+        "skills_instructions",
+        "plugins_instructions",
+        "permissions instructions",
+        "model-switch",
+        "model_switch",
+    )
 )
 PEM_RE = re.compile(
     r"-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----.*?"
@@ -226,9 +232,36 @@ def redact_text(text: str) -> str:
     return ENV_SECRET_RE.sub(r"\1[REDACTED]", value)
 
 
+def _is_context_wrapper_turn(text: str) -> bool:
+    """Return whether the entire turn is one or more known context wrappers."""
+
+    lowered = text.lower()
+    cursor = 0
+    matched = False
+    while True:
+        while cursor < len(lowered) and lowered[cursor].isspace():
+            cursor += 1
+        if cursor == len(lowered):
+            return matched
+
+        markers = next(
+            (pair for pair in CONTEXT_WRAPPER_MARKERS if lowered.startswith(pair[0], cursor)),
+            None,
+        )
+        if markers is None:
+            return False
+
+        opening, closing = markers
+        closing_at = lowered.find(closing, cursor + len(opening))
+        if closing_at < 0:
+            return False
+        cursor = closing_at + len(closing)
+        matched = True
+
+
 def sanitize_turn_text(text: str) -> str:
     stripped = text.strip()
-    if not stripped or CONTEXT_WRAPPER_RE.fullmatch(stripped):
+    if not stripped or _is_context_wrapper_turn(stripped):
         return ""
     return redact_text(stripped).strip()
 
