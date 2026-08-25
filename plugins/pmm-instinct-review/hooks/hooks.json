@@ -1,0 +1,29 @@
+{
+  "description": "Disabled-by-default local session learning for PMM Instinct Review.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/skills/pmm-instinct-review/scripts/instinct_review.py\" hook session-start",
+            "statusMessage": "Checking PMM instinct suggestions",
+            "additionalContextLimit": 500
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/skills/pmm-instinct-review/scripts/instinct_review.py\" hook session-end",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

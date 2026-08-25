@@ -3,8 +3,10 @@
 A portable, public-safe PMM operating toolkit for planning work, producing evidence-bound
 marketing artifacts, synthesizing signals, and maintaining repository hygiene:
 
-- **26 agent skills** — the complete approved v1 set across planning, execution,
+- **25 standalone agent skills** — the approved v1 set across planning, execution,
   intelligence, drafting, signal operations, and repository hygiene.
+- **PMM Instinct Review plugin (draft)** — an installable, human-gated Codex improvement
+  loop for local capture, extraction, review, promotion, and cleanup.
 - **Diffguard Lite** — a local Git-diff analyzer for Python and JavaScript complexity,
   file size, churn, and test health.
 - **Standards and templates** — public skill structure, evidence/privacy, approval-gate,
@@ -49,6 +51,34 @@ Each skill is self-contained under `skills/<name>/` except for explicitly linked
 standards in `docs/`. Run `python3 scripts/governance/validate_skill_pack.py` to verify
 the selected inventory, required resources, local links, frontmatter, and public-safety
 guardrails.
+
+## PMM Instinct Review plugin (draft)
+
+The plugin is a release candidate pending pull-request approval. Installation does not
+enable chat capture. After installation, review and trust both hooks with `/hooks`, confirm
+your employer permits local transcript-derived storage and a second Codex model invocation,
+then explicitly enable learning through `$pmm-instinct-review`.
+
+```bash
+codex plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
+codex plugin add pmm-instinct-review@pmm-engine-toolkit
+```
+
+If `codex` is not on `PATH` on macOS, use either installed app binary:
+
+```bash
+"/Applications/ChatGPT.app/Contents/Resources/codex" plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
+"/Applications/ChatGPT.app/Contents/Resources/codex" plugin add pmm-instinct-review@pmm-engine-toolkit
+```
+
+The equivalent Codex app binary path is
+`/Applications/Codex.app/Contents/Resources/codex`.
+
+Enabling creates user-owned state under `~/.codex/instinct-review/`. The plugin has no
+telemetry or hosted PMM service, and it never changes native Codex history. Removing the
+plugin leaves captured state in place. See the
+[operator guide](plugins/pmm-instinct-review/README.md) and [privacy policy](PRIVACY.md)
+before enabling it on a work device.
 
 ## Skill authoring
 

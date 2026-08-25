@@ -18,8 +18,9 @@ SKILLS = {
     "pre-read-sharpener", "product-page-copywriter", "sales-one-pager",
     "strategic-narrative-coach", "meeting-notes-scaffolder", "slack-monitor-scaffolder",
     "weekly-summary-promoter", "git-sweep", "pmm-accepted-plan-importer",
-    "pmm-instinct-review",
 }
+PLUGIN_NAME = "pmm-instinct-review"
+PLUGIN = ROOT / "plugins" / PLUGIN_NAME
 REQUIRED_SHARED = {
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
@@ -44,6 +45,10 @@ REQUIRED_SHARED = {
     "docs/security/GITHUB-SECURITY-CONTROLS.md",
     "docs/security/gitleaks-history-2026-08-18.json",
     "docs/security/gitleaks-tracked-tree-2026-08-18.json",
+    "docs/security/SECRET-AUDIT-2026-08-25.md",
+    "docs/security/gitleaks-all-refs-2026-08-25.json",
+    "docs/security/gitleaks-tracked-tree-2026-08-25.json",
+    "docs/legal/IP-RIGHTS-REVIEW-2026-08-25.md",
     "docs/STD-evidence-privacy-v1.0.md",
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
@@ -56,10 +61,13 @@ REQUIRED_SHARED = {
     "requirements-build.txt",
     "requirements.lock",
     "scripts/governance/configure_github_security.py",
+    ".agents/plugins/marketplace.json",
 }
 AUDIT_REPORTS = {
     "docs/security/gitleaks-history-2026-08-18.json",
     "docs/security/gitleaks-tracked-tree-2026-08-18.json",
+    "docs/security/gitleaks-all-refs-2026-08-25.json",
+    "docs/security/gitleaks-tracked-tree-2026-08-25.json",
 }
 IP_INVENTORY = "docs/legal/IP-INVENTORY.csv"
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
@@ -329,6 +337,60 @@ def main() -> int:
 
     validate_governance_plugin(errors)
 
+    validate_governance_plugin(errors)
+
+    manifest_path = PLUGIN / ".codex-plugin" / "plugin.json"
+    hooks_path = PLUGIN / "hooks" / "hooks.json"
+    plugin_skill = PLUGIN / "skills" / PLUGIN_NAME
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.1.0":
+            errors.append("instinct-review plugin manifest name/version mismatch")
+        if manifest.get("skills") != "./skills/":
+            errors.append("instinct-review plugin must declare bundled skills")
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid instinct-review plugin manifest: {exc}")
+
+    try:
+        marketplace = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text(encoding="utf-8"))
+        entries = [item for item in marketplace.get("plugins", []) if item.get("name") == PLUGIN_NAME]
+        if len(entries) != 1 or entries[0].get("category") != "Productivity":
+            errors.append("marketplace must contain one Productivity instinct-review plugin")
+        if entries and entries[0].get("source", {}).get("path") != f"./plugins/{PLUGIN_NAME}":
+            errors.append("marketplace instinct-review source path mismatch")
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid plugin marketplace: {exc}")
+
+    try:
+        hooks = json.loads(hooks_path.read_text(encoding="utf-8")).get("hooks", {})
+        if set(hooks) != {"SessionStart", "SessionEnd"}:
+            errors.append("instinct-review plugin must declare SessionStart and SessionEnd hooks")
+        commands = [hook.get("command", "") for groups in hooks.values() for group in groups for hook in group.get("hooks", [])]
+        if not commands or any("${PLUGIN_ROOT}" not in command for command in commands):
+            errors.append("instinct-review hooks must resolve commands through ${PLUGIN_ROOT}")
+        if any("hooks.json" in command for command in commands):
+            errors.append("instinct-review hooks must not modify user hook configuration")
+    except (OSError, json.JSONDecodeError, AttributeError) as exc:
+        errors.append(f"invalid instinct-review plugin hooks: {exc}")
+
+    try:
+        meta = frontmatter(plugin_skill / "SKILL.md")
+        if set(meta["_keys"]) != {"name", "description"} or meta.get("name") != PLUGIN_NAME:
+            errors.append("bundled instinct-review skill frontmatter mismatch")
+    except (OSError, ValueError) as exc:
+        errors.append(f"bundled instinct-review skill: {exc}")
+    for rel in (
+        "agents/openai.yaml", "references/RUN-workflow.md", "assets/output-template.md",
+        "assets/extractor-prompt.md", "assets/extractor-schema.json", "examples/EX-synthetic.md",
+        "scripts/instinct_review.py", "scripts/pmm_instinct/runtime.py",
+    ):
+        if not (plugin_skill / rel).is_file():
+            errors.append(f"bundled instinct-review skill missing {rel}")
+    plugin_python = "\n".join(path.read_text(encoding="utf-8") for path in plugin_skill.rglob("*.py"))
+    for forbidden in ("import yaml", "from yaml", "capability-registry", ".venv", ".claude", "/Users/"):
+        if forbidden in plugin_python:
+            errors.append(f"instinct-review runtime contains forbidden dependency/path: {forbidden}")
+
     for path in ROOT.rglob("*"):
         if (not path.is_file() or ".git" in path.parts or ".venv" in path.parts
                 or "__pycache__" in path.parts):
@@ -359,7 +421,7 @@ def main() -> int:
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return 1
-    print(f"Validated {len(SKILLS)} public skills and their declared dependencies.")
+    print(f"Validated {len(SKILLS)} public standalone skills, two plugins, and their declared dependencies.")
     return 0
 
 
