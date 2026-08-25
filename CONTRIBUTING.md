@@ -38,6 +38,8 @@ Run the complete validation suite before opening a pull request:
 - Preserve the public package contract in `docs/STD-skill-dependencies-v1.0.md`.
 - Keep `SKILL.md` concise; move detailed knowledge into `references/` and reusable output
   material into `assets/`.
+- Keep canonical standards and their installable plugin mirrors byte-for-byte identical.
+- Preserve advisory-by-default audits, explicit apply gates, and non-overwrite behavior.
 - Update the skill catalog or governance documentation when the public interface changes.
 - Never weaken privacy, approval-gate, dependency, or secrets checks merely to make a test pass.
 

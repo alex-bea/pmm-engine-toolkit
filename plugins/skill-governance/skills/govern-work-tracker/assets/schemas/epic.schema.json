@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Governed epic record",
+  "allOf": [
+    {"$ref": "roadmap.schema.json"},
+    {
+      "type": "object",
+      "required": ["roadmap_id"],
+      "properties": {
+        "roadmap_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+      }
+    }
+  ]
+}
