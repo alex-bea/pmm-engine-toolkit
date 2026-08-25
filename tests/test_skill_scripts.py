@@ -64,16 +64,6 @@ class SkillScriptTest(unittest.TestCase):
         self.assertEqual(first["sha256"], second["sha256"])
         self.assertFalse(first["tracker_write_approved"])
 
-    def test_instinct_candidates_require_evidence(self):
-        module = load_module(
-            "review_candidates", "skills/pmm-instinct-review/scripts/review_candidates.py"
-        )
-        records = [{"id": "c1", "lesson": "Lead with the decision", "source": "retro.md",
-                    "observed_on": "2026-08-18", "evidence": ["line 10"]}]
-        valid, errors = module.review(records)
-        self.assertEqual(errors, [])
-        self.assertEqual(valid[0]["promotion_status"], "review-required")
-
     def test_git_sweep_protects_current_worktree(self):
         script = ROOT / "skills/git-sweep/scripts/worktree_hygiene.py"
         with tempfile.TemporaryDirectory() as tmp:

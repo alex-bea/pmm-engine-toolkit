@@ -9,6 +9,7 @@ on:
       - "requirements.lock"
       - "requirements-build.txt"
       - "requirements-build.lock"
+      - "plugins/**"
 
 permissions:
   contents: read

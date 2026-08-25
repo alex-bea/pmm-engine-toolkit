@@ -47,8 +47,15 @@ The categories are mutually exclusive by each skill's primary job.
 ## Global workflows
 
 - `pmm-accepted-plan-importer` — import an approved plan into governed local state.
-- `pmm-instinct-review` — review candidate lessons before promotion.
 
-All 26 packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
+## Installable Codex plugins (draft)
+
+- `pmm-instinct-review` — capture eligible completed Codex sessions locally, extract
+  reviewable preferences with a second ephemeral Codex call, and promote only guidance
+  approved at both the review and destination gates. It also imports explicit candidate
+  JSON from the retired standalone package.
+
+All 25 standalone packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
 and a synthetic example. Deterministic workflows also include scripts and tests. See the
-standards and templates in `docs/` before modifying a package.
+standards and templates in `docs/` before modifying a package. The plugin follows the
+Codex plugin manifest and hook contracts in addition to the bundled-skill contract.

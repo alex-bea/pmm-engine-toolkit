@@ -59,10 +59,10 @@ results.
 
 ## Required-check note
 
-`Dependency review` runs only when dependency manifests, lock files,
+`Dependency review` runs only when dependency manifests, lock files, plugin files,
 Dependabot configuration, or workflows change. It must not be an always-required check:
-GitHub would leave that check absent on unrelated pull requests. The always-required list
-is encoded in the ruleset policy.
+GitHub would leave that check absent on unrelated pull requests. The always-required list is
+encoded in the ruleset policy.
 
 ## Evidence to retain
 

@@ -10,8 +10,9 @@ The public repository runs these checks on pull requests:
 - `Dependency review` when dependency or workflow files change.
 
 The repository-settings gate requires the five test jobs, governance, and CodeQL before
-merge. Dependency review is path-filtered and is not configured as an always-required check
-because GitHub will leave it absent on unrelated pull requests.
+merge. Dependency review runs when dependency, workflow, or plugin files change. It is not
+configured as an always-required check because GitHub will leave it absent on unrelated pull
+requests.
 
 ## Security properties
 

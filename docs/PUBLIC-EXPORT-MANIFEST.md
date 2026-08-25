@@ -2,8 +2,9 @@
 
 ## Approved v1 boundary
 
-This local fresh-history repository contains the 26 skills listed in `SKILL-CATALOG.md`,
-Diffguard Lite, shared public standards, reusable templates, synthetic examples, and tests.
+This local fresh-history repository contains the 25 standalone skills and one draft Codex
+plugin listed in `SKILL-CATALOG.md`, Diffguard Lite, shared public standards, reusable
+templates, synthetic examples, and tests.
 The root governance set covers contributions, conduct, project decisions, security,
 support, privacy, licensing, and independent setup.
 
@@ -20,6 +21,14 @@ Every skill includes:
 
 The repository validator enforces this contract and checks declared local dependencies.
 
+The `plugins/pmm-instinct-review/` release candidate additionally contains a Codex plugin
+manifest, marketplace registration, plugin-relative hooks, a bundled skill, a standard-library
+Python runtime, an extractor prompt and schema, operator documentation, product requirements,
+an implementation blueprint, public submission test cases, and synthetic tests.
+It has no dependency on a private registry or repository. The retired standalone
+`skills/pmm-instinct-review/` package is represented by the plugin's explicit candidate-file
+import command.
+
 ## Generalization rules applied
 
 - Existing safe templates were retained, including the PM Prioritizer framework and format.
@@ -29,6 +38,8 @@ The repository validator enforces this contract and checks declared local depend
   boundaries. No connector is required to use the local workflow.
 - Global workflows were converted from private runtime state to explicit local input paths.
 - Examples use fictional organizations and people and must never be treated as evidence.
+- No private chats, native Codex history, runtime configuration, audits, instincts, or
+  normalized transcripts are part of the public export.
 
 ## Verification
 
