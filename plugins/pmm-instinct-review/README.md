@@ -63,8 +63,8 @@ Use `$pmm-instinct-review` with any of these requests:
 - `drain the extraction queue` or `retry failed extraction`;
 - `clean up processed transcripts`;
 - `list priority suggestions`, `resolve the zero-candidate bucket`, or `review Codex instincts`;
-- `preview promotion for <instinct-id>` and, only after inspecting it, approve one of
-  `project`, `global`, `both`, `skill`, or `no`; or
+- `preview promotion for <instinct-id>`, select `project`, `global`, `both`, `run`, `ref`, or
+  `standard`, then inspect the exact destination before the separate confirmation; or
 - `import candidates from <local-json-path>` for the retired standalone workflow.
 
 The deterministic entrypoint in a source checkout is:
@@ -73,9 +73,16 @@ The deterministic entrypoint in a source checkout is:
 python3 plugins/pmm-instinct-review/skills/pmm-instinct-review/scripts/instinct_review.py --help
 ```
 
-Each review cluster requires `accept`, `reject`, `edit`, or `match`. Promotion is unavailable
-below confidence `0.5` and always requires a later preview-and-apply gate. Exact duplicates are
-not inserted.
+Each review card leads with what happened, the user's feedback, proposed future behavior, and
+why it matters; it does not include routing. `accept`, `reject`, `edit`, or `match` is required.
+Promotion is unavailable below confidence `0.5` and always requires a destination-selection
+preview followed by a matching apply confirmation. Exact duplicates are recorded as covered,
+not inserted. New rules are written under `## PMM Instinct Review — Promoted Guidance`.
+
+Voice-to-REF promotion is opt-in: add an explicit relative path under `voice_ref_routes` in
+the user-owned `~/.codex/instinct-review/config.json`, for example
+`{"voice_ref_routes":{"my-skill":"references/REF-voice.md"}}`. The destination must
+already exist, be writable, and sit outside the plugin cache; the plugin never guesses it.
 
 ## Controlled smoke test
 

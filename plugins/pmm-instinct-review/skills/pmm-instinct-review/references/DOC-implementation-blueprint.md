@@ -75,7 +75,8 @@ Accepted extractor output contains at most five objects with only these fields:
   "type": "correction|confirmation|voice|scope|workflow",
   "rule": "one sentence",
   "evidence": "short redacted excerpt",
-  "context": "bounded context"
+  "context": "bounded context",
+  "why_it_matters": "evidence-bound consequence, maximum 300 characters"
 }
 ```
 
@@ -86,8 +87,9 @@ not part of the contract.
 ### Instinct state
 
 An owner-approved instinct contains a unique ID, type, confidence, support count, created and
-last-seen dates, source context, suggested destination, and promotion record. A rejected
-cluster creates no instinct. `match` updates only the exact active match.
+last-seen dates, source skill(s), source repository/repositories, rationale, suggested
+destination, and promotion record. A rejected cluster creates no instinct. `match` updates
+only the exact active match.
 
 ## Requirement-to-test map
 
@@ -97,8 +99,8 @@ cluster creates no instinct. `match` updates only the exact active match.
 | Capture is disabled and eligible-only | Default config, disabled capture, minimum turns, subagent, and idempotent capture tests |
 | Normalized evidence is minimized | Event preference, fallback dedupe, excluded records, wrapper removal, redaction, and size-limit tests |
 | Extraction is controlled | Configured-model, no-fallback, schema, valid worker, retry-limit, lock, and restart-recovery tests |
-| Review requires a decision | Accept, reject, edit, match, zero-candidate, and multi-candidate cleanup tests |
-| Promotion is separately gated | Threshold, preview, explicit confirmation, duplicate, project/global/both, and skill-target tests |
+| Review requires a decision | Rationale schema, candidate-card fields without routing, accept, reject, edit, match, zero-candidate, and multi-candidate cleanup tests |
+| Promotion is separately gated | Destination selection, persisted preview, matching second confirmation, duplicate coverage, managed section, staged project/global/both, RUN/REF/standard routing tests |
 | Local state is recoverable | Cleanup retry, state durability, and independent plugin-path tests |
 | Backfill is bounded | Five-session inventory and explicit-apply test |
 

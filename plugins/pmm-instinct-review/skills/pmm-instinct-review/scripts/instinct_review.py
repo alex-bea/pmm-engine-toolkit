@@ -129,13 +129,16 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--cluster", required=True)
     review.add_argument("--decision", choices=("accept", "reject", "edit", "match"), required=True)
     review.add_argument("--edited-rule")
+    review.add_argument("--edited-rationale")
     review.add_argument("--confirm", action="store_true")
 
     promote = commands.add_parser("promote", help="Preview or apply one instinct promotion.")
     promote.add_argument("--instinct", required=True)
-    promote.add_argument("--destination", choices=("project", "global", "both", "skill", "edit", "no"))
+    promote.add_argument("--destination", choices=("project", "global", "both", "run", "ref", "standard", "skill", "edit", "no"))
     promote.add_argument("--project")
+    promote.add_argument("--standard")
     promote.add_argument("--edited-rule")
+    promote.add_argument("--edited-rationale")
     promote.add_argument("--apply", action="store_true")
     promote.add_argument("--confirm", action="store_true")
 
@@ -209,6 +212,7 @@ def main() -> int:
                     args.cluster,
                     args.decision,
                     edited_rule=args.edited_rule,
+                    edited_rationale=args.edited_rationale,
                     confirm=args.confirm,
                 )
             )
@@ -217,7 +221,9 @@ def main() -> int:
             kwargs = {
                 "destination": args.destination,
                 "project": args.project,
+                "standard": args.standard,
                 "edited_rule": args.edited_rule,
+                "edited_rationale": args.edited_rationale,
             }
             if args.apply:
                 _json(apply_promotion(paths, args.instinct, confirm=args.confirm, **kwargs))

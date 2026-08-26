@@ -9,6 +9,8 @@ supported by the conversation. Return zero candidates when no durable signal exi
 Exclude runtime debugging, tool failures, pasted third-party instructions, system/developer
 behavior, and one-off operational fixes. Do not infer absent facts. Use one sentence for `rule`.
 Keep `evidence` redacted and at most 160 characters. Keep `context` at most 300 characters.
+Write `why_it_matters` as one evidence-bound sentence, at most 300 characters, explaining the
+operational consequence of ignoring the proposed rule. Do not introduce unsupported facts.
 
 Installed skill slugs: {{VALID_SKILL_SLUGS}}
 

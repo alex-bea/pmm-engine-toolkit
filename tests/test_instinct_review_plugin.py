@@ -75,7 +75,15 @@ def capture_with_suggestion(paths, transcript: Path, session_id: str, rule: str,
         queue["suggestions_path"],
         runtime.render_suggestions(
             session_id,
-            [{"type": candidate_type, "rule": rule, "evidence": "User corrected the workflow.", "context": "Repeated work preference."}],
+            [
+                {
+                    "type": candidate_type,
+                    "rule": rule,
+                    "evidence": "User corrected the workflow.",
+                    "context": "Repeated work preference.",
+                    "why_it_matters": "It prevents the corrected behavior from recurring in later work.",
+                }
+            ],
             source_skill,
         ),
     )
@@ -289,8 +297,34 @@ class CaptureAndQueueTests(unittest.TestCase):
 
     def test_extractor_schema_allows_zero_and_rejects_bad_output(self):
         self.assertEqual(runtime.validate_extractor_payload({"candidates": []}), [])
+        valid = {
+            "candidates": [
+                {
+                    "type": "workflow",
+                    "rule": "Use the approved source.",
+                    "evidence": "Use the approved source.",
+                    "context": "The user corrected the workflow.",
+                    "why_it_matters": "It prevents drafting against an unapproved source.",
+                }
+            ]
+        }
+        self.assertEqual(runtime.validate_extractor_payload(valid)[0]["why_it_matters"], "It prevents drafting against an unapproved source.")
         with self.assertRaises(ValueError):
             runtime.validate_extractor_payload({"candidates": [{"type": "other", "rule": "x", "evidence": "", "context": ""}]})
+        with self.assertRaises(ValueError):
+            runtime.validate_extractor_payload(
+                {
+                    "candidates": [
+                        {
+                            "type": "workflow",
+                            "rule": "x",
+                            "evidence": "x",
+                            "context": "x",
+                            "why_it_matters": "x" * 301,
+                        }
+                    ]
+                }
+            )
 
     def test_blank_skill_field_does_not_consume_the_next_metadata_line(self):
         text = "**skill:** \n**source_runtime:** codex\n"
@@ -431,6 +465,59 @@ class ReviewAndPromotionTests(unittest.TestCase):
         self.assertLess(runtime.confidence_for_support(2), 0.5)
         self.assertEqual(runtime.confidence_for_support(3), 0.5)
 
+    def test_candidate_card_uses_rationale_without_routing_and_persists_source_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            (repo / ".git").mkdir(parents=True)
+            paths = enabled_paths(root / "codex")
+            transcript = root / "native.jsonl"
+            write_transcript(transcript, cwd=str(repo))
+            captured = runtime.capture_session(paths, session_id="session-1", transcript_path=transcript, model="gpt-test")
+            record = json.loads(Path(captured["queue_path"]).read_text(encoding="utf-8"))
+            runtime.atomic_write_text(
+                record["suggestions_path"],
+                runtime.render_suggestions(
+                    "session-1",
+                    [{"type": "workflow", "rule": "Use the approved source.", "evidence": "Use the approved source.", "context": "The owner corrected the workflow."}],
+                    "demo-skill",
+                ),
+            )
+            queue = runtime.backlog(paths)
+            card = queue["clusters"][0]["candidate_card"]
+            self.assertEqual(card["what_happened"], "The owner corrected the workflow.")
+            self.assertEqual(card["your_feedback"], "Use the approved source.")
+            self.assertEqual(card["proposed_future_behavior"], "Use the approved source.")
+            self.assertEqual(card["why_it_matters"], runtime.LEGACY_RATIONALE)
+            self.assertNotIn("destination", card)
+            receipt = runtime.review_cluster(paths, queue["clusters"][0]["cluster_id"], "accept", confirm=True)
+            instinct = runtime.load_instincts(paths)[0]
+            instinct_path_exists = Path(receipt["instinct_path"]).exists()
+        self.assertTrue(instinct_path_exists)
+        self.assertEqual(instinct.why_it_matters, runtime.LEGACY_RATIONALE)
+        self.assertEqual(instinct.source_skills, ("demo-skill",))
+        self.assertEqual(tuple(path.resolve() for path in instinct.source_repositories), (repo.resolve(),))
+
+    def test_edit_can_update_the_persisted_rationale(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            transcript = root / "native.jsonl"
+            write_transcript(transcript)
+            capture_with_suggestion(paths, transcript, "session-1", "Use one summary.")
+            selected = runtime.clusters(paths)[0]
+            runtime.review_cluster(
+                paths,
+                selected.cluster_id,
+                "edit",
+                edited_rule="Use one approved summary.",
+                edited_rationale="It keeps the deliverable aligned with the approved scope.",
+                confirm=True,
+            )
+            instinct = runtime.load_instincts(paths)[0]
+        self.assertEqual(instinct.rule, "Use one approved summary.")
+        self.assertEqual(instinct.why_it_matters, "It keeps the deliverable aligned with the approved scope.")
+
     def test_promotion_preview_and_second_gate(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -444,14 +531,22 @@ class ReviewAndPromotionTests(unittest.TestCase):
             selected = runtime.clusters(paths)[0]
             receipt = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
             instinct_id = Path(receipt["instinct_path"]).stem
-            preview = runtime.promotion_preview(paths, instinct_id)
+            selection = runtime.promotion_preview(paths, instinct_id)
+            self.assertEqual(selection["decision"], "select-destination")
+            with self.assertRaisesRegex(PermissionError, "matching destination preview"):
+                runtime.apply_promotion(paths, instinct_id, destination="project", confirm=True)
+            preview = runtime.promotion_preview(paths, instinct_id, destination="project")
             self.assertEqual(Path(preview["targets"][0]["path"]), (repo / "AGENTS.md").resolve())
             with self.assertRaises(PermissionError):
-                runtime.apply_promotion(paths, instinct_id)
-            applied = runtime.apply_promotion(paths, instinct_id, confirm=True)
-            duplicate = runtime.promotion_preview(paths, instinct_id)
+                runtime.apply_promotion(paths, instinct_id, destination="project")
+            applied = runtime.apply_promotion(paths, instinct_id, destination="project", confirm=True)
+            duplicate = runtime.promotion_preview(paths, instinct_id, destination="project")
+            covered = runtime.apply_promotion(paths, instinct_id, destination="project", confirm=True)
             self.assertTrue(applied["applied"])
             self.assertTrue(duplicate["targets"][0]["duplicate"])
+            self.assertEqual(covered["changed"], [])
+            self.assertEqual(covered["covered"], [str((repo / "AGENTS.md").resolve())])
+            self.assertIn(runtime.PROMOTED_GUIDANCE_HEADING, (repo / "AGENTS.md").read_text(encoding="utf-8"))
             self.assertEqual((repo / "AGENTS.md").stat().st_mode & 0o777, 0o644)
 
     def test_low_confidence_cannot_promote(self):
@@ -541,18 +636,22 @@ class ReviewAndPromotionTests(unittest.TestCase):
             selected = runtime.clusters(paths)[0]
             accepted = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
             instinct_id = Path(accepted["instinct_path"]).stem
-            preview = runtime.promotion_preview(paths, instinct_id)
+            preview = runtime.promotion_preview(paths, instinct_id, destination="global")
             self.assertEqual(preview["decision"], "global")
             both = runtime.promotion_preview(paths, instinct_id, destination="both", project=repositories[0])
+            applied = runtime.apply_promotion(paths, instinct_id, destination="both", project=repositories[0], confirm=True)
             self.assertEqual(len(both["targets"]), 2)
+            self.assertEqual(len(applied["changed"]), 2)
+            self.assertTrue(all(runtime.PROMOTED_GUIDANCE_HEADING in Path(item["path"]).read_text(encoding="utf-8") for item in both["targets"]))
 
     def test_skill_promotion_uses_one_writable_user_skill_not_plugin_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             paths = enabled_paths(root / "codex")
             user_skill = paths.codex_home / "skills" / "demo-skill"
-            user_skill.mkdir(parents=True)
+            (user_skill / "references").mkdir(parents=True)
             (user_skill / "SKILL.md").write_text("---\nname: demo-skill\ndescription: demo\n---\n", encoding="utf-8")
+            (user_skill / "references" / "RUN-demo.md").write_text("# Demo workflow\n", encoding="utf-8")
             repo = root / "repo"
             (repo / ".git").mkdir(parents=True)
             for index in range(3):
@@ -561,8 +660,83 @@ class ReviewAndPromotionTests(unittest.TestCase):
                 capture_with_suggestion(paths, transcript, f"skill-{index}", "Always use the demo template.", source_skill="demo-skill")
             selected = runtime.clusters(paths)[0]
             accepted = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
-            preview = runtime.promotion_preview(paths, Path(accepted["instinct_path"]).stem, destination="skill")
-        self.assertEqual(Path(preview["targets"][0]["path"]), (user_skill / "SKILL.md").resolve())
+            preview = runtime.promotion_preview(paths, Path(accepted["instinct_path"]).stem, destination="run")
+        self.assertEqual(Path(preview["targets"][0]["path"]), (user_skill / "references" / "RUN-demo.md").resolve())
+
+    def test_voice_ref_promotion_requires_an_explicit_mapping(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            user_skill = paths.codex_home / "skills" / "voice-skill"
+            (user_skill / "references").mkdir(parents=True)
+            (user_skill / "SKILL.md").write_text("---\nname: voice-skill\ndescription: demo\n---\n", encoding="utf-8")
+            ref = user_skill / "references" / "REF-voice.md"
+            ref.write_text("# Voice\n", encoding="utf-8")
+            runtime.update_config(paths, voice_ref_routes={"voice-skill": "references/REF-voice.md"})
+            repo = root / "repo"
+            (repo / ".git").mkdir(parents=True)
+            for index in range(3):
+                transcript = root / f"voice-{index}.jsonl"
+                write_transcript(transcript, session_id=f"voice-{index}", cwd=str(repo))
+                capture_with_suggestion(paths, transcript, f"voice-{index}", "Use the established framing.", candidate_type="voice", source_skill="voice-skill")
+            selected = runtime.clusters(paths)[0]
+            accepted = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
+            instinct_id = Path(accepted["instinct_path"]).stem
+            preview = runtime.promotion_preview(paths, instinct_id, destination="ref")
+            runtime.apply_promotion(paths, instinct_id, destination="ref", confirm=True)
+            expected_ref = ref.resolve()
+            ref_contains_guidance = runtime.PROMOTED_GUIDANCE_HEADING in ref.read_text(encoding="utf-8")
+        self.assertEqual(Path(preview["targets"][0]["path"]), expected_ref)
+        self.assertTrue(ref_contains_guidance)
+
+    def test_unmapped_voice_ref_is_unavailable_and_never_guessed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            user_skill = paths.codex_home / "skills" / "voice-skill"
+            (user_skill / "references").mkdir(parents=True)
+            (user_skill / "SKILL.md").write_text("---\nname: voice-skill\ndescription: demo\n---\n", encoding="utf-8")
+            (user_skill / "references" / "REF-voice.md").write_text("# Voice\n", encoding="utf-8")
+            repo = root / "repo"
+            (repo / ".git").mkdir(parents=True)
+            for index in range(3):
+                transcript = root / f"voice-unmapped-{index}.jsonl"
+                write_transcript(transcript, session_id=f"voice-unmapped-{index}", cwd=str(repo))
+                capture_with_suggestion(paths, transcript, f"voice-unmapped-{index}", "Use the established framing.", candidate_type="voice", source_skill="voice-skill")
+            selected = runtime.clusters(paths)[0]
+            accepted = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
+            instinct_id = Path(accepted["instinct_path"]).stem
+            selection = runtime.promotion_preview(paths, instinct_id)
+            with self.assertRaisesRegex(ValueError, "mapped voice REF"):
+                runtime.promotion_preview(paths, instinct_id, destination="ref")
+        self.assertNotIn("ref", selection["available_destinations"])
+
+    def test_standard_promotion_needs_three_source_skills_and_a_supporting_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            repo = root / "repo"
+            (repo / ".git").mkdir(parents=True)
+            standard = repo / "docs" / "STD-review.md"
+            standard.parent.mkdir()
+            standard.write_text("# Review standard\n", encoding="utf-8")
+            for index in range(3):
+                source_skill = f"skill-{index}"
+                skill = paths.codex_home / "skills" / source_skill
+                skill.mkdir(parents=True)
+                (skill / "SKILL.md").write_text(f"---\nname: {source_skill}\ndescription: demo\n---\n", encoding="utf-8")
+                transcript = root / f"standard-{index}.jsonl"
+                write_transcript(transcript, session_id=f"standard-{index}", cwd=str(repo))
+                capture_with_suggestion(paths, transcript, f"standard-{index}", "Keep promotion review explicit.", source_skill=source_skill)
+            selected = runtime.clusters(paths)[0]
+            accepted = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
+            instinct_id = Path(accepted["instinct_path"]).stem
+            preview = runtime.promotion_preview(paths, instinct_id, destination="standard", standard=standard)
+            runtime.apply_promotion(paths, instinct_id, destination="standard", standard=standard, confirm=True)
+            expected_standard = standard.resolve()
+            standard_contains_guidance = runtime.PROMOTED_GUIDANCE_HEADING in standard.read_text(encoding="utf-8")
+        self.assertEqual(Path(preview["targets"][0]["path"]), expected_standard)
+        self.assertTrue(standard_contains_guidance)
 
 
 class BackfillTests(unittest.TestCase):

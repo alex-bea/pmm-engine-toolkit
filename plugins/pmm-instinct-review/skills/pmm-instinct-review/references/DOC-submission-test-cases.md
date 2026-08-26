@@ -50,8 +50,9 @@ apply action.
 **Prompt:** `Use $pmm-instinct-review to import my local synthetic candidate JSON, list priority suggestions, and show me the first cluster.`
 
 **Expected behavior:** The import summary is shown before the confirmed import. The candidate
-appears as one reviewable cluster with rule, evidence, context, support, and destination
-preview. No instinct is created until an explicit review decision.
+appears as one reviewable card with what happened, feedback, proposed future behavior, why it
+matters, and support/source context. Destination routing is absent. No instinct is created
+until an explicit review decision.
 
 **Expected result:** The reviewer can choose `accept`, `reject`, `edit`, or `match`; the
 plugin records only the chosen outcome.
@@ -60,12 +61,14 @@ plugin records only the chosen outcome.
 
 **Prompt:** `Use $pmm-instinct-review to preview promotion for my eligible instinct to this local test repository's AGENTS.md.`
 
-**Expected behavior:** The skill checks confidence, reads the precise local destination,
-detects a duplicate if present, and displays the insertion text. It asks for a second,
-destination-specific confirmation before applying.
+**Expected behavior:** The skill checks confidence, asks for a destination class, then reads
+the precise local destination, detects a duplicate if present, and displays the managed-section
+insertion text. It asks for a second, destination-specific confirmation before applying.
 
 **Expected result:** Preview does not modify the target. A confirmed apply writes only the
-selected local target and records the promotion in the local instinct file.
+selected local target under `## PMM Instinct Review — Promoted Guidance` and records the final
+file and section in the local instinct file. An existing rule is recorded as covered rather than
+written again.
 
 ## Negative cases
 
@@ -101,8 +104,9 @@ remain unchanged.
 
 - The plugin is local-only and has no server, external connector, or reviewer credential.
 - The plugin's own unit suite covers the same paths with synthetic fixtures, including
-  extractor schema rejection, retry/recovery, duplicate handling, confidence thresholds,
-  multi-candidate cleanup, cross-repository routing, and local-state persistence.
+  rationale schema rejection, candidate-card routing separation, retry/recovery, duplicate
+  coverage, confidence thresholds, staged multi-target writes, RUN/REF/standard routing,
+  multi-candidate cleanup, and local-state persistence.
 - If testing against a real Codex installation, use only a disposable profile or deliberately
   fictional conversations. Never provide real customer, employer, or personal content as a
   public submission fixture.
