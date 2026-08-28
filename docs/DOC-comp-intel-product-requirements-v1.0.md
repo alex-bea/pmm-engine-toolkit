@@ -25,6 +25,22 @@ This document is a product requirements document governed as a `DOC`, the docume
 supported by the toolkit's current metadata validator. It does not authorize implementation,
 release, source collection, or external publication while its status is `Draft`.
 
+## 0. Document purpose and companion authority map
+
+This PRD is the product decision contract for the public `comp-intel` expansion. It owns the
+problem, users, outcomes, scope, product requirements, quality bar, approval gates and release
+acceptance. Operational procedure and implementation detail belong in separately reviewed
+artifacts so a future implementation cannot quietly redefine the product contract.
+
+| Artifact | Role | Authority |
+|---|---|---|
+| This PRD | Product outcomes, scope, requirements, gates and acceptance | Advisory while `Draft`; binding only after project-owner approval and activation as `normative: true` |
+| `DOC-comp-intel-source-inventory-v1.0.md` | Bounded source closure and publication dispositions | Advisory design evidence; remains non-normative |
+| Future `skills/comp-intel/references/RUN-comp-intel-workflow-v1.0.md` | Exact operator stages, stop conditions and approval procedure | Binding execution contract when implemented, reviewed and Active |
+| Future analysis, source-adapter and registry references | Detailed semantic and interface contracts | Authority declared by each governed document's metadata; cannot override this PRD |
+| Future schemas, templates and deterministic controller | Machine-enforced data and transition contracts | Implementation of this PRD; schema versions and tests govern compatibility |
+| Implementation pull requests and test reports | Build history and verification evidence | Evidence only; they do not change product scope without a PRD revision |
+
 ## 1. Decision summary
 
 Expand the existing public `skills/comp-intel` package in place into a self-contained,
@@ -98,9 +114,23 @@ may be generalized and which material must remain private or excluded.
 - Importing private historical runs or cutting over an existing private deployment.
 - Rebuilding downstream copywriting, battlecard or signal-scanning skills.
 
-## 5. Required user experience
+## 5. Success measures
 
-### 5.1 Setup
+These are release measures, not claims about current product performance. Every target must be
+demonstrated with synthetic or repository-governance evidence before public release.
+
+| Outcome | Measure | v1 release target | Guardrail |
+|---|---|---|---|
+| Portable direct installation | Share of runtime paths and declared package dependencies resolved from a direct `skills/comp-intel/` install | 100% | Repository-root or private-path fallback is a release blocker |
+| Trustworthy outputs | Share of material rendered statements linked to eligible evidence or explicitly labeled `[Missing]` | 100% | A fluent unsupported statement counts as failure, not partial success |
+| Gate integrity | Unauthorized synthesis, canonical-state apply or external-write successes in the acceptance corpus | Zero | Any bypass blocks release and further apply testing until reviewed |
+| Honest degraded operation | Enabled adapters with explicit capability, coverage and terminal status in the run manifest | 100% | A failed source may not disappear from coverage or silently fall back |
+| Deterministic operability | Repeated fixture runs with identical normalized digests and rendered outputs; offline synthetic controller duration | 100% identical; no more than 30 seconds per supported CI runtime, excluding model and external-service time | Performance work may not weaken evidence, approval or privacy controls |
+| Data safety | Private-data findings in package/history scans; update or uninstall tests that preserve adopter-owned data | Zero findings; 100% preservation tests pass | Any credential, private identifier or unintended data deletion blocks release |
+
+## 6. Required user experience
+
+### 6.1 Setup
 
 1. Inspect for an existing configuration and data root without writing.
 2. If absent, show the exact files and directories that initialization would create.
@@ -114,7 +144,7 @@ Initialization requires explicit local-write approval. If `.comp-intel/` is repo
 the initializer proposes a matching ignore rule but does not edit `.gitignore` without separate
 approval.
 
-### 5.2 Run stages
+### 6.2 Run stages
 
 ```text
 configure -> collect -> normalize -> evidence_review -> synthesize
@@ -137,7 +167,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
 - **Complete:** Record artifacts, versions, approvals and final digests. External publication or
   messaging remains outside the product.
 
-### 5.3 Resume and failure behavior
+### 6.3 Resume and failure behavior
 
 - Resume requires an exact run ID. A convenience command may suggest the latest eligible run but
   must display and confirm its market, window and stage before proceeding.
@@ -149,9 +179,9 @@ configure -> collect -> normalize -> evidence_review -> synthesize
 - A corrupt or unsupported state version stops with recovery guidance. It is never repaired
   silently.
 
-## 6. Functional requirements
+## 7. Functional requirements
 
-### 6.1 Package and compatibility
+### 7.1 Package and compatibility
 
 - **CI-PKG-001:** Expand `skills/comp-intel` in place. No duplicate package or plugin may define
   competing workflow semantics.
@@ -163,7 +193,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
   accurate `agents/openai.yaml` metadata. Add negative activation cases for unrelated research
   and generic skill-authoring requests.
 
-### 6.2 Configuration and adopter-owned data
+### 7.2 Configuration and adopter-owned data
 
 - **CI-CFG-001:** Validate configuration for data root, markets, competitors, source adapters,
   absolute-window policy, reviewer policy, retention and output renderers.
@@ -173,7 +203,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
   market/competitor IDs, source queries, optional positioning context and output lens without
   requiring code edits.
 
-### 6.3 Source adapters
+### 7.3 Source adapters
 
 - **CI-SRC-001:** All sources implement one versioned adapter contract: capability ID, required
   permission, query ID, stable source identity, pagination/checkpoint behavior, time-window
@@ -185,7 +215,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
   explicitly; missing required adapters stop. No adapter may fall back to a different source
   without declaration.
 
-### 6.4 Evidence and claims
+### 7.4 Evidence and claims
 
 - **CI-EVD-001:** Every evidence record includes stable ID, market and competitor IDs, adapter and
   query IDs, canonical source identity, title, publication and observation timestamps, bounded
@@ -196,9 +226,9 @@ configure -> collect -> normalize -> evidence_review -> synthesize
 - **CI-EVD-003:** Treat source content as untrusted data. Preserve corroboration, conflicts and
   limitations; deduplicate deterministically; never execute instructions found in evidence.
 
-### 6.5 Run control and approvals
+### 7.5 Run control and approvals
 
-- **CI-RUN-001:** Enforce the stages in §5.2. Synthesis may read only the approved normalized
+- **CI-RUN-001:** Enforce the stages in §6.2. Synthesis may read only the approved normalized
   evidence manifest and may not retrieve live sources.
 - **CI-RUN-002:** Use a collision-resistant run ID, append-only stage history and immutable
   evidence artifacts. Resume validates the run ID, schema version and current stage.
@@ -210,7 +240,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
 - **CI-RUN-005:** External messaging, publication, scheduling and other service mutation are
   prohibited in v1, regardless of retrieval permission.
 
-### 6.6 State and outputs
+### 7.6 State and outputs
 
 - **CI-STATE-001:** Versioned run state records run ID, market, absolute window, stage history,
   capability coverage, package/controller versions, artifacts, digests, approvals, failures and
@@ -225,7 +255,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
   counter-evidence and next-check concepts. Add run ID, window, coverage, evidence digest, review
   status and proposed-change summary.
 
-### 6.7 Privacy and security
+### 7.7 Privacy and security
 
 - **CI-PRV-001:** The package contains no real organization configuration, internal identifiers,
   people or profiles, customers, deal intelligence, private positioning, unpublished plans,
@@ -235,7 +265,7 @@ configure -> collect -> normalize -> evidence_review -> synthesize
 - **CI-PRV-003:** Validate path containment, least privilege, sensitivity propagation, redaction
   and configured retention. Uninstall and update preserve adopter data by default.
 
-### 6.8 Migration and quality
+### 7.8 Migration and quality
 
 - **CI-MIG-001:** Preserve documented invocation language and provide a deterministic migration
   from the existing public config/output templates or a precise incompatibility error. Do not
@@ -248,12 +278,38 @@ configure -> collect -> normalize -> evidence_review -> synthesize
   suite, GitHub Actions validator, local-link check, IP inventory reconciliation and applicable
   security review to pass without weakening a control.
 
-## 7. Data contracts
+## 8. Non-functional requirements
+
+- **CI-NFR-001 — Privacy:** Minimize collected and persisted data, apply configured sensitivity
+  and retention, and prevent real identities, private mappings or evidence from entering the
+  distributed package or synthetic corpus.
+- **CI-NFR-002 — Security:** Treat all retrieved and local-file content as untrusted, validate
+  path containment, use least-privilege adapters, keep credentials outside artifacts, and refuse
+  instructions embedded in evidence.
+- **CI-NFR-003 — Reliability:** Make collection checkpoints, normalization, resume and apply
+  idempotent where applicable; use deterministic digests, atomic writes, optimistic concurrency
+  and explicit terminal failure records.
+- **CI-NFR-004 — Performance:** Complete the offline synthetic controller path within 30 seconds
+  on each supported CI runtime, excluding model and external-service latency; expose stage
+  durations and bound adapter pagination, item counts and excerpt sizes.
+- **CI-NFR-005 — Explainability:** Before each approval, show source coverage, limitations,
+  conflicts, relevant digests, proposed operations and the effect of accepting or rejecting.
+- **CI-NFR-006 — Maintainability:** Version machine-readable contracts, keep deterministic logic
+  in tested helpers, keep runtime instructions concise, and require explicit migrations for
+  incompatible schema or package changes.
+- **CI-NFR-007 — Portability and compatibility:** Support direct installation without private or
+  repository-root dependencies, preserve documented invocation language and validate upgrades
+  from every supported public schema version.
+- **CI-NFR-008 — Resource and cost control:** Apply configured source, page, item, excerpt and
+  retry limits; resume from approved checkpoints instead of recollecting; do not introduce a
+  hosted service or mandatory paid integration in v1.
+
+## 9. Data contracts
 
 The implementation may use JSON or YAML, but the machine-readable schemas and field semantics
 are normative. Rendered Markdown is never the only representation of mutable state.
 
-### 7.1 Evidence record
+### 9.1 Evidence record
 
 Required fields:
 
@@ -264,7 +320,7 @@ Required fields:
 - `corroborates[]`, `conflicts_with[]`, `limitations[]`; and
 - a content digest.
 
-### 7.2 Claim record
+### 9.2 Claim record
 
 Required fields:
 
@@ -275,7 +331,7 @@ Required fields:
 
 No claim can be `Verified` without at least one eligible evidence ID.
 
-### 7.3 Proposed change set
+### 9.3 Proposed change set
 
 Required fields:
 
@@ -285,7 +341,7 @@ Required fields:
 - `status`; and
 - review/apply approval references.
 
-### 7.4 Run state
+### 9.4 Run state
 
 Required fields:
 
@@ -297,7 +353,7 @@ Required fields:
 - error ledger and retry metadata; and
 - final status.
 
-## 8. Target package architecture
+## 10. Target package architecture
 
 Later implementation PRs will converge on this package shape:
 
@@ -333,7 +389,7 @@ The old `references/RUN-workflow.md` is replaced only in the same implementation
 updates `SKILL.md` and tests. Repository-root standards remain contributor governance; runtime
 instructions contain the required operational rules locally so direct installation stays closed.
 
-## 9. Compatibility and lifecycle
+## 11. Compatibility and lifecycle
 
 - The skill name and `$comp-intel` invocation remain stable.
 - Existing public config fields (`scope`, `market`, `competitors`, `sources`, confidence
@@ -345,41 +401,55 @@ instructions contain the required operational rules locally so direct installati
   adopter-data path for removal.
 - Breaking contract changes require a major package/schema version and a documented migration.
 
-## 10. Delivery slices
+## 12. Rollout plan and implementation slices
 
-1. **Requirements baseline:** land this PRD, the source inventory, catalog discoverability and
-   legal inventory. No runtime behavior changes.
-2. **Package contracts:** update the skill router and metadata; add the governed runbook,
-   analysis/source/registry references, templates and machine-readable schemas.
-3. **Offline controller:** implement initialization, synthetic/local-file collection,
-   normalization, run state, approvals, rendering, apply and deterministic tests.
-4. **Optional public adapters:** add web and repository-host adapters with capability and
-   failure tests. Keep communication-source retrieval separately configured and optional.
-5. **Release verification:** run clean-install, update, uninstall, privacy, IP, security and
-   full CI acceptance; obtain project-owner release approval.
-
-Each slice is a focused pull request. No slice may claim behavior owned by a later slice.
-
-## 11. Acceptance tests
-
-| ID | Scenario | Pass condition |
+| Phase | Scope | Exit evidence |
 |---|---|---|
-| CI-AT-001 | Inventory closure | Every functional seed reference has an inventory row or an explicit interface/pattern boundary; no copied-content path is publishable. |
-| CI-AT-002 | Direct installation | A clean direct install resolves every runtime path inside `skills/comp-intel/`. |
-| CI-AT-003 | Offline quickstart | Fictional fixture completes configure through approved local apply without an external account. |
-| CI-AT-004 | Local-file evidence | Approved local input normalizes into stable evidence records with correct dates, labels and sensitivity. |
-| CI-AT-005 | Optional adapter absent | Missing optional adapter produces explicit partial coverage; missing required adapter stops before collection. |
-| CI-AT-006 | Evidence review gate | Synthesis refuses absent, unauthorized or wrong-digest approval and performs no live retrieval after approval. |
-| CI-AT-007 | Claim provenance | Every material rendered claim resolves to eligible evidence; missing or conflicting support stays visible. |
-| CI-AT-008 | Apply safety | Wrong base digest or partial-write failure leaves canonical state unchanged. |
-| CI-AT-009 | Data-root safety | Initialization rejects package-contained and escaping paths and never overwrites differing files. |
-| CI-AT-010 | Public privacy | Package and intended history contain no prohibited real configuration, identities, people, deals, positioning, credentials or private evidence. |
-| CI-AT-011 | Compatibility | Existing invocation language and supported config/output concepts migrate deterministically or fail with precise guidance. |
-| CI-AT-012 | External-write refusal | Requests to message, publish, schedule or mutate a service are refused as out of v1 scope. |
-| CI-AT-013 | Same-day and resume | Multiple same-day runs do not collide; exact-run resume validates stage and schema. |
-| CI-AT-014 | Document and package governance | Metadata, links, dependency closure, IP inventory, tests and validators all pass. |
+| 0 — Requirements baseline | Land this PRD, source inventory, catalog discoverability and legal inventory without runtime changes | Strict document audit, local-link validation, IP reconciliation, project-owner approval of the exact PRD revision and activation as normative |
+| 1 — Package contracts | Update the router and metadata; add the runbook, analysis/source/registry references, templates and schemas | CI-AT-001, CI-AT-002, CI-AT-009, CI-AT-010, CI-AT-014 and direct-install review pass |
+| 2 — Offline controller | Implement initialization, synthetic/local-file collection, normalization, state, approvals, rendering and local apply | CI-AT-003, CI-AT-004, CI-AT-006–009 and CI-AT-013 pass on every supported CI runtime |
+| 3 — Optional public adapters | Add web and repository-host adapters; keep communication-source retrieval separately configured and optional | CI-AT-005–007, privacy review and adapter failure/limit tests pass |
+| 4 — Release verification | Exercise clean install, update, uninstall, compatibility, refusal, privacy, IP, security and complete CI acceptance | CI-AT-001–014 pass; success measures meet their targets; all stop conditions are clear; project-owner release approval is recorded |
 
-## 12. Release gates and approval
+Each phase is a focused pull request. A phase cannot claim behavior or exit evidence owned by a
+later phase, and failure of an exit condition stops advancement.
+
+## 13. Acceptance tests and requirement traceability
+
+| ID | Requirements verified | Scenario | Pass condition |
+|---|---|---|---|
+| CI-AT-001 | CI-PKG-001, CI-MIG-002, CI-PRV-001, CI-QA-002 | Inventory closure | Every functional seed reference has an inventory row or an explicit interface/pattern boundary; no copied-content path is publishable. |
+| CI-AT-002 | CI-PKG-001–003, CI-CFG-002, CI-NFR-006–007 | Direct installation | A clean direct install resolves every runtime path inside `skills/comp-intel/`. |
+| CI-AT-003 | CI-CFG-001–003, CI-SRC-002, CI-RUN-001–004, CI-STATE-001–002, CI-OUT-001–002, CI-NFR-003–005, CI-NFR-008 | Offline quickstart | Fictional fixture completes configure through approved local apply without an external account, repeats with identical digests and output, and meets the offline duration target. |
+| CI-AT-004 | CI-SRC-001–002, CI-EVD-001–003, CI-NFR-001–002 | Local-file evidence | Approved local input normalizes into stable evidence records with correct dates, labels and sensitivity. |
+| CI-AT-005 | CI-SRC-001–003, CI-STATE-001, CI-OUT-002, CI-NFR-004, CI-NFR-008 | Optional adapter absent | Missing optional adapter produces explicit partial coverage; missing required adapter stops before collection. Adapter limits and stage timing remain visible. |
+| CI-AT-006 | CI-EVD-003, CI-RUN-001–003, CI-NFR-002, CI-NFR-005 | Evidence review gate | Synthesis refuses absent, unauthorized or wrong-digest approval and performs no live retrieval after approval. |
+| CI-AT-007 | CI-EVD-001–003, CI-OUT-001–002, CI-NFR-005 | Claim provenance | Every material rendered claim resolves to eligible evidence; missing or conflicting support stays visible. |
+| CI-AT-008 | CI-RUN-004, CI-STATE-001–002, CI-NFR-003 | Apply safety | Wrong base digest or partial-write failure leaves canonical state unchanged. |
+| CI-AT-009 | CI-CFG-002, CI-PRV-003, CI-NFR-002–003 | Data-root safety | Initialization rejects package-contained and escaping paths and never overwrites differing files. |
+| CI-AT-010 | CI-CFG-003, CI-PRV-001–003, CI-MIG-002, CI-NFR-001–002 | Public privacy | Package and intended history contain no prohibited real configuration, identities, people, deals, positioning, credentials or private evidence. |
+| CI-AT-011 | CI-PKG-004, CI-MIG-001, CI-NFR-006–007 | Compatibility | Existing invocation language and supported config/output concepts migrate deterministically or fail with precise guidance. |
+| CI-AT-012 | CI-RUN-005, CI-PRV-003, CI-NFR-002, CI-NFR-008 | External-write refusal | Requests to message, publish, schedule or mutate a service are refused as out of v1 scope. |
+| CI-AT-013 | CI-RUN-002, CI-STATE-001, CI-NFR-003 | Same-day and resume | Multiple same-day runs do not collide; exact-run resume validates stage and schema without recollecting approved inputs. |
+| CI-AT-014 | CI-QA-001–002, CI-NFR-006–007 | Document and package governance | Metadata, links, dependency closure, IP inventory, tests and validators all pass. |
+
+Every requirement in §§7–8 appears in at least one acceptance row. Implementation pull requests
+must preserve this mapping and name the automated or review evidence used for each applicable ID.
+
+## 14. Risks, mitigations and stop conditions
+
+| Risk | Mitigation | Stop condition |
+|---|---|---|
+| Private or identifying material enters a public artifact or Git history | Synthetic-only fixtures, bounded inventory dispositions, staged review, privacy scans and IP reconciliation | Any real private identity, mapping, evidence, credential or restricted positioning blocks release until removed from the branch and intended history |
+| Unsupported or stale claims appear authoritative | Absolute windows, evidence labels, source dates, conflicts, limitations and claim-to-evidence validation | Any material claim without eligible evidence or `[Missing]` status stops report approval |
+| Retrieved content attempts to redirect the workflow | Treat evidence as untrusted data, isolate normalization and prohibit instruction execution from source content | Any evidence-originated instruction changes scope, tools, approvals or writes; stop the run and record the source as unsafe |
+| Adapter failure silently narrows coverage | Capability preflight, explicit required/optional policy and coverage manifest | A required adapter fails, or any enabled adapter lacks a terminal coverage status |
+| Concurrent or partial apply corrupts adopter state | Digest-bound approval, optimistic concurrency, backups and atomic replacement | Base digest mismatch, write failure or unverifiable rollback leaves canonical state untouched and stops apply |
+| Package update or uninstall loses adopter data | Separate data root, schema preflight, migration backup and path-scoped removal | A preservation or rollback test fails; block the release or migration |
+| Review burden encourages approval shortcuts | Bounded evidence summaries, visible conflicts, separate evidence/apply decisions and resumable review | Approval cannot be bound to the exact digest or a reviewer cannot inspect the proposed effect |
+| Scope expands into external mutation or hosted operation | Explicit v1 non-goals, adapter read boundaries and external-write refusal tests | Any implementation can publish, message, schedule or mutate a service through the v1 workflow |
+
+## 15. Release gates and approval
 
 This PRD begins as `Draft` and `normative: false`. Project-owner approval must apply to the
 exact pull-request revision after all review findings are resolved. Before merge as the binding
@@ -393,7 +463,7 @@ Approval of this PRD authorizes only the later implementation work described her
 approve a public release, live source collection, external messaging, publication, scheduling,
 or migration of private state.
 
-## 13. Assumptions and fixed defaults
+## 16. Assumptions and fixed defaults
 
 - The canonical public source remains this repository and the existing `skills/comp-intel` path.
 - Interactive Codex is the supported v1 runtime; headless and scheduled operation are deferred.
@@ -406,3 +476,23 @@ or migration of private state.
   or distributable content.
 - Downstream integrations consume versioned approved outputs; their implementation remains out
   of scope.
+
+## 17. Change control and review cadence
+
+- Changes to product scope, requirement semantics, approval gates, data contracts, supported
+  adapters, privacy boundaries, compatibility or release targets require project-owner approval,
+  pull-request review and a version change when the contract is materially different.
+- Each implementation phase must review this PRD's traceability table and record affected
+  requirement and acceptance IDs in its pull request.
+- Review this PRD after each implementation phase, before every public release, after any privacy
+  or approval-control incident, and at least once per minor release while the skill is Active.
+- A validator change cannot silently weaken a written requirement. Update the PRD and validation
+  evidence together when intended behavior changes.
+- Changes to future companion documents cannot override this PRD; conflicting documents stop the
+  implementation until the project owner approves a reconciled revision.
+
+## 18. Changelog
+
+| Date | Version | Author | Summary |
+|---|---|---|---|
+| 2026-08-28 | 1.0 | alex-bea / Codex | Initial public expansion PRD: generic staged workflow, bounded dependency closure, measurable success targets, non-functional requirements, requirement-to-test traceability, rollout exit evidence, risk controls and governed approval lifecycle. |
