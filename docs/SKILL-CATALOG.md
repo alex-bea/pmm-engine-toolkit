@@ -21,7 +21,9 @@ The categories are mutually exclusive by each skill's primary job.
 ## Intelligence and analysis
 
 - `people-intelligence` — create consented stakeholder briefs.
-- `comp-intel` — synthesize sourced competitive signals.
+- `comp-intel` — synthesize sourced competitive signals. See the
+  [source inventory](DOC-comp-intel-source-inventory-v1.0.md) and
+  [expansion product requirements](DOC-comp-intel-product-requirements-v1.0.md).
 - `pmm-weekly-impact` — connect shipped work to outcomes and next bets.
 
 ## Marketing and sales drafting or review
