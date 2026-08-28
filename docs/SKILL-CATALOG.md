@@ -21,7 +21,9 @@ The categories are mutually exclusive by each skill's primary job.
 ## Intelligence and analysis
 
 - `people-intelligence` — create consented stakeholder briefs.
-- `comp-intel` — synthesize sourced competitive signals.
+- `comp-intel` — synthesize sourced competitive signals. See the
+  [Draft Codex product-requirements suite](product-requirements/comp-intel/README.md) for
+  the proposed reusable workflow, migration, integrations, and distribution architecture.
 - `pmm-weekly-impact` — connect shipped work to outcomes and next bets.
 
 ## Marketing and sales drafting or review
@@ -73,3 +75,6 @@ All three plugin skills are generic. PMM-specific material is isolated to synthe
 
 Both installable plugins follow the Codex plugin manifest contract. `pmm-instinct-review`
 also declares session hooks; its bundled skill follows the same skill-package contract.
+
+The competitive-intelligence requirements describe a possible future plugin wrapper but do
+not add a third installable plugin to the current catalog.

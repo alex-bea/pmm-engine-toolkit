@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parents[2]
 INVENTORY = ROOT / "docs" / "legal" / "IP-INVENTORY.csv"
 EXCLUDED_PARTS = {".git", ".venv", "__pycache__"}
 BRAND_RE = re.compile(
-    r"\b(?:Git|GitHub|OpenAI|LinkedIn|Slack|PyYAML|Radon|cognitive[-_]complexity)\b",
+    r"\b(?:Claude|Codex|Git|GitHub|OpenAI|LinkedIn|Polygon|Slack|PyYAML|Radon|"
+    r"cognitive[-_]complexity)\b",
     re.IGNORECASE,
 )
 URL_RE = re.compile(r"https?://")

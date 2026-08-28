@@ -72,10 +72,17 @@ IP_INVENTORY = "docs/legal/IP-INVENTORY.csv"
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 BLOCKED = re.compile(
-    r"(/Users/|polygon|clickup|@polygon|channel[_ -]?id\s*[:=]\s*[A-Z0-9]|"
+    r"(/Users/|clickup|@polygon|channel[_ -]?id\s*[:=]\s*[A-Z0-9]|"
     r"api[_ -]?key\s*[:=]|secret\s*[:=]|token\s*[:=])",
     re.IGNORECASE,
 )
+POLYGON_REFERENCE = re.compile(r"\bpolygon\b", re.IGNORECASE)
+PUBLIC_POLYGON_REFERENCE_PATHS = {
+    "AGENTS.md",
+    "docs/legal/IP-PRIVACY-REVIEW-COMP-INTEL-PRDS-2026-08-28.md",
+    "scripts/governance/build_ip_inventory.py",
+}
+PUBLIC_POLYGON_REFERENCE_PREFIXES = ("docs/product-requirements/comp-intel/",)
 
 PLUGIN_ROOT = ROOT / "plugins" / "skill-governance"
 PLUGIN_SKILLS = {"govern-documents", "govern-skills", "govern-work-tracker"}
@@ -113,6 +120,21 @@ def frontmatter(path: Path) -> dict[str, str]:
     if "description" not in keys:
         raise ValueError("frontmatter needs description")
     return {"name": name_match.group(1).strip(), "description": "", "_keys": keys}
+
+
+def public_safety_violation(relative_path: str, text: str) -> str | None:
+    """Return a blocked public-safety match, allowing reviewed nominative examples."""
+    match = BLOCKED.search(text)
+    if match:
+        return match.group(0)
+    polygon_match = POLYGON_REFERENCE.search(text)
+    polygon_allowed = (
+        relative_path in PUBLIC_POLYGON_REFERENCE_PATHS
+        or relative_path.startswith(PUBLIC_POLYGON_REFERENCE_PREFIXES)
+    )
+    if polygon_match and not polygon_allowed:
+        return polygon_match.group(0)
+    return None
 
 
 def validate_governance_plugin(errors: list[str]) -> None:
@@ -400,9 +422,10 @@ def main() -> int:
             continue
         if "TODO:" in text or "example_asset.txt" in text or "api_reference.md" in text:
             errors.append(f"placeholder content: {path.relative_to(ROOT)}")
-        match = BLOCKED.search(text)
-        if match:
-            errors.append(f"public-safety pattern {match.group(0)!r}: {path.relative_to(ROOT)}")
+        relative_path = path.relative_to(ROOT).as_posix()
+        violation = public_safety_violation(relative_path, text)
+        if violation:
+            errors.append(f"public-safety pattern {violation!r}: {relative_path}")
         if path.suffix.lower() == ".md":
             for target in MARKDOWN_LINK_RE.findall(text):
                 clean_target = target.split("#", 1)[0]
