@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Governed task record",
+  "allOf": [
+    {"$ref": "roadmap.schema.json"},
+    {
+      "type": "object",
+      "required": ["epic_id", "acceptance_criteria"],
+      "properties": {
+        "epic_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "acceptance_criteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "current_task": {"type": "string"},
+        "next_action": {"type": "string"},
+        "resume_from": {"type": "string"},
+        "blocked_reason": {"type": "string"},
+        "evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  ]
+}

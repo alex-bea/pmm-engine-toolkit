@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern Documents"
+  short_description: "Audit governed Markdown documents"
+  default_prompt: "Use $govern-documents to audit governed Markdown in this repository."

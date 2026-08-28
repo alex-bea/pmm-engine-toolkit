@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern Work Tracker"
+  short_description: "Govern roadmap, epic, and task records"
+  default_prompt: "Use $govern-work-tracker to audit this repository work tracker and propose fixes."

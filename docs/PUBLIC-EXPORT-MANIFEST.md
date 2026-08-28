@@ -8,6 +8,9 @@ templates, synthetic examples, and tests.
 The root governance set covers contributions, conduct, project decisions, security,
 support, privacy, licensing, and independent setup.
 
+It also contains the `skill-governance` Codex plugin, its public marketplace entry, and three
+self-contained governance skills that can be installed independently from GitHub.
+
 ## Package contract
 
 Every skill includes:
@@ -20,6 +23,11 @@ Every skill includes:
 - local scripts when the workflow has deterministic validation or transformation logic.
 
 The repository validator enforces this contract and checks declared local dependencies.
+
+Plugin governance skills additionally include the canonical standards they enforce,
+deterministic initializer/audit/fix scripts, installable schemas and templates, and generic
+examples with optional PMM profiles. The document audit is read-only and validates only
+opted-in Markdown structure and local paths. CI verifies mirrored standards against `docs/`.
 
 The `plugins/pmm-instinct-review/` release candidate additionally contains a Codex plugin
 manifest, marketplace registration, plugin-relative hooks, a bundled skill, a standard-library

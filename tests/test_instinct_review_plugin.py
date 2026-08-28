@@ -96,7 +96,9 @@ class PluginContractTests(unittest.TestCase):
         marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "pmm-instinct-review")
         self.assertEqual(manifest["version"], "0.1.0")
-        self.assertEqual(marketplace["plugins"][0]["name"], "pmm-instinct-review")
+        entries = [entry for entry in marketplace["plugins"] if entry["name"] == "pmm-instinct-review"]
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["source"]["path"], "./plugins/pmm-instinct-review")
 
     def test_hooks_use_plugin_root_and_both_events(self):
         hooks = json.loads((PLUGIN / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]

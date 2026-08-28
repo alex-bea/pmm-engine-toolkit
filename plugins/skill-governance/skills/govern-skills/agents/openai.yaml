@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern Skills"
+  short_description: "Initialize and audit governed Codex skills"
+  default_prompt: "Use $govern-skills to audit this repository and propose governed skill fixes."

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Governed roadmap record",
+  "type": "object",
+  "required": ["id", "title", "status", "rank", "updated_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "title": {"type": "string", "minLength": 1},
+    "status": {"enum": ["icebox", "todo", "active", "blocked", "done"]},
+    "rank": {"type": "integer", "minimum": 1},
+    "updated_at": {"type": "string", "format": "date"},
+    "owner": {"type": "string"},
+    "summary": {"type": "string"},
+    "plan_path": {"type": ["string", "null"]},
+    "related_paths": {"type": "array", "items": {"type": "string"}},
+    "depends_on": {"type": "array", "items": {"type": "string"}},
+    "labels": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

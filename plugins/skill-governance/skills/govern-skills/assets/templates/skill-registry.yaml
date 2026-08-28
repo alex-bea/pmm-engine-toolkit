@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "skills": [
+    {
+      "name": "example-skill",
+      "folder": ".agents/skills/example-skill",
+      "version": "0.1.0",
+      "owner": "unassigned",
+      "status": "draft",
+      "replacement": null
+    }
+  ]
+}

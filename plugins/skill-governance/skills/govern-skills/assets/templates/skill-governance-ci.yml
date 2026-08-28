@@ -1,0 +1,36 @@
+name: Skill Governance
+
+on:
+  pull_request:
+    paths:
+      - '.agents/governance/**'
+      - '.agents/skills/**'
+      - 'skills/**'
+      - 'state/work/**'
+  push:
+    branches: [main]
+    paths:
+      - '.agents/governance/**'
+      - '.agents/skills/**'
+      - 'skills/**'
+      - 'state/work/**'
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.11'
+      - name: Validate governed skills
+        run: python .agents/governance/bin/govern_skills.py audit --repo . --strict
+      - name: Validate work tracker when installed
+        run: |
+          if [ -f .agents/governance/bin/govern_work_tracker.py ]; then
+            python .agents/governance/bin/govern_work_tracker.py audit --repo . --strict
+          fi
