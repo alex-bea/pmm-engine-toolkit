@@ -24,12 +24,14 @@ and validates a strict schema. Zero candidates is success.
 
 ## 3. Backlog review
 
-Run `list-priority`. Review zero-candidate audits separately and present each positive cluster's
-type, rule, evidence, context, support, repositories, and default destination. Accept only an
-explicit `accept`, `reject`, `edit`, or `match` decision. Mutating review commands require
-`--confirm`. Use `resolve-zero --confirm` only after explicitly confirming the zero-candidate
-bucket. When one audit contains multiple candidates, keep its normalized transcript until every
-candidate cluster from that audit has a recorded decision.
+Run `list-priority`. Present one positive candidate at a time with what happened, the user's
+feedback, proposed future behavior, why it matters, and concise support/source details. Do not
+show a destination or routing metadata at this candidate-to-instinct gate. Accept only an
+explicit `accept`, `reject`, `edit`, or `match` decision; an edit can include an amended
+rationale. Mutating review commands require `--confirm`. Use `resolve-zero --confirm` only
+after explicitly confirming the zero-candidate bucket. When one audit contains multiple
+candidates, keep its normalized transcript until every candidate cluster from that audit has a
+recorded decision.
 
 Accepting creates one runtime-owned instinct. Rejecting creates none. Matching increments the
 exact active instinct. Any resolved review marks its audits processed and deletes only their
@@ -37,13 +39,23 @@ normalized transcript copies.
 
 ## 4. Promotion
 
-Only active instincts with confidence at least 0.5 are eligible. Preview first. Project guidance
-targets the nearest repository `AGENTS.md`; general guidance targets `~/.codex/AGENTS.md`;
-`both` targets both. A skill destination is allowed only for one exact writable user/project
-skill outside plugin cache.
+Only active instincts with confidence at least 0.5 are eligible. First choose a destination
+class, then preview that exact target. Project guidance targets the nearest repository
+`AGENTS.md`; general guidance targets `~/.codex/AGENTS.md`; `both` targets both. A single
+named skill can target its exact writable registered RUN document. A voice rule can target an
+explicitly configured writable REF mapping; an unmapped route remains unresolved. A pattern
+with at least three source skills can target an owner-selected writable `STD-*.md` inside a
+supporting repository. Never write a plugin-cache skill.
 
-Show exact paths, insertion text, and duplicate state. Apply only after a second explicit
-confirmation. Record destinations in the instinct file. Never write Claude state.
+Configure a voice mapping only in the user-owned `voice_ref_routes` object in
+`~/.codex/instinct-review/config.json`. Each value is a relative path within the named skill,
+such as `"references/REF-voice.md"`; absolute paths and parent-directory traversal are refused.
+
+The destination preview is recorded locally. Show exact paths, insertion text, and duplicate
+state, then apply only with a matching second explicit confirmation. Append new rules under
+`## PMM Instinct Review — Promoted Guidance`; stage all selected writes before replacing any
+target. If a target already covers the rule, record it as covered without a duplicate write.
+Record the final file and managed section in the instinct file. Never write Claude state.
 
 ## 5. Retention and rollback
 

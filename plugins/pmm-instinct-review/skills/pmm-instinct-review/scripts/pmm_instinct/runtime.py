@@ -27,9 +27,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "extractor_model": None,
     "extractor_reasoning_effort": "medium",
     "max_attempts": 3,
+    "voice_ref_routes": {},
 }
 ALLOWED_TYPES = ("correction", "confirmation", "voice", "scope", "workflow")
 TYPE_WEIGHTS = {"voice": 10, "workflow": 6, "scope": 5, "correction": 4, "confirmation": 3}
+LEGACY_RATIONALE = "Without this rule, the correction described in the evidence could recur."
+PROMOTED_GUIDANCE_HEADING = "## PMM Instinct Review — Promoted Guidance"
 CONTEXT_WRAPPER_MARKERS = tuple(
     (f"<{tag}>", f"</{tag}>")
     for tag in (
@@ -114,6 +117,7 @@ class Candidate:
     rule: str
     evidence: str
     context: str
+    why_it_matters: str
     source_skill: str
     cwd: str
 
@@ -126,6 +130,7 @@ class Cluster:
     rule: str
     evidence: str
     context: str
+    why_it_matters: str
     support_count: int
     session_ids: tuple[str, ...]
     audit_paths: tuple[Path, ...]
@@ -150,7 +155,10 @@ class Instinct:
     status: str
     rule: str
     source_skill: str
+    source_skills: tuple[str, ...]
     source_cwds: tuple[str, ...]
+    source_repositories: tuple[Path, ...]
+    why_it_matters: str
     promoted_to: tuple[str, ...]
 
 
@@ -666,16 +674,35 @@ def validate_extractor_payload(payload: Any) -> list[dict[str, str]]:
         raise ValueError("extractor candidates must be a list of at most five items")
     validated: list[dict[str, str]] = []
     for candidate in candidates:
-        if not isinstance(candidate, dict) or set(candidate) != {"type", "rule", "evidence", "context"}:
+        if not isinstance(candidate, dict) or set(candidate) != {
+            "type",
+            "rule",
+            "evidence",
+            "context",
+            "why_it_matters",
+        }:
             raise ValueError("invalid extractor candidate fields")
         candidate_type = candidate.get("type")
-        values = (candidate.get("rule"), candidate.get("evidence"), candidate.get("context"))
+        values = (
+            candidate.get("rule"),
+            candidate.get("evidence"),
+            candidate.get("context"),
+            candidate.get("why_it_matters"),
+        )
         if candidate_type not in ALLOWED_TYPES or not all(isinstance(item, str) for item in values):
             raise ValueError("invalid extractor candidate")
-        rule, evidence, context = (" ".join(str(item).split()).strip() for item in values)
-        if not rule or len(evidence) > 160 or len(context) > 300:
+        rule, evidence, context, why_it_matters = (" ".join(str(item).split()).strip() for item in values)
+        if not rule or not why_it_matters or len(evidence) > 160 or len(context) > 300 or len(why_it_matters) > 300:
             raise ValueError("extractor candidate violates length constraints")
-        validated.append({"type": candidate_type, "rule": rule, "evidence": evidence, "context": context})
+        validated.append(
+            {
+                "type": candidate_type,
+                "rule": rule,
+                "evidence": evidence,
+                "context": context,
+                "why_it_matters": why_it_matters,
+            }
+        )
     return validated
 
 
@@ -697,6 +724,7 @@ def render_suggestions(session_id: str, candidates: list[dict[str, str]], source
                 f"**rule:** {candidate['rule']}",
                 f"**evidence:** {candidate['evidence']}",
                 f"**context:** {candidate['context']}",
+                f"**why it matters:** {candidate.get('why_it_matters') or LEGACY_RATIONALE}",
             ]
         )
         if source_skill:
@@ -1015,6 +1043,7 @@ def load_candidates(audit: Audit) -> list[Candidate]:
                 rule=rule,
                 evidence=fields.get("evidence", ""),
                 context=fields.get("context", ""),
+                why_it_matters=fields.get("why it matters", ""),
                 source_skill=fields.get("skill", "") or file_fields.get("skill", ""),
                 cwd=audit.cwd,
             )
@@ -1073,6 +1102,7 @@ def _all_clusters(paths: RuntimePaths, *, include_decided: bool) -> list[Cluster
                 rule=first.rule,
                 evidence=first.evidence,
                 context=first.context,
+                why_it_matters=first.why_it_matters,
                 support_count=support,
                 session_ids=tuple(sorted({item.session_id for item in items})),
                 audit_paths=tuple(sorted({item.audit_path for item in items})),
@@ -1145,6 +1175,22 @@ def _body_rule(body: str) -> str:
     return body.split("\n\n", 1)[0].strip()
 
 
+def _body_labeled_value(body: str, label: str) -> str:
+    prefix = f"**{label}:**"
+    for chunk in body.split("\n\n"):
+        candidate = chunk.strip()
+        if candidate.startswith(prefix):
+            return candidate.removeprefix(prefix).strip()
+    return ""
+
+
+def _metadata_strings(metadata: dict[str, Any], key: str) -> tuple[str, ...]:
+    value = metadata.get(key) or []
+    if isinstance(value, str):
+        value = [value] if value else []
+    return tuple(str(item).strip() for item in value if str(item).strip()) if isinstance(value, list) else ()
+
+
 def load_instincts(paths: RuntimePaths) -> list[Instinct]:
     instincts: list[Instinct] = []
     if not paths.instincts.exists():
@@ -1154,12 +1200,11 @@ def load_instincts(paths: RuntimePaths) -> list[Instinct]:
             metadata, body = _parse_frontmatter(path.read_text(encoding="utf-8"))
             created = date.fromisoformat(str(metadata.get("created")))
             last_seen = date.fromisoformat(str(metadata.get("last_seen") or metadata.get("created")))
-            source_cwds = metadata.get("source_cwds") or []
             promoted = metadata.get("promoted_to") or []
-            if isinstance(source_cwds, str):
-                source_cwds = [source_cwds] if source_cwds else []
             if isinstance(promoted, str):
                 promoted = [promoted] if promoted else []
+            source_skill = str(metadata.get("source_skill") or "")
+            source_skills = _metadata_strings(metadata, "source_skills") or ((source_skill,) if source_skill else ())
             instincts.append(
                 Instinct(
                     path=path,
@@ -1171,8 +1216,11 @@ def load_instincts(paths: RuntimePaths) -> list[Instinct]:
                     seen_count=int(metadata.get("seen_count", 1)),
                     status=str(metadata.get("status") or "active"),
                     rule=_body_rule(body),
-                    source_skill=str(metadata.get("source_skill") or ""),
-                    source_cwds=tuple(str(item) for item in source_cwds if str(item)),
+                    source_skill=source_skill,
+                    source_skills=source_skills,
+                    source_cwds=_metadata_strings(metadata, "source_cwds"),
+                    source_repositories=tuple(Path(item) for item in _metadata_strings(metadata, "source_repositories")),
+                    why_it_matters=_body_labeled_value(body, "Why it matters") or LEGACY_RATIONALE,
                     promoted_to=tuple(str(item) for item in promoted if str(item)),
                 )
             )
@@ -1194,12 +1242,29 @@ def next_instinct_id(instincts: Iterable[Instinct], created: date | None = None)
     return f"{prefix}{max(numbers, default=0) + 1:03d}"
 
 
-def _write_new_instinct(paths: RuntimePaths, cluster: Cluster, rule: str | None = None) -> Path:
+def _source_repositories(cwds: Iterable[str]) -> tuple[Path, ...]:
+    repositories: list[Path] = []
+    for cwd in cwds:
+        candidate = _nearest_repository(cwd)
+        if candidate is not None and candidate not in repositories:
+            repositories.append(candidate)
+    return tuple(repositories)
+
+
+def _write_new_instinct(
+    paths: RuntimePaths,
+    cluster: Cluster,
+    rule: str | None = None,
+    why_it_matters: str | None = None,
+) -> Path:
     ensure_store(paths)
     instincts = load_instincts(paths)
     created = date.today()
     identifier = next_instinct_id(instincts, created)
     chosen_rule = rule or cluster.rule
+    chosen_why = why_it_matters or cluster.why_it_matters or LEGACY_RATIONALE
+    if len(chosen_why) > 300:
+        raise ValueError("instinct rationale must be at most 300 characters")
     metadata = {
         "id": identifier,
         "type": cluster.candidate_type,
@@ -1209,16 +1274,18 @@ def _write_new_instinct(paths: RuntimePaths, cluster: Cluster, rule: str | None 
         "seen_count": cluster.support_count,
         "status": "active",
         "source_skill": cluster.source_skills[0] if len(cluster.source_skills) == 1 else "",
+        "source_skills": list(cluster.source_skills),
         "source_runtime": "codex",
         "source_transcript_format": "normalized-jsonl-v1",
         "source_cwds": list(cluster.session_cwds),
+        "source_repositories": [str(path) for path in _source_repositories(cluster.session_cwds)],
         "promoted_to": [],
     }
     body = "\n\n".join(
         [
             chosen_rule,
             f"**Evidence:** {cluster.evidence or 'Clustered from approved session suggestions.'}",
-            f"**Why it matters:** Confirmed across {cluster.support_count} supporting session(s).",
+            f"**Why it matters:** {chosen_why}",
         ]
     )
     return atomic_write_text(paths.instincts / f"{identifier}.md", _serialize_frontmatter(metadata, body))
@@ -1231,6 +1298,10 @@ def _update_instinct(instinct: Instinct, cluster: Cluster) -> Path:
     metadata["last_seen"] = (cluster.latest or date.today()).isoformat()
     metadata["confidence"] = confidence_for_support(seen, correction=instinct.instinct_type == "correction")
     metadata["source_cwds"] = sorted(set(instinct.source_cwds) | set(cluster.session_cwds))
+    metadata["source_skills"] = sorted(set(instinct.source_skills) | set(cluster.source_skills))
+    metadata["source_repositories"] = sorted(
+        {str(path) for path in instinct.source_repositories} | {str(path) for path in _source_repositories(cluster.session_cwds)}
+    )
     return atomic_write_text(instinct.path, _serialize_frontmatter(metadata, body))
 
 
@@ -1278,6 +1349,7 @@ def review_cluster(
     decision: str,
     *,
     edited_rule: str | None = None,
+    edited_rationale: str | None = None,
     confirm: bool = False,
 ) -> dict[str, Any]:
     if decision not in {"accept", "reject", "edit", "match"}:
@@ -1289,6 +1361,8 @@ def review_cluster(
         raise ValueError(f"cluster not found: {selected_id}")
     if decision == "edit" and not (edited_rule or "").strip():
         raise ValueError("edit requires a non-empty edited rule")
+    if decision != "edit" and edited_rationale is not None:
+        raise ValueError("edited rationale is allowed only with an edit decision")
     matching = next(
         (item for item in load_instincts(paths) if item.status == "active" and normalize_rule(item.rule) == selected.normalized_rule),
         None,
@@ -1301,7 +1375,12 @@ def review_cluster(
     elif decision in {"accept", "edit"}:
         if matching:
             raise ValueError("an exact active instinct exists; use match")
-        instinct_path = _write_new_instinct(paths, selected, (edited_rule or "").strip() or None)
+        instinct_path = _write_new_instinct(
+            paths,
+            selected,
+            (edited_rule or "").strip() or None,
+            (edited_rationale or "").strip() or None,
+        )
     ledger = _review_ledger(paths)
     previous_sessions = set(ledger.get(selected.cluster_id, {}).get("session_ids", []))
     ledger[selected.cluster_id] = {
@@ -1367,6 +1446,19 @@ def backlog(paths: RuntimePaths) -> dict[str, Any]:
                 "rule": item.rule,
                 "evidence": item.evidence,
                 "context": item.context,
+                "why_it_matters": item.why_it_matters or LEGACY_RATIONALE,
+                "candidate_card": {
+                    "what_happened": item.context or "No additional context was captured.",
+                    "your_feedback": item.evidence or "No redacted feedback was captured.",
+                    "proposed_future_behavior": item.rule,
+                    "why_it_matters": item.why_it_matters or LEGACY_RATIONALE,
+                    "support_count": item.support_count,
+                    "source_skills": list(item.source_skills),
+                    "session_cwds": list(item.session_cwds),
+                    "first_seen": item.earliest.isoformat() if item.earliest else None,
+                    "last_seen": item.latest.isoformat() if item.latest else None,
+                    "existing_match": item.match_state,
+                },
                 "support_count": item.support_count,
                 "source_skills": list(item.source_skills),
                 "session_cwds": list(item.session_cwds),
@@ -1413,23 +1505,71 @@ def _project_agents_path(instinct: Instinct, explicit_project: str | Path | None
     return root / "AGENTS.md"
 
 
-def _skill_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
-    if not instinct.source_skill:
-        return None
-    discovered: set[Path] = set()
-    for cwd in instinct.source_cwds or (None,):
-        discovered.update(discover_skills(paths, cwd).get(instinct.source_skill, ()))
+def _is_plugin_owned_path(paths: RuntimePaths, candidate: Path) -> bool:
+    resolved = candidate.resolve()
     plugin_cache = (paths.codex_home / "plugins" / "cache").resolve()
     bundled = plugin_root().resolve()
-    eligible: list[Path] = []
-    for location in discovered:
-        resolved = location.resolve()
-        if plugin_cache in (resolved, *resolved.parents) or bundled in (resolved, *resolved.parents):
+    return plugin_cache in (resolved, *resolved.parents) or bundled in (resolved, *resolved.parents)
+
+
+def _writable_user_file(paths: RuntimePaths, candidate: Path) -> bool:
+    return candidate.is_file() and os.access(candidate, os.W_OK) and not _is_plugin_owned_path(paths, candidate)
+
+
+def _source_skill_locations(paths: RuntimePaths, instinct: Instinct) -> tuple[Path, ...]:
+    if len(instinct.source_skills) != 1:
+        return ()
+    discovered: set[Path] = set()
+    for cwd in instinct.source_cwds or (None,):
+        discovered.update(discover_skills(paths, cwd).get(instinct.source_skills[0], ()))
+    return tuple(sorted(location for location in discovered if not _is_plugin_owned_path(paths, location)))
+
+
+def _run_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
+    candidates: list[Path] = []
+    for location in _source_skill_locations(paths, instinct):
+        candidates.extend(path for path in (location / "references").glob("RUN-*.md") if _writable_user_file(paths, path))
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def _voice_ref_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
+    if instinct.instinct_type != "voice" or len(instinct.source_skills) != 1:
+        return None
+    routes = load_config(paths).get("voice_ref_routes")
+    route = routes.get(instinct.source_skills[0]) if isinstance(routes, dict) else None
+    if not isinstance(route, str) or not route.strip():
+        return None
+    relative = Path(route)
+    if relative.is_absolute() or ".." in relative.parts:
+        return None
+    candidates: list[Path] = []
+    for location in _source_skill_locations(paths, instinct):
+        candidate = (location / relative).resolve()
+        if location.resolve() not in (candidate, *candidate.parents):
             continue
-        descriptor = resolved / "SKILL.md"
-        if descriptor.is_file() and os.access(descriptor, os.W_OK):
-            eligible.append(descriptor)
-    return eligible[0] if len(eligible) == 1 else None
+        if candidate.name.startswith("REF-") and _writable_user_file(paths, candidate):
+            candidates.append(candidate)
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def _standard_destination(
+    paths: RuntimePaths,
+    instinct: Instinct,
+    standard: str | Path | None,
+) -> Path | None:
+    if len(instinct.source_skills) < 3:
+        raise ValueError("standard promotion requires evidence from at least three source skills")
+    if not standard:
+        raise ValueError("standard promotion requires --standard")
+    candidate = Path(standard).expanduser().resolve()
+    if not candidate.name.startswith("STD-") or candidate.suffix != ".md":
+        raise ValueError("standard promotion requires an existing STD-*.md file")
+    if not _writable_user_file(paths, candidate):
+        raise ValueError("standard destination must be an existing writable non-plugin file")
+    repositories = instinct.source_repositories or _source_repositories(instinct.source_cwds)
+    if repositories and not any(root.resolve() in (candidate, *candidate.parents) for root in repositories):
+        raise ValueError("standard destination must belong to a supporting source repository")
+    return candidate
 
 
 def instruction_contains_rule(path: str | Path, rule: str) -> bool:
@@ -1439,8 +1579,112 @@ def instruction_contains_rule(path: str | Path, rule: str) -> bool:
     return normalize_rule(rule) in normalize_rule(destination.read_text(encoding="utf-8"))
 
 
-def default_promotion_destination(instinct: Instinct, project: str | Path | None = None) -> str:
-    return "project" if _project_agents_path(instinct, project) is not None else "global"
+def _available_promotion_destinations(
+    paths: RuntimePaths,
+    instinct: Instinct,
+    project: str | Path | None = None,
+) -> list[str]:
+    choices = ["global"]
+    if _project_agents_path(instinct, project) is not None:
+        choices.extend(["project", "both"])
+    if _run_destination(paths, instinct) is not None:
+        choices.append("run")
+    if _voice_ref_destination(paths, instinct) is not None:
+        choices.append("ref")
+    if len(instinct.source_skills) >= 3:
+        choices.append("standard")
+    return choices
+
+
+def _promotion_preview_path(paths: RuntimePaths, instinct_id: str) -> Path:
+    return paths.state / f"promotion-preview-{safe_session_id(instinct_id)}.json"
+
+
+def _preview_signature(preview: dict[str, Any]) -> str:
+    signed = {
+        "instinct_id": preview["instinct_id"],
+        "decision": preview["decision"],
+        "rule": preview["rule"],
+        "why_it_matters": preview["why_it_matters"],
+        "insertion": preview["insertion"],
+        "targets": [target["path"] for target in preview["targets"]],
+    }
+    return hashlib.sha256(json.dumps(signed, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _build_promotion_preview(
+    paths: RuntimePaths,
+    instinct_id: str,
+    *,
+    destination: str | None = None,
+    project: str | Path | None = None,
+    standard: str | Path | None = None,
+    edited_rule: str | None = None,
+    edited_rationale: str | None = None,
+) -> dict[str, Any]:
+    instinct = next((item for item in load_instincts(paths) if item.instinct_id == instinct_id), None)
+    if not instinct:
+        raise ValueError(f"instinct not found: {instinct_id}")
+    if instinct.status != "active" or instinct.confidence < 0.5:
+        raise ValueError("instinct is not eligible for promotion (active and confidence >= 0.5 required)")
+    rule = (edited_rule or instinct.rule).strip()
+    why_it_matters = (edited_rationale or instinct.why_it_matters).strip()
+    if not rule:
+        raise ValueError("promotion rule cannot be blank")
+    if not why_it_matters or len(why_it_matters) > 300:
+        raise ValueError("promotion rationale must be between 1 and 300 characters")
+    if destination == "no":
+        return {"instinct_id": instinct_id, "decision": "no", "applied": False, "targets": []}
+    if destination == "edit":
+        if not edited_rule:
+            raise ValueError("edit requires --edited-rule")
+        destination = None
+    if destination is None:
+        return {
+            "instinct_id": instinct_id,
+            "decision": "select-destination",
+            "rule": rule,
+            "why_it_matters": why_it_matters,
+            "available_destinations": _available_promotion_destinations(paths, instinct, project),
+            "applied": False,
+            "targets": [],
+        }
+    targets: list[Path] = []
+    if destination in {"project", "both"}:
+        project_path = _project_agents_path(instinct, project)
+        if not project_path:
+            raise ValueError("one repository could not be resolved; supply --project or choose global")
+        targets.append(project_path)
+    if destination in {"global", "both"}:
+        targets.append(paths.global_agents)
+    if destination in {"run", "skill"}:
+        run_path = _run_destination(paths, instinct)
+        if not run_path:
+            raise ValueError("one exact writable registered skill RUN document could not be resolved")
+        targets.append(run_path)
+        destination = "run"
+    if destination == "ref":
+        ref_path = _voice_ref_destination(paths, instinct)
+        if not ref_path:
+            raise ValueError("one exact writable mapped voice REF document could not be resolved")
+        targets.append(ref_path)
+    if destination == "standard":
+        targets.append(_standard_destination(paths, instinct, standard))
+    if destination not in {"project", "global", "both", "run", "ref", "standard"}:
+        raise ValueError("destination must be project, global, both, run, ref, standard, edit, or no")
+    insertion = f"- {rule}"
+    return {
+        "instinct_id": instinct_id,
+        "decision": destination,
+        "rule": rule,
+        "why_it_matters": why_it_matters,
+        "insertion": insertion,
+        "section": PROMOTED_GUIDANCE_HEADING,
+        "targets": [
+            {"path": str(target), "duplicate": instruction_contains_rule(target, rule)} for target in targets
+        ],
+        "applied": False,
+    }
 
 
 def promotion_preview(
@@ -1449,62 +1693,79 @@ def promotion_preview(
     *,
     destination: str | None = None,
     project: str | Path | None = None,
+    standard: str | Path | None = None,
     edited_rule: str | None = None,
+    edited_rationale: str | None = None,
 ) -> dict[str, Any]:
-    instinct = next((item for item in load_instincts(paths) if item.instinct_id == instinct_id), None)
-    if not instinct:
-        raise ValueError(f"instinct not found: {instinct_id}")
-    if instinct.status != "active" or instinct.confidence < 0.5:
-        raise ValueError("instinct is not eligible for promotion (active and confidence >= 0.5 required)")
-    requested = destination or default_promotion_destination(instinct, project)
-    rule = (edited_rule or instinct.rule).strip()
-    if not rule:
-        raise ValueError("promotion rule cannot be blank")
-    if requested == "no":
-        return {"instinct_id": instinct_id, "decision": "no", "applied": False, "targets": []}
-    if requested == "edit":
-        if not edited_rule:
-            raise ValueError("edit requires --edited-rule")
-        requested = default_promotion_destination(instinct, project)
-    targets: list[Path] = []
-    if requested in {"project", "both"}:
-        project_path = _project_agents_path(instinct, project)
-        if not project_path:
-            raise ValueError("one repository could not be resolved; supply --project or choose global")
-        targets.append(project_path)
-    if requested in {"global", "both"}:
-        targets.append(paths.global_agents)
-    if requested == "skill":
-        skill_path = _skill_destination(paths, instinct)
-        if not skill_path:
-            raise ValueError("one exact writable project/user skill could not be resolved")
-        targets.append(skill_path)
-    if requested not in {"project", "global", "both", "skill"}:
-        raise ValueError("destination must be project, global, both, skill, edit, or no")
-    insertion = f"- {rule}"
-    return {
-        "instinct_id": instinct_id,
-        "decision": requested,
-        "rule": rule,
-        "insertion": insertion,
-        "targets": [
-            {"path": str(target), "duplicate": instruction_contains_rule(target, rule)} for target in targets
-        ],
-        "applied": False,
-    }
+    preview = _build_promotion_preview(
+        paths,
+        instinct_id,
+        destination=destination,
+        project=project,
+        standard=standard,
+        edited_rule=edited_rule,
+        edited_rationale=edited_rationale,
+    )
+    if preview["decision"] not in {"no", "select-destination"}:
+        atomic_write_json(
+            _promotion_preview_path(paths, instinct_id),
+            {"signature": _preview_signature(preview), "previewed_at": iso_now()},
+        )
+        preview["confirmation_required"] = True
+    return preview
 
 
-def _append_guidance(path: Path, insertion: str) -> None:
-    existing = path.read_text(encoding="utf-8") if path.exists() else "# Instructions\n"
-    if "## Learned guidance" not in existing:
-        existing = existing.rstrip() + "\n\n## Learned guidance\n"
-    mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
-    destination = path
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary = destination.with_name(f".{destination.name}.{os.getpid()}.tmp")
-    temporary.write_text(existing.rstrip() + "\n" + insertion + "\n", encoding="utf-8")
+def _render_guidance_update(existing: str, insertion: str) -> str:
+    content = existing.rstrip() or "# Instructions"
+    lines = content.splitlines()
+    try:
+        heading = lines.index(PROMOTED_GUIDANCE_HEADING)
+    except ValueError:
+        return f"{content}\n\n{PROMOTED_GUIDANCE_HEADING}\n\n{insertion}\n"
+    section_end = next(
+        (index for index in range(heading + 1, len(lines)) if lines[index].startswith("## ")),
+        len(lines),
+    )
+    updated = lines[:section_end]
+    if updated and updated[-1] != "":
+        updated.append("")
+    updated.extend([insertion, ""])
+    updated.extend(lines[section_end:])
+    return "\n".join(updated).rstrip() + "\n"
+
+
+def _stage_text(path: Path, text: str, mode: int) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, raw_path = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".pmm-instinct-review", dir=path.parent)
+    temporary = Path(raw_path)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(text)
     temporary.chmod(mode)
-    temporary.replace(destination)
+    return temporary
+
+
+def _write_guidance_updates(updates: list[tuple[Path, str]]) -> None:
+    originals = [
+        (path, path.read_text(encoding="utf-8") if path.exists() else "", path.exists(), path.stat().st_mode & 0o777 if path.exists() else 0o644)
+        for path, _ in updates
+    ]
+    staged: list[tuple[Path, Path]] = []
+    applied: list[tuple[Path, str, bool, int]] = []
+    try:
+        for (path, original, existed, mode), (_, updated) in zip(originals, updates, strict=True):
+            staged.append((path, _stage_text(path, updated, mode)))
+        for (path, original, existed, mode), (_, temporary) in zip(originals, staged, strict=True):
+            os.replace(temporary, path)
+            applied.append((path, original, existed, mode))
+    except OSError:
+        for path, original, existed, mode in reversed(applied):
+            if existed:
+                os.replace(_stage_text(path, original, mode), path)
+            else:
+                path.unlink(missing_ok=True)
+        for _, temporary in staged:
+            temporary.unlink(missing_ok=True)
+        raise
 
 
 def apply_promotion(
@@ -1513,33 +1774,60 @@ def apply_promotion(
     *,
     destination: str | None = None,
     project: str | Path | None = None,
+    standard: str | Path | None = None,
     edited_rule: str | None = None,
+    edited_rationale: str | None = None,
     confirm: bool = False,
 ) -> dict[str, Any]:
     if not confirm:
         raise PermissionError("promotion requires --confirm after preview")
-    preview = promotion_preview(
+    preview = _build_promotion_preview(
         paths,
         instinct_id,
         destination=destination,
         project=project,
+        standard=standard,
         edited_rule=edited_rule,
+        edited_rationale=edited_rationale,
     )
     if preview.get("decision") == "no":
         return preview
-    changed: list[str] = []
+    if preview.get("decision") == "select-destination":
+        raise ValueError("select a promotion destination and preview it before applying")
+    preview_record_path = _promotion_preview_path(paths, instinct_id)
+    try:
+        preview_record = json.loads(preview_record_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        preview_record = {}
+    if preview_record.get("signature") != _preview_signature(preview):
+        raise PermissionError("promotion requires a matching destination preview before --confirm")
+    updates: list[tuple[Path, str]] = []
     for target in preview["targets"]:
         if target["duplicate"]:
             continue
         path = Path(target["path"])
-        _append_guidance(path, str(preview["insertion"]))
-        changed.append(str(path))
+        existing = path.read_text(encoding="utf-8") if path.exists() else ""
+        updates.append((path, _render_guidance_update(existing, str(preview["insertion"]))))
+    _write_guidance_updates(updates)
     instinct = next(item for item in load_instincts(paths) if item.instinct_id == instinct_id)
     metadata, body = _parse_frontmatter(instinct.path.read_text(encoding="utf-8"))
-    metadata["promoted_to"] = sorted(set(instinct.promoted_to) | {item["path"] for item in preview["targets"]})
-    atomic_write_text(instinct.path, _serialize_frontmatter(metadata, body))
+    metadata["promoted_to"] = sorted(
+        set(instinct.promoted_to)
+        | {f"{item['path']} § {PROMOTED_GUIDANCE_HEADING}" for item in preview["targets"]}
+    )
+    evidence = _body_labeled_value(body, "Evidence") or "Clustered from approved session suggestions."
+    updated_body = "\n\n".join(
+        [
+            str(preview["rule"]),
+            f"**Evidence:** {evidence}",
+            f"**Why it matters:** {preview['why_it_matters']}",
+        ]
+    )
+    atomic_write_text(instinct.path, _serialize_frontmatter(metadata, updated_body))
+    preview_record_path.unlink(missing_ok=True)
     preview["applied"] = True
-    preview["changed"] = changed
+    preview["changed"] = [str(path) for path, _ in updates]
+    preview["covered"] = [item["path"] for item in preview["targets"] if item["duplicate"]]
     return preview
 
 
@@ -1651,6 +1939,7 @@ def import_candidates(
             "rule": " ".join(str(item["lesson"]).split()),
             "evidence": " ".join(str(evidence[0]).split())[:160],
             "context": f"Imported from {item['source']} observed {observed}"[:300],
+            "why_it_matters": LEGACY_RATIONALE,
         }
         validate_extractor_payload({"candidates": [candidate]})
         atomic_write_text(suggestions_path, render_suggestions(source_id, [candidate], source_skill or None))

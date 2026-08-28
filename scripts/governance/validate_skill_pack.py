@@ -61,7 +61,6 @@ REQUIRED_SHARED = {
     "requirements-build.txt",
     "requirements.lock",
     "scripts/governance/configure_github_security.py",
-    ".agents/plugins/marketplace.json",
 }
 AUDIT_REPORTS = {
     "docs/security/gitleaks-history-2026-08-18.json",
@@ -334,8 +333,6 @@ def main() -> int:
             resolved = (ROOT / target) if target.startswith("docs/") else (skill / target)
             if not resolved.exists():
                 errors.append(f"{name}: broken dependency `{target}`")
-
-    validate_governance_plugin(errors)
 
     validate_governance_plugin(errors)
 

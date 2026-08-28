@@ -114,8 +114,11 @@ A model can propose a candidate. It cannot establish durability or authorise a c
 - Session-end capture writes an audit and queue record without waiting for model extraction.
 - The worker invokes the configured Codex model exactly in an ephemeral read-only mode. It
   never switches models silently.
-- Each suggestion must match the fixed type/rule/evidence/context schema. Invalid output
-  produces a visible failed job, not a partially trusted suggestion.
+- Each suggestion must match the fixed type/rule/evidence/context/`why_it_matters` schema.
+  `why_it_matters` is one evidence-bound sentence, no more than 300 characters, that
+  explains the operational consequence of ignoring the proposed rule. It may not introduce
+  facts beyond the captured evidence and context. Invalid output produces a visible failed
+  job, not a partially trusted suggestion.
 - Zero candidates is a successful result.
 - Queue transitions are recoverable and single-worker protected. Failed work is bounded and
   manually retryable.
@@ -124,27 +127,48 @@ A model can propose a candidate. It cannot establish durability or authorise a c
 
 - The backlog separates zero-candidate audits, positive clusters, and missing/failed
   suggestion work.
-- Clustering uses normalized type plus rule. Each cluster shows evidence, support, source
-  skills, repositories, first/last seen, matching-instinct state, and default destination.
+- Clustering uses normalized type plus rule. Each cluster retains evidence, context,
+  rationale, support, source skills, repositories, first/last seen, and matching-instinct
+  state.
 - Ranking highlights voice/framing patterns, then workflow, scope, correction, and
   confirmation. Ranking changes review order only; it never makes a decision.
+- Codex presents one candidate card at a time for the candidate-to-instinct decision. The
+  card contains exactly the decision-relevant context: **what happened**, **your feedback**,
+  **proposed future behavior**, **why it matters**, and concise support/source details.
+  It must not show a destination, file path, or routing metadata at this first gate.
 - The only cluster actions are explicit `accept`, `reject`, `edit`, or `match`. An unresolved
-  cluster remains unchanged.
-- An active instinct records its type, support, confidence, source, suggested destination,
-  and actual promotion state.
+  cluster remains unchanged. An `edit` may amend both the proposed behavior and its rationale.
+- A legacy imported candidate without `why_it_matters` receives the visible fallback:
+  "Without this rule, the correction described in the evidence could recur." It is not
+  re-extracted solely to supply the rationale.
+- An active instinct records its type, support, confidence, source skill(s), source
+  repository/repositories, rationale, suggested destination, and actual promotion state.
 
 ### Promotion and cross-skill learning
 
 - Only an active instinct at the configured confidence threshold is eligible for promotion.
-- The plugin previews the exact destination, proposed insertion, and duplicate state before
-  any write. Application requires a second explicit confirmation.
-- A skill-specific rule can target one exact writable user/project skill, never a plugin-cache
-  copy. Repository behavior targets a repository `AGENTS.md`; general behavior can target the
-  user-level `~/.codex/AGENTS.md`.
+- Promotion is an explicit, separate operation for one selected instinct; the owner first
+  chooses a destination class, then receives the resolved target and write preview. Creating
+  an instinct never implies a promotion choice.
+- A single named skill rule may target that skill's registered workflow document. A voice
+  rule may target only an explicitly mapped skill reference document. A pattern supported by
+  three or more source skills may target an owner-selected governed standard. The plugin must
+  leave a missing or unmapped skill target unresolved rather than guess or create a new skill
+  document.
+- Repository behavior can target the nearest repository `AGENTS.md`; general behavior can
+  target the user-level `~/.codex/AGENTS.md`; `both` targets both. A target must be outside
+  the plugin cache and writable by the installing user.
+- After the owner selects a destination class, the plugin previews the exact destination,
+  proposed insertion, and duplicate state before any write. Application requires a second,
+  destination-level explicit confirmation.
 - Cross-repository evidence is a useful routing signal, not permission to generalize. The
   owner chooses the target after reading the preview.
-- If existing guidance already contains the normalized rule, the safe action is to skip a
-  duplicate write.
+- If existing guidance already contains the normalized rule, the plugin offers to record that
+  the instinct is already covered without writing a duplicate.
+- New guidance is appended under the managed heading `## PMM Instinct Review — Promoted
+  Guidance`, creating that section only when it is absent. For multi-target promotion, all
+  writes are staged before any destination is replaced; promotion state is recorded only
+  after every selected write succeeds.
 
 ## Approval gates
 
@@ -154,8 +178,8 @@ A model can propose a candidate. It cannot establish durability or authorise a c
 | G1 — Local trust | May this device capture future work? | Hook review, disabled default, and privacy acknowledgment | Capture remains off until the user explicitly enables it |
 | G2 — Capture boundary | Is stored evidence eligible and minimized? | Eligibility/redaction/size checks and bounded calibration inventory | Prohibited session content is excluded from normalized storage |
 | G3 — Extraction quality | Is a suggestion safe to show for review? | Exact-model receipt, schema validation, retry/failure behavior, and source discovery | Invalid output produces no candidate; zero results are accepted |
-| G4 — Instinct decision | Does this cluster represent a useful durable rule? | Evidence, scope, support, conflicts, and duplicate state | Only the owner's selected action changes the cluster |
-| G5 — Promotion | Should this rule change a destination? | Confidence, target path, insertion text, and duplicate preview | Only a second confirmed destination write occurs |
+| G4 — Instinct decision | Does this cluster represent a useful durable rule? | Candidate card with situation, feedback, proposed behavior, rationale, support, scope, conflicts, and matching-instinct state | Only the owner's selected action changes the cluster; no routing is shown or written at this gate |
+| G5 — Promotion | Should this rule change a destination? | Confidence, owner-selected destination class, resolved target path, insertion text, and duplicate preview | Only a second confirmed destination write occurs; the final file and managed section are recorded |
 | G6 — Operation and rollback | Can the user continue or stop safely? | Status, cleanup, failure visibility, and narrow uninstall behavior | No hidden mutation or unrecoverable owned-state loss |
 
 ## Success measures
@@ -167,7 +191,7 @@ setting numeric targets.
 |---|---|---|
 | Quality | Owner acceptance rate and later rule reversals | Never hide low-quality candidates just to inflate acceptance |
 | Breadth | Clusters with evidence from distinct skills or repositories | Cross-skill evidence never automatically creates global guidance |
-| Improvement | Promotions with a recorded destination and later outcome review | A write without a preview and confirmation is a failure |
+| Improvement | Promotions with a recorded destination, managed section, and later outcome review | A write without a preview and confirmation is a failure |
 | Safety | Unauthorized promotions, native-history mutation, or unredacted normalized evidence | Target is zero incidents |
 | Reliability | Visible terminal failures, retries, and cleanup outcomes | Failed extraction never becomes inferred guidance |
 
