@@ -21,15 +21,19 @@ intelligence capability—including `skills/comp-intel/`, a future comp-intel pl
 controller, its schemas, adapters, examples, tests, or documentation—read these documents
 before editing:
 
-1. `docs/product-requirements/comp-intel/DOC-comp-intel-codex-migration-prd-v1.0.md`
-2. `docs/product-requirements/comp-intel/DOC-comp-intel-codex-implementation-blueprint-v1.0.md`
-3. the relevant smaller implementation PRD in the same directory; and
-4. `docs/product-requirements/comp-intel/DOC-comp-intel-public-acceptance-tests-v1.0.md`
+1. `docs/DOC-comp-intel-source-inventory-v1.0.md`;
+2. `docs/product-requirements/comp-intel/DOC-comp-intel-codex-migration-prd-v1.0.md`;
+3. `docs/product-requirements/comp-intel/DOC-comp-intel-codex-implementation-blueprint-v1.0.md`;
+4. the relevant smaller implementation PRD in the same directory; and
+5. `docs/product-requirements/comp-intel/DOC-comp-intel-public-acceptance-tests-v1.0.md`.
 
 Use `docs/product-requirements/comp-intel/README.md` as the suite index. These are draft
 requirements, not claims that the current lightweight `skills/comp-intel/` package already
 implements the target architecture. Do not activate the runtime comp-intel skill merely
 because a task edits an unrelated skill.
+
+`docs/DOC-comp-intel-product-requirements-v1.0.md` is a superseded alternative retained for
+decision history. It must not override the current suite when product directions conflict.
 
 The binding v1 direction is:
 

@@ -12,6 +12,15 @@ private migration, and easy Codex Desktop installation.
 All documents are `Draft`. Implementation, private cutover, GitHub release, and marketplace
 submission each require the reviews and approvals specified in the suite.
 
+## Relationship to earlier public drafts
+
+The [source inventory](../../DOC-comp-intel-source-inventory-v1.0.md) remains an input to this
+suite. The earlier
+[skill-expansion product draft](../../DOC-comp-intel-product-requirements-v1.0.md) is retained
+as `Superseded` decision history because its narrower direction excluded the subsequently
+chosen public golden examples and thin plugin wrapper. When the documents differ, this
+suite is the current proposal.
+
 ## Reading order
 
 1. [Master product requirements](DOC-comp-intel-codex-migration-prd-v1.0.md) — product

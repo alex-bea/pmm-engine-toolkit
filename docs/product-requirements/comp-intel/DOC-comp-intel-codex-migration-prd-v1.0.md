@@ -2,6 +2,7 @@
 doc_type: DOC
 normative: false
 requires:
+  - ../../DOC-comp-intel-source-inventory-v1.0.md
   - ../../STD-ai-skill-governance-prd-v1.0.md
   - ../../STD-skill-structure-v1.0.md
   - ../../STD-evidence-privacy-v1.0.md
