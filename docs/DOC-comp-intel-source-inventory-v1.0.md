@@ -5,6 +5,7 @@ requires:
   - STD-approval-gates-v1.0.md
   - STD-evidence-privacy-v1.0.md
   - STD-skill-dependencies-v1.0.md
+  - product-requirements/comp-intel/DOC-comp-intel-codex-migration-prd-v1.0.md
 status: Draft
 version: "1.0"
 owner: alex-bea
@@ -30,6 +31,10 @@ already under [`skills/comp-intel/`](../skills/comp-intel/). The private seed is
 
 This is a dependency inventory, not permission to publish any source item. Only artifacts with
 a public target and an approved implementation may enter the reusable package.
+
+The inventory remains a design input to the
+[current Codex product-requirements suite](product-requirements/comp-intel/README.md). Where
+the inventory describes an earlier target decision, the current suite governs the proposal.
 
 ### 1.1 Closure rules
 
@@ -136,7 +141,7 @@ under the configured data root.
 
 | Source | Role / direction | Sensitivity | Current public equivalent | Disposition | Target artifact | Rationale | Requirements | Verification |
 |---|---|---|---|---|---|---|---|---|
-| `docs/workbench/{master requirements, implementation blueprint, acceptance plan, four implementation PRDs}` | Prior private design inputs; analysis only | Mixed private context and obsolete decisions | This inventory and the public PRD | `exclude` | None | Reconcile reusable decisions during authoring, but make the public PRD self-contained and free of inaccessible dependencies. | CI-MIG-002, CI-PRV-001, CI-QA-002 | Public-link and package-content scans |
+| `docs/workbench/{master requirements, implementation blueprint, acceptance plan, four implementation PRDs}` | Prior private design inputs; analysis only | Mixed private context and obsolete decisions | The public Codex product-requirements suite | `rewrite-generic` | `docs/product-requirements/comp-intel/` | Reconcile reusable decisions into self-contained public specifications without making inaccessible private files runtime dependencies. | CI-MIG-002, CI-PRV-001, CI-QA-002 | Public-link and package-content scans |
 
 ## 9. Closure conclusion
 

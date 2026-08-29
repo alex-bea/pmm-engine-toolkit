@@ -86,6 +86,10 @@ The included [skill catalog](docs/SKILL-CATALOG.md), [skill-structure standard](
 and [format templates](docs/templates/) are the public reference set for extending this
 toolkit without copying private operating context.
 
+The [competitive-intelligence product-requirements suite](docs/product-requirements/comp-intel/README.md)
+is a Draft, implementation-oriented example of migrating a mature workflow to Codex while
+keeping the reusable core product-agnostic and private organization mappings adopter-owned.
+
 See the [public export manifest](docs/PUBLIC-EXPORT-MANIFEST.md) for the exact package
 contract, generalization rules, and pre-publication gates.
 

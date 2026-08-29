@@ -11,6 +11,13 @@ support, privacy, licensing, and independent setup.
 It also contains the `skill-governance` Codex plugin, its public marketplace entry, and three
 self-contained governance skills that can be installed independently from GitHub.
 
+The repository also contains a Draft competitive-intelligence product-requirements suite
+under `product-requirements/comp-intel/`. The suite documents a proposed Codex migration,
+implementation architecture, acceptance tests, integrations, private cutover, and public
+distribution path. It is documentation only: it does not change the approved 25-skill
+inventory or claim that the proposed controller, adapters, golden examples, or plugin
+wrapper have shipped.
+
 ## Package contract
 
 Every skill includes:
@@ -48,6 +55,9 @@ import command.
 - Examples use fictional organizations and people and must never be treated as evidence.
 - No private chats, native Codex history, runtime configuration, audits, instincts, or
   normalized transcripts are part of the public export.
+- Competitive-intelligence adopters must map their own internal names, channels, company
+  systems, permissions, existing intelligence data, reviewers, and output destinations.
+  Those mappings are not included or inferred by the public requirements.
 
 ## Verification
 
@@ -69,3 +79,8 @@ creating a public remote, confirm repository name and ownership. Then apply and 
 versioned branch, Actions, CodeQL, dependency, secret-scanning, and vulnerability-reporting
 baseline in
 [`security/GITHUB-SECURITY-CONTROLS.md`](security/GITHUB-SECURITY-CONTROLS.md).
+
+The documentation-only competitive-intelligence candidate has a separate Draft
+[IP and privacy review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-PRDS-2026-08-28.md). Future
+implementation code, connectors, source corpora, golden outputs, and plugin artifacts are
+outside that review and require new evidence before release.

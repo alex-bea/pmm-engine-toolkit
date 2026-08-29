@@ -3,12 +3,13 @@ doc_type: DOC
 normative: false
 requires:
   - DOC-comp-intel-source-inventory-v1.0.md
+  - product-requirements/comp-intel/DOC-comp-intel-codex-migration-prd-v1.0.md
   - STD-approval-gates-v1.0.md
   - STD-evidence-privacy-v1.0.md
   - STD-governance-document-metadata-v1.0.md
   - STD-skill-dependencies-v1.0.md
   - STD-skill-structure-v1.0.md
-status: Draft
+status: Superseded
 version: "1.0"
 owner: alex-bea
 consumers:
@@ -21,27 +22,31 @@ change_control: Pull request review and project-owner approval
 
 # Competitive Intelligence Skill Expansion Product Requirements (v1.0)
 
-This document is a product requirements document governed as a `DOC`, the document class
-supported by the toolkit's current metadata validator. It does not authorize implementation,
-release, source collection, or external publication while its status is `Draft`.
+This earlier product-requirements draft is retained as decision history. It is superseded by
+the [current Codex product-requirements suite](product-requirements/comp-intel/README.md),
+which incorporates later product-owner decisions about public golden examples, integration
+scope, migration, and distribution. Do not implement from this document where it conflicts
+with that suite. Neither document authorizes implementation, source collection, private
+cutover, or external publication without its stated approvals.
 
 ## 0. Document purpose and companion authority map
 
-This PRD is the product decision contract for the public `comp-intel` expansion. It owns the
-problem, users, outcomes, scope, product requirements, quality bar, approval gates and release
-acceptance. Operational procedure and implementation detail belong in separately reviewed
-artifacts so a future implementation cannot quietly redefine the product contract.
+This PRD recorded an earlier product direction for the public `comp-intel` expansion. The
+current suite now owns the proposed outcomes, scope, product requirements, quality bar,
+approval gates, and release acceptance. This document remains useful only as a trace of the
+prior analysis and narrower alternative.
 
 | Artifact | Role | Authority |
 |---|---|---|
-| This PRD | Product outcomes, scope, requirements, gates and acceptance | Advisory while `Draft`; binding only after project-owner approval and activation as `normative: true` |
+| This PRD | Superseded product alternative and decision history | Non-normative; must not override the current suite |
+| `product-requirements/comp-intel/README.md` and linked suite | Current proposed product outcomes, architecture, implementation slices and acceptance | Advisory while `Draft`; binding only after the suite's stated approvals |
 | `DOC-comp-intel-source-inventory-v1.0.md` | Bounded source closure and publication dispositions | Advisory design evidence; remains non-normative |
 | Future `skills/comp-intel/references/RUN-comp-intel-workflow-v1.0.md` | Exact operator stages, stop conditions and approval procedure | Binding execution contract when implemented, reviewed and Active |
 | Future analysis, source-adapter and registry references | Detailed semantic and interface contracts | Authority declared by each governed document's metadata; cannot override this PRD |
 | Future schemas, templates and deterministic controller | Machine-enforced data and transition contracts | Implementation of this PRD; schema versions and tests govern compatibility |
 | Implementation pull requests and test reports | Build history and verification evidence | Evidence only; they do not change product scope without a PRD revision |
 
-## 1. Decision summary
+## 1. Superseded decision summary
 
 Expand the existing public `skills/comp-intel` package in place into a self-contained,
 review-gated competitive-intelligence workflow for interactive Codex use. Keep `comp-intel`
