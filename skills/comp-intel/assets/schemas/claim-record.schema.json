@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/claim-record.schema.json",
+  "title": "Evidence-backed competitive claim",
+  "type": "object",
+  "required": ["schema_version", "claim_id", "market_id", "competitor_id", "claim_type", "text", "evidence_ids", "confidence", "sensitivity", "limitations"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "claim_id": {"type": "string"},
+    "market_id": {"type": "string"},
+    "competitor_id": {"type": "string"},
+    "claim_type": {"enum": ["observation", "attributed_report", "inference", "recommendation", "unknown"]},
+    "text": {"type": "string", "minLength": 1},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "confidence": {"enum": ["high", "medium", "low", "unknown"]},
+    "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

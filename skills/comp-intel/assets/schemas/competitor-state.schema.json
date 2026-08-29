@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/competitor-state.schema.json",
+  "title": "Canonical market and competitor state",
+  "type": "object",
+  "required": ["schema_version", "market_id", "competitors", "trackers", "applied_runs", "history"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "market_id": {"type": "string"},
+    "competitors": {"type": "object"},
+    "trackers": {
+      "type": "object",
+      "required": ["battlecard_gaps", "narrative_changes", "win_loss_signals"]
+    },
+    "applied_runs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "history": {"type": "array"}
+  }
+}

@@ -1,4 +1,4 @@
 interface:
   display_name: "Competitive Intelligence"
-  short_description: "Synthesize sourced competitive signals"
-  default_prompt: "Use $comp-intel to analyze these competitor signals and identify implications."
+  short_description: "Run a sourced, review-gated competitor workflow"
+  default_prompt: "Use $comp-intel to collect competitive evidence for a configured market and stop at evidence review."

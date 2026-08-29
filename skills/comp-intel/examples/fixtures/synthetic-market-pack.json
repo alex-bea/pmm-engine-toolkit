@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "market_id": "synthetic-devtools",
+  "display_name": "Fictional Developer Tools",
+  "version": "1.0.0",
+  "fictional": true,
+  "competitors": [
+    {"competitor_id": "bluepeak", "display_name": "BluePeak", "status": "active", "aliases": []},
+    {"competitor_id": "cedarworks", "display_name": "CedarWorks", "status": "active", "aliases": []},
+    {"competitor_id": "northstar-labs", "display_name": "Northstar Labs", "status": "monitor", "aliases": []}
+  ],
+  "analysis": {
+    "categories": ["product", "positioning", "pricing", "go_to_market", "customer", "talent"],
+    "max_executive_signals": 2
+  },
+  "window_policy": {
+    "date_basis": ["event_at", "published_at"],
+    "missing_date": "retain_with_limitation"
+  },
+  "sources": [
+    {
+      "source_id": "fictional-release-feed",
+      "adapter_id": "synthetic",
+      "required": true,
+      "enabled": true,
+      "config": {"fixture_path": "fixtures/synthetic-source.json"}
+    },
+    {
+      "source_id": "fictional-local-notes",
+      "adapter_id": "local_files",
+      "required": false,
+      "enabled": true,
+      "config": {
+        "allowed_roots": ["local"],
+        "files": ["local/local-source.json"],
+        "max_files": 10,
+        "max_bytes_per_file": 100000
+      }
+    }
+  ],
+  "optional_failure_policy": "continue_with_warning"
+}

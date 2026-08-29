@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/evidence-record.schema.json",
+  "title": "Normalized competitive evidence",
+  "type": "object",
+  "required": ["schema_version", "evidence_id", "market_id", "competitor_id", "source", "content", "classification", "confidence", "category", "sensitivity", "public_safe", "relationships"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "evidence_id": {"type": "string", "pattern": "^ev_[a-f0-9]{20}$"},
+    "market_id": {"type": "string"},
+    "competitor_id": {"type": "string"},
+    "source": {
+      "type": "object",
+      "required": ["adapter_id", "adapter_version", "source_id", "source_type", "canonical_uri", "native_id", "source_version", "observed_at"],
+      "properties": {
+        "adapter_id": {"type": "string"},
+        "adapter_version": {"type": "string"},
+        "source_id": {"type": "string"},
+        "source_type": {"type": "string"},
+        "canonical_uri": {"type": "string"},
+        "native_id": {"type": "string"},
+        "source_version": {"type": "string"},
+        "published_at": {"type": ["string", "null"], "format": "date-time"},
+        "observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "content": {
+      "type": "object",
+      "required": ["summary", "content_digest"],
+      "properties": {
+        "summary": {"type": "string"},
+        "excerpt": {"type": ["string", "null"]},
+        "content_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+      }
+    },
+    "classification": {"enum": ["verified", "reported", "inference", "missing", "rejected"]},
+    "confidence": {"enum": ["high", "medium", "low", "unknown"]},
+    "category": {"enum": ["product", "positioning", "pricing", "go_to_market", "customer", "talent", "operations", "other"]},
+    "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]},
+    "public_safe": {"type": "boolean"},
+    "relationships": {"type": "object"}
+  }
+}

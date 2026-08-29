@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "status": "unmapped",
+  "instructions": "Map every organization-owned field before live use. The synthetic market does not depend on these mappings.",
+  "organization_and_product_names": [],
+  "market_and_competitor_aliases": [],
+  "channels_and_users": [],
+  "repository_organizations_and_projects": [],
+  "company_systems_and_allowed_roots": [],
+  "existing_intelligence_data": [],
+  "stakeholder_lenses": [],
+  "permissions_and_retention": [],
+  "reviewers_and_approvers": [],
+  "output_owners_and_destinations": []
+}

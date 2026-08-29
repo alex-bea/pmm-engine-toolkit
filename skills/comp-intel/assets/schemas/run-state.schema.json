@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/run-state.schema.json",
+  "title": "Competitive intelligence run state",
+  "type": "object",
+  "required": ["schema_version", "run_id", "market_id", "controller_version", "runtime", "window", "stage", "artifacts", "transitions", "warnings", "errors"],
+  "properties": {
+    "schema_version": {"const": 2},
+    "run_id": {"type": "string", "pattern": "^run_[A-Za-z0-9_-]+$"},
+    "market_id": {"type": "string"},
+    "controller_version": {"type": "string"},
+    "runtime": {"type": "object"},
+    "window": {"type": "object"},
+    "stage": {"enum": ["initialized", "collecting", "needs_attention", "evidence_review", "synthesizing", "draft_review", "apply_ready", "complete", "blocked", "failed"]},
+    "artifacts": {"type": "object"},
+    "transitions": {"type": "array"},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "errors": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -21,7 +21,11 @@ The categories are mutually exclusive by each skill's primary job.
 ## Intelligence and analysis
 
 - `people-intelligence` — create consented stakeholder briefs.
-- `comp-intel` — synthesize sourced competitive signals. See the
+- `comp-intel` — collect and normalize offline competitive evidence, stop for digest-bound
+  review, validate an evidence-backed synthesis package, and transactionally apply approved
+  local state changes. The current foundation includes synthetic and local-file adapters;
+  web, GitHub, optional Slack, public golden packs, and the thin plugin wrapper remain later
+  implementation slices. See the
   [current Draft Codex product-requirements suite](product-requirements/comp-intel/README.md)
   for the proposed reusable workflow, migration, integrations, and distribution architecture.
   The [source inventory](DOC-comp-intel-source-inventory-v1.0.md) and
@@ -79,5 +83,5 @@ All three plugin skills are generic. PMM-specific material is isolated to synthe
 Both installable plugins follow the Codex plugin manifest contract. `pmm-instinct-review`
 also declares session hooks; its bundled skill follows the same skill-package contract.
 
-The competitive-intelligence requirements describe a possible future plugin wrapper but do
-not add a third installable plugin to the current catalog.
+The competitive-intelligence foundation remains a standalone skill and does not add a third
+installable plugin to the current catalog. Its requirements describe the later thin wrapper.

@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "lens_id": "replace-consented-lens-id",
+  "sensitivity": "internal",
+  "prioritization_questions": [],
+  "decision_preferences": [],
+  "limitations": [
+    "This lens may order recommendations but cannot change evidence classification or create facts."
+  ]
+}

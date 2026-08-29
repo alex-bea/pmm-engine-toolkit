@@ -1,14 +1,33 @@
-# Competitive briefing: [Scope]
+# Competitive briefing: [Market]
 
-## Executive signal
+Status: Draft — external publication is outside this workflow.
 
-## Evidence
+- Run ID: [Run ID]
+- Window: [Absolute start] through [Absolute end, exclusive]
+- Evidence digest: [Digest]
 
-| Signal | Competitor | Label | Confidence | Source | Date |
-|---|---|---|---|---|---|
+## Executive signals
+
+Limit this section to one or two stakeholder-relevant signals. Label analysis as analysis.
+
+## Coverage
+
+## Limitations
+
+## Material changes
 
 ## Implications
 
-## Counter-evidence
+## Claims and evidence
 
-## Gaps and next checks
+| Claim | Type | Confidence | Evidence IDs |
+|---|---|---|---|
+
+## Open questions
+
+## Proposed next actions
+
+## Proposed state changes
+
+List capability, positioning, pricing, narrative, battlecard-gap, or win/loss changes. These
+remain proposals until a digest-bound apply approval is valid.

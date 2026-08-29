@@ -89,6 +89,20 @@ toolkit without copying private operating context.
 The [competitive-intelligence product-requirements suite](docs/product-requirements/comp-intel/README.md)
 is a Draft, implementation-oriented example of migrating a mature workflow to Codex while
 keeping the reusable core product-agnostic and private organization mappings adopter-owned.
+The repository now includes its first offline foundation: a standard-library controller,
+schemas, synthetic and local-file adapters, deterministic evidence manifests, digest-bound
+review records, and optimistic local-state apply. From a clean checkout:
+
+```bash
+python3 skills/comp-intel/scripts/comp_intel.py init --data-root ./comp-intel-data
+python3 skills/comp-intel/scripts/comp_intel.py doctor --data-root ./comp-intel-data --market synthetic-devtools
+python3 skills/comp-intel/scripts/comp_intel.py collect --data-root ./comp-intel-data --market synthetic-devtools --from 2026-08-18 --to 2026-08-26
+```
+
+Every collection operation intentionally stops at evidence review; later local steps require
+two digest-bound review records. Web, GitHub, optional Slack, public golden examples,
+Desktop synthesis wiring, private migration, and the thin plugin wrapper are still governed
+future work; the catalog must not imply those capabilities already ship.
 
 See the [public export manifest](docs/PUBLIC-EXPORT-MANIFEST.md) for the exact package
 contract, generalization rules, and pre-publication gates.

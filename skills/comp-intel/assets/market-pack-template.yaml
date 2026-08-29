@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "market_id": "replace-market-id",
+  "display_name": "Replace market name",
+  "version": "1.0.0",
+  "competitors": [
+    {
+      "competitor_id": "replace-competitor-id",
+      "display_name": "Replace competitor name",
+      "status": "monitor",
+      "aliases": []
+    }
+  ],
+  "analysis": {
+    "categories": ["product", "positioning", "pricing", "go_to_market", "customer", "talent"],
+    "max_executive_signals": 2
+  },
+  "window_policy": {
+    "date_basis": ["event_at", "published_at"],
+    "missing_date": "retain_with_limitation"
+  },
+  "sources": [],
+  "optional_failure_policy": "continue_with_warning"
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/approval-record.schema.json",
+  "title": "Digest-bound review decision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "approval_id", "run_id", "stage", "decision", "artifact", "approver", "decided_at", "comment"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "approval_id": {"type": "string"},
+    "run_id": {"type": "string"},
+    "stage": {"enum": ["evidence_review", "draft_review"]},
+    "decision": {"enum": ["approved", "rejected"]},
+    "artifact": {
+      "type": "object",
+      "required": ["role", "path", "sha256"],
+      "properties": {
+        "role": {"enum": ["evidence_manifest", "change_set"]},
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+      }
+    },
+    "approver": {
+      "type": "object",
+      "required": ["id", "role"],
+      "properties": {
+        "id": {"type": "string"},
+        "role": {"enum": ["evidence_reviewer", "apply_approver"]}
+      }
+    },
+    "decided_at": {"type": "string", "format": "date-time"},
+    "comment": {"type": "string"}
+  }
+}
