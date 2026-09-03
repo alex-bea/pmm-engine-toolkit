@@ -106,6 +106,36 @@ STANDARD_MIRRORS = {
         "STD-governance-document-metadata-v1.0.md",
     ),
 }
+COMP_INTEL_REQUIRED = (
+    "scripts/comp_intel.py",
+    "scripts/validate_comp_intel.py",
+    "scripts/comp_intel_core/controller.py",
+    "scripts/comp_intel_core/adapters.py",
+    "scripts/comp_intel_core/normalize.py",
+    "assets/config-template.yaml",
+    "assets/mapping-template.yaml",
+    "assets/market-pack-template.yaml",
+    "assets/stakeholder-lens-template.yaml",
+    "assets/positioning-context-template.md",
+    "assets/schemas/config.schema.json",
+    "assets/schemas/market-pack.schema.json",
+    "assets/schemas/evidence-record.schema.json",
+    "assets/schemas/evidence-manifest.schema.json",
+    "assets/schemas/run-state.schema.json",
+    "assets/schemas/approval-record.schema.json",
+    "assets/schemas/claim-record.schema.json",
+    "assets/schemas/change-set.schema.json",
+    "assets/schemas/competitor-state.schema.json",
+    "assets/schemas/synthesis-package.schema.json",
+    "references/DOC-setup-and-mapping.md",
+    "references/DOC-evidence-and-claims.md",
+    "references/DOC-review-and-apply.md",
+    "references/DOC-troubleshooting.md",
+    "examples/fixtures/synthetic-market-pack.json",
+    "examples/fixtures/synthetic-source.json",
+    "examples/fixtures/local-source.json",
+    "examples/fixtures/synthesis-package-template.json",
+)
 
 
 def frontmatter(path: Path) -> dict[str, str]:
@@ -355,6 +385,26 @@ def main() -> int:
             resolved = (ROOT / target) if target.startswith("docs/") else (skill / target)
             if not resolved.exists():
                 errors.append(f"{name}: broken dependency `{target}`")
+
+        if name == "comp-intel":
+            for rel in COMP_INTEL_REQUIRED:
+                resource = skill / rel
+                if not resource.is_file():
+                    errors.append(f"comp-intel: missing {rel}")
+                elif resource.suffix == ".json":
+                    try:
+                        json.loads(resource.read_text(encoding="utf-8"))
+                    except json.JSONDecodeError as exc:
+                        errors.append(f"comp-intel: invalid JSON in {rel}: {exc}")
+            for rel in ("assets/config-template.yaml", "assets/mapping-template.yaml", "assets/market-pack-template.yaml"):
+                try:
+                    json.loads((skill / rel).read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as exc:
+                    errors.append(f"comp-intel: template must be JSON-compatible YAML in {rel}: {exc}")
+            runtime_text = "\n".join(path.read_text(encoding="utf-8") for path in (skill / "scripts").rglob("*.py"))
+            for forbidden in ("import yaml", "from yaml", ".claude", "/Users/", "subprocess"):
+                if forbidden in runtime_text:
+                    errors.append(f"comp-intel runtime contains forbidden dependency/path: {forbidden}")
 
     validate_governance_plugin(errors)
 

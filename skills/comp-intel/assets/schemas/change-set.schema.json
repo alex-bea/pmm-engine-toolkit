@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/change-set.schema.json",
+  "title": "Proposed competitive state changes",
+  "type": "object",
+  "required": ["schema_version", "change_set_id", "run_id", "market_id", "base_registry_digest", "evidence_digest", "changes", "status"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "change_set_id": {"type": "string"},
+    "run_id": {"type": "string"},
+    "market_id": {"type": "string"},
+    "base_registry_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "evidence_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["operation", "claim_ids"],
+        "properties": {
+          "operation": {"enum": ["set_field", "append_tracker_event"]},
+          "claim_ids": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+        }
+      }
+    },
+    "status": {"const": "proposed"}
+  }
+}

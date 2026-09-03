@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/comp-intel/evidence-manifest.schema.json",
+  "title": "Immutable evidence manifest",
+  "type": "object",
+  "required": ["schema_version", "market_id", "window", "evidence_ids", "record_digests", "record_count", "evidence_digest"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "market_id": {"type": "string"},
+    "window": {"type": "object"},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "record_digests": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}},
+    "record_count": {"type": "integer", "minimum": 0},
+    "evidence_digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
+  }
+}

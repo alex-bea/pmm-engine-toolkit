@@ -1,0 +1,21 @@
+{
+  "candidates": [
+    {
+      "native_id": "fictional-analyst-note-1",
+      "source_version": "1",
+      "canonical_uri": "local:local/local-source.json",
+      "title": "Fictional analyst note",
+      "summary": "An unverified fictional note asks whether the BluePeak dashboard changes comparison guidance.",
+      "source_type": "local_file",
+      "competitor_id": "bluepeak",
+      "published_at": "2026-08-24T09:00:00Z",
+      "category": "positioning",
+      "signal_type": "comparison",
+      "classification": "reported",
+      "confidence": "low",
+      "sensitivity": "internal",
+      "public_safe": false,
+      "limitations": ["Adopter-owned local note; not independently verified."]
+    }
+  ]
+}

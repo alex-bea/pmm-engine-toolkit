@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "run_id": "replace-from-run-state",
+  "market_id": "synthetic-devtools",
+  "evidence_digest": "replace-from-evidence-manifest",
+  "claims": [],
+  "report": {
+    "executive_signals": [],
+    "coverage": [],
+    "limitations": [],
+    "material_changes": [],
+    "implications": [],
+    "open_questions": [],
+    "next_actions": [],
+    "selected_claim_ids": [],
+    "public_safe": true
+  },
+  "proposed_change_set": {
+    "schema_version": 1,
+    "change_set_id": "replace-change-set-id",
+    "run_id": "replace-from-run-state",
+    "market_id": "synthetic-devtools",
+    "base_registry_digest": "replace-from-current-registry",
+    "evidence_digest": "replace-from-evidence-manifest",
+    "changes": [],
+    "status": "proposed"
+  }
+}

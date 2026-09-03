@@ -1,11 +1,15 @@
-scope:
-  market: "[Define market]"
-  competitors: []
-sources:
-  - name: official-product-pages
-    type: web
-    allowed: true
-  - name: licensed-research
-    type: local
-    allowed: false
-confidence_threshold: medium
+{
+  "schema_version": 1,
+  "default_market": "synthetic-devtools",
+  "markets": {
+    "synthetic-devtools": "markets/synthetic-devtools.json"
+  },
+  "reviewers": {
+    "evidence_reviewer": ["fictional-evidence-reviewer"],
+    "apply_approver": ["fictional-apply-approver"]
+  },
+  "output_policy": {
+    "public_safe_default": true,
+    "external_publication": false
+  }
+}
