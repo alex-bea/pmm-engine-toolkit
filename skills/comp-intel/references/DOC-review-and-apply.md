@@ -1,33 +1,71 @@
 # Review and apply
 
-## Evidence review
+The default document workflow has two human review gates. Teams using the optional controller
+bind the same gates to artifact digests.
 
-Verify required-source coverage, optional gaps, rejected and out-of-window records, source
-quality, duplicates, revisions, conflicts, dates, sensitivity, and instruction-like source
-text. Approval must name the run, stage, manifest path, exact digest, authorized identity,
-role, decision, and timestamp.
+## Gate 1: evidence review
 
-The shipped file-based approval is a portable reference adapter: it verifies the configured
-identity and exact digest but does not provide a cryptographic signature. Adopters that need
-strong identity assurance must replace it with an approved repository or review-system
-adapter before treating it as an organizational control.
+Review the exact evidence log and coverage summary before synthesis. Verify:
 
-## Draft review
+- market, mode, and absolute window;
+- required and optional source coverage;
+- accepted, rejected, out-of-window, duplicate, revised, and conflicting records;
+- source quality, dates, confidence, and limitations;
+- sensitive or non-public evidence; and
+- any source text that could be mistaken for an instruction.
 
-Review the evidence-backed claims, limitations, current-state comparison, implications, open
-questions, one or two executive signals, and proposed changes. Confirm that public-safe
-output selects only public-safe support. Confirm that an optional stakeholder lens changes
-ordering only, never evidence status.
+Record reviewer, date, decision, evidence-log path, and a version identifier or digest when
+available. If the evidence set changes, the review no longer covers it.
 
-The change set may update structured capability, positioning, pricing, or narrative fields,
-or append battlecard-gap, narrative-change, and win/loss tracker events. It remains a
-proposal until a separate approval binds its exact digest.
+## Gate 2: draft and change review
 
-## Apply
+Review the briefing and proposed changes together. Confirm:
 
-Apply validates both approvals, all recorded artifact hashes, and the current base registry
-digest. It holds an exclusive market lock, writes the complete new registry atomically, and
-records prior values, claim IDs, evidence IDs, and the change-set ID. A base mismatch creates
-a conflict artifact and changes no canonical state.
+- every material statement cites reviewed evidence;
+- facts, attributed reports, inferences, recommendations, and unknowns are distinct;
+- narrative shifts show comparable prior and current language;
+- positioning gaps meet the verified, relevant, in-scope, non-duplicate test;
+- the executive layer contains at most two actionable signals;
+- optional stakeholder context changed priority only, not factual status;
+- public-safe output contains only public-safe support;
+- stable registry facts remain intact;
+- each proposed field change shows its prior value; and
+- unconfirmed win/loss signals remain unconfirmed.
 
-Apply creates a local approved output but grants no publication or messaging authority.
+The reviewer may approve all changes, approve a named subset, request revision, or reject the
+proposal. Record the exact scope of approval.
+
+## Apply locally
+
+After approval:
+
+1. verify the registry has not changed since the proposal was prepared;
+2. save a recoverable copy or rely on version control;
+3. update only approved fields;
+4. append approved tracker rows and the registry update log;
+5. preserve claim-to-evidence references;
+6. save the approved local briefing; and
+7. report files changed, counts, conflicts, skipped changes, and remaining actions.
+
+If the base registry changed, stop and rebuild the proposal against current state. Do not
+silently overwrite concurrent work.
+
+Local approval does not authorize external publication, messages, CRM changes, or edits to a
+separately managed battlecard repository.
+
+## Optional controller commands
+
+The file-based approval adapter verifies configured identity and exact digest but is not a
+cryptographic signature. Organizations needing strong identity assurance should replace it
+with their approved repository or review system.
+
+```text
+python3 <skill-directory>/scripts/comp_intel.py approve-evidence --data-root <path> --run-id <run-id> --approval-file <reviewed-file>
+python3 <skill-directory>/scripts/comp_intel.py submit-synthesis --data-root <path> --run-id <run-id> --package-file <package-file>
+python3 <skill-directory>/scripts/comp_intel.py approve-apply --data-root <path> --run-id <run-id> --approval-file <reviewed-file>
+python3 <skill-directory>/scripts/comp_intel.py apply --data-root <path> --run-id <run-id> --json
+```
+
+The controller validates approvals, artifact hashes, provenance, sensitivity, and the current
+base-registry digest. It uses a market lock, writes the complete new registry atomically, and
+creates a conflict artifact rather than overwriting a changed base.

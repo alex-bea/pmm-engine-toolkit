@@ -3,22 +3,45 @@
   "market_id": "replace-market-id",
   "display_name": "Replace market name",
   "version": "1.0.0",
+  "market_boundary": "Describe the buyer, job, use case, and explicit exclusions.",
+  "adopter_product": "Replace with the product or organization being positioned",
   "competitors": [
     {
       "competitor_id": "replace-competitor-id",
       "display_name": "Replace competitor name",
-      "status": "monitor",
-      "aliases": []
+      "status": "active",
+      "aliases": ["replace-alias"],
+      "ambiguity_filters": ["replace-required-context-term"]
     }
   ],
   "analysis": {
     "categories": ["product", "positioning", "pricing", "go_to_market", "customer", "talent"],
-    "max_executive_signals": 2
+    "max_executive_signals": 2,
+    "business_priorities": ["replace-priority"]
   },
   "window_policy": {
     "date_basis": ["event_at", "published_at"],
-    "missing_date": "retain_with_limitation"
+    "missing_date": "retain_with_limitation",
+    "baseline_days": "replace-with-adopter-chosen-number",
+    "standard_days": "replace-with-adopter-chosen-number"
   },
-  "sources": [],
+  "status_policy": {
+    "active": "replace-with-date-or-event-rule",
+    "monitor": "replace-with-date-or-event-rule",
+    "watchlist": "replace-with-trigger-rule",
+    "dormant": "replace-with-date-or-event-rule"
+  },
+  "sources": [
+    {
+      "source_id": "replace-source-id",
+      "adapter_id": "local_files",
+      "required": false,
+      "enabled": false,
+      "config": {
+        "allowed_root": "replace-with-explicit-adopter-owned-root",
+        "files": []
+      }
+    }
+  ],
   "optional_failure_policy": "continue_with_warning"
 }

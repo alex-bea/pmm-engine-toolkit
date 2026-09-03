@@ -1,27 +1,26 @@
-# Competitive Intelligence for Codex — Draft Product Requirements
+# Competitive Intelligence for Codex — Archived Design Exploration
 
-This directory is the public, product-agnostic specification for moving a mature
-competitive-intelligence workflow from Claude to Codex. It is a design and implementation
-planning suite, not a statement that the target product is already available.
+This directory preserves an earlier proposal for turning a mature competitive-intelligence
+workflow into a larger Codex-specific product. The project later chose a smaller direction:
+publish the proven analyst framework, fillable structures, and fictional example so users can
+run them with their own agent and source access.
 
-The current `skills/comp-intel/` package remains a lightweight, evidence-bound public skill.
-The documents here define the larger target: deterministic workflow control, reusable data
-contracts, review-gated state changes, adapter-based collection, public golden examples,
-private migration, and easy Codex Desktop installation.
+The shipped [`skills/comp-intel/`](../../../skills/comp-intel/README.md) package is the current
+product direction and source of truth. The documents here are non-binding design history. Do
+not use their Codex-only, bundled-adapter, real-company golden-pack, private-cutover, or plugin
+requirements to expand the package unless a later product decision explicitly revives them.
 
-All documents are `Draft`. Implementation, private cutover, GitHub release, and marketplace
-submission each require the reviews and approvals specified in the suite.
+All documents remain `Draft` and `normative: false`. They do not authorize implementation,
+private cutover, release, or marketplace submission.
 
-## Relationship to earlier public drafts
+## Relationship to other design history
 
-The [source inventory](../../DOC-comp-intel-source-inventory-v1.0.md) remains an input to this
-suite. The earlier
-[skill-expansion product draft](../../DOC-comp-intel-product-requirements-v1.0.md) is retained
-as `Superseded` decision history because its narrower direction excluded the subsequently
-chosen public golden examples and thin plugin wrapper. When the documents differ, this
-suite is the current proposal.
+The [source inventory](../../DOC-comp-intel-source-inventory-v1.0.md), the
+[skill-expansion product draft](../../DOC-comp-intel-product-requirements-v1.0.md), and this
+suite record successive design explorations. None overrides the shipped package. Use them only
+to understand prior tradeoffs or recover a deliberately revived requirement.
 
-## Reading order
+## Reading order for the archive
 
 1. [Master product requirements](DOC-comp-intel-codex-migration-prd-v1.0.md) — product
    decisions, current-state analysis, target behavior, boundaries, risks, and success
@@ -38,16 +37,11 @@ suite is the current proposal.
    release criteria spanning static checks, adapters, offline workflows, Desktop behavior,
    security, portability, migration, and publication.
 
-## Binding product direction
+## Historical proposed direction
 
-- The core is reusable and product-agnostic.
-- Polygon is the public golden example, delivered in the order Chain, Payments, then
-  Wallets, using approved public evidence only.
-- A fully synthetic pack supports offline, deterministic validation.
-- Version 1 targets Codex Desktop and preserves a clean future headless seam.
-- Base integrations are web, GitHub, synthetic fixtures, and local files. Slack is optional.
-- The GitHub repository is canonical. A thin plugin wrapper may make installation and
-  integration mapping easier; it is not the architectural source of truth.
+The linked documents proposed a reusable core, Codex Desktop target, bundled adapters,
+real-company public examples, private migration, and a thin plugin wrapper. These decisions are
+preserved for traceability but are not current requirements.
 
 ## Public-adopter mapping requirement
 
@@ -67,7 +61,6 @@ this repository.
 
 ## Contributor rule
 
-Root [`AGENTS.md`](../../../AGENTS.md) instructs Codex to load this suite whenever work
-touches the competitive-intelligence skill, controller, integrations, migration, tests, or
-distribution. The runtime skill remains scoped to competitive-intelligence requests and
-must not activate for unrelated skill authoring.
+Root [`AGENTS.md`](../../../AGENTS.md) points maintainers to the shipped package and treats this
+suite as design history. The runtime skill remains scoped to competitive-intelligence requests
+and must not activate for unrelated skill authoring.

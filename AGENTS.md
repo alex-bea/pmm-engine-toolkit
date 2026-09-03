@@ -14,35 +14,29 @@ These instructions apply to the entire PMM Engine Toolkit repository.
 - Keep externally shareable product requirements in `Draft` until their stated review and
   approval gates are complete.
 
-## Competitive-intelligence build routing
+## Competitive-intelligence maintainer direction
 
-For any task that builds, changes, tests, reviews, packages, or distributes the competitive-
-intelligence capability—including `skills/comp-intel/`, a future comp-intel plugin or
-controller, its schemas, adapters, examples, tests, or documentation—read these documents
-before editing:
+For changes to `skills/comp-intel/`, read its `README.md`, `SKILL.md`,
+`references/RUN-workflow.md`, and the specific template or reference being changed. The
+source inventory and product-requirements files under `docs/` are design history; they are not
+runtime dependencies and do not override the shipped package.
 
-1. `docs/DOC-comp-intel-source-inventory-v1.0.md`;
-2. `docs/product-requirements/comp-intel/DOC-comp-intel-codex-migration-prd-v1.0.md`;
-3. `docs/product-requirements/comp-intel/DOC-comp-intel-codex-implementation-blueprint-v1.0.md`;
-4. the relevant smaller implementation PRD in the same directory; and
-5. `docs/product-requirements/comp-intel/DOC-comp-intel-public-acceptance-tests-v1.0.md`.
+The binding direction is:
 
-Use `docs/product-requirements/comp-intel/README.md` as the suite index. These are draft
-requirements, not claims that the current lightweight `skills/comp-intel/` package already
-implements the target architecture. Do not activate the runtime comp-intel skill merely
-because a task edits an unrelated skill.
+- preserve the practical analyst method: source mapping, disciplined collection, evidence
+  review, competitor snapshots, narrative shifts, positioning gaps, executive prioritization,
+  and reviewed local updates;
+- keep the method agent-neutral and usable from Claude Code, Codex, or another compatible
+  local agent;
+- ship blank reusable templates plus complete fictional examples, never private operating
+  context or organization-specific defaults;
+- let adopters use whatever authorized source access their environment provides rather than
+  requiring bundled web, repository, or communication adapters; and
+- keep the deterministic controller and schemas as optional advanced support, not the default
+  user experience or a prerequisite for the analyst workflow.
 
-`docs/DOC-comp-intel-product-requirements-v1.0.md` is a superseded alternative retained for
-decision history. It must not override the current suite when product directions conflict.
-
-The binding v1 direction is:
-
-- product-agnostic reusable core;
-- Codex Desktop first, with an explicit seam for later headless operation;
-- synthetic/local files, web, and GitHub in the base integration scope;
-- Slack as an optional, separately mapped integration;
-- public Polygon golden examples in the order Chain, Payments, then Wallets; and
-- a skill-first GitHub source of truth with a thin plugin installation wrapper.
+Do not add a plugin, hosted service, real-company golden pack, or private migration layer unless
+a later product decision explicitly requests it.
 
 Every adopter-facing implementation or setup flow must require users to map their own
 internal names, channels, company systems, permissions, existing intelligence data,
@@ -51,6 +45,6 @@ reviewers, and output destinations. Never infer or silently supply these mapping
 ## Validation
 
 Before submitting a competitive-intelligence change, run the repository skill validator
-and test suite, then perform the privacy, provenance, dependency, and acceptance checks
-applicable to the changed slice. Publication or marketplace submission requires separate
-approval of the exact candidate artifact.
+and test suite, then perform the privacy, provenance, link, and package-closure checks
+applicable to the changed slice. Publication requires separate approval of the exact candidate
+artifact.

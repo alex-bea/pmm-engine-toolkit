@@ -86,12 +86,16 @@ The included [skill catalog](docs/SKILL-CATALOG.md), [skill-structure standard](
 and [format templates](docs/templates/) are the public reference set for extending this
 toolkit without copying private operating context.
 
-The [competitive-intelligence product-requirements suite](docs/product-requirements/comp-intel/README.md)
-is a Draft, implementation-oriented example of migrating a mature workflow to Codex while
-keeping the reusable core product-agnostic and private organization mappings adopter-owned.
-The repository now includes its first offline foundation: a standard-library controller,
-schemas, synthetic and local-file adapters, deterministic evidence manifests, digest-bound
-review records, and optimistic local-state apply. From a clean checkout:
+The [competitive-intelligence starter kit](skills/comp-intel/README.md) publishes the reusable
+framework of a mature working practice: source mapping, collection logic, evidence standards,
+competitor registries, positioning and narrative analysis, gap trackers, executive briefing,
+review gates, and a complete fictional example. Copy the skill into Claude Code, Codex, or
+another compatible agent environment, fill the adopter-owned templates, and use the guided
+workflow with whatever source access you authorize.
+
+The document-led workflow is the default. An optional standard-library controller adds
+synthetic/local-file adapters, deterministic evidence manifests, digest-bound review records,
+and guarded local-state apply for teams that need machine-enforced controls:
 
 ```bash
 python3 skills/comp-intel/scripts/comp_intel.py init --data-root ./comp-intel-data
@@ -99,10 +103,13 @@ python3 skills/comp-intel/scripts/comp_intel.py doctor --data-root ./comp-intel-
 python3 skills/comp-intel/scripts/comp_intel.py collect --data-root ./comp-intel-data --market synthetic-devtools --from 2026-08-18 --to 2026-08-26
 ```
 
-Every collection operation intentionally stops at evidence review; later local steps require
-two digest-bound review records. Web, GitHub, optional Slack, public golden examples,
-Desktop synthesis wiring, private migration, and the thin plugin wrapper are still governed
-future work; the catalog must not imply those capabilities already ship.
+Every controller collection intentionally stops at evidence review; later controller steps
+require two digest-bound review records. The guided workflow does not require bundled web,
+repository, or communication adapters: adopters use the source tools already available in
+their agent environment and record the resulting evidence using the shipped contract.
+
+The earlier [Codex migration requirements](docs/product-requirements/comp-intel/README.md) are
+retained as non-binding design history.
 
 See the [public export manifest](docs/PUBLIC-EXPORT-MANIFEST.md) for the exact package
 contract, generalization rules, and pre-publication gates.
