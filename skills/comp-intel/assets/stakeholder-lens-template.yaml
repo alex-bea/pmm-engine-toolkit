@@ -1,10 +1,26 @@
 {
   "schema_version": 1,
   "lens_id": "replace-consented-lens-id",
+  "status": "draft",
+  "owner_role": "replace-role-or-consented-owner",
   "sensitivity": "internal",
-  "prioritization_questions": [],
-  "decision_preferences": [],
+  "priorities": [
+    {
+      "priority": "replace-decision-priority",
+      "what_to_flag": [
+        "replace-specific-competitive-signal"
+      ],
+      "decision_or_action": "replace-decision-this-could-change"
+    }
+  ],
+  "executive_style": {
+    "max_signals": 2,
+    "lead_with_conclusion": true,
+    "max_sentences_per_signal": 4,
+    "one_action_or_ask_per_signal": true
+  },
   "limitations": [
-    "This lens may order recommendations but cannot change evidence classification or create facts."
+    "This lens may rank and frame reviewed signals but cannot change evidence status, confidence, or sensitivity.",
+    "Do not infer personal preferences; use only consented or role-based priorities supplied by the adopter."
   ]
 }

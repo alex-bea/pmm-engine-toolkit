@@ -11,12 +11,11 @@ support, privacy, licensing, and independent setup.
 It also contains the `skill-governance` Codex plugin, its public marketplace entry, and three
 self-contained governance skills that can be installed independently from GitHub.
 
-The repository also contains a Draft competitive-intelligence product-requirements suite
-under `product-requirements/comp-intel/`. The suite documents a proposed Codex migration,
-implementation architecture, acceptance tests, integrations, private cutover, and public
-distribution path. It is documentation only: it does not change the approved 25-skill
-inventory or claim that the proposed controller, adapters, golden examples, or plugin
-wrapper have shipped.
+The repository also contains a complete, agent-neutral competitive-intelligence starter kit
+under `skills/comp-intel/`: a working analyst method, fillable source/registry/positioning/
+tracker templates, review gates, a complete fictional example, and an optional deterministic
+controller. An earlier Draft Codex migration suite under `product-requirements/comp-intel/` is
+retained as non-binding design history.
 
 ## Package contract
 
@@ -56,8 +55,9 @@ import command.
 - No private chats, native Codex history, runtime configuration, audits, instincts, or
   normalized transcripts are part of the public export.
 - Competitive-intelligence adopters must map their own internal names, channels, company
-  systems, permissions, existing intelligence data, reviewers, and output destinations.
-  Those mappings are not included or inferred by the public requirements.
+  systems, permissions, existing intelligence data, reviewers, and output destinations. The
+  package provides blank templates and a fully fictional worked example; no live mapping is
+  included or inferred.
 
 ## Verification
 
@@ -80,7 +80,9 @@ versioned branch, Actions, CodeQL, dependency, secret-scanning, and vulnerabilit
 baseline in
 [`security/GITHUB-SECURITY-CONTROLS.md`](security/GITHUB-SECURITY-CONTROLS.md).
 
-The documentation-only competitive-intelligence candidate has a separate Draft
-[IP and privacy review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-PRDS-2026-08-28.md). Future
-implementation code, connectors, source corpora, golden outputs, and plugin artifacts are
-outside that review and require new evidence before release.
+The current starter-kit candidate has a Draft
+[IP and privacy review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-FRAMEWORK-2026-09-03.md). The
+[earlier requirements-suite review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-PRDS-2026-08-28.md)
+remains design history. The public starter kit contains only project-authored generic
+structures and fictional examples. Live source corpora, adopter mappings, and private outputs
+remain outside the public boundary.

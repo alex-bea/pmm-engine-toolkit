@@ -21,16 +21,15 @@ The categories are mutually exclusive by each skill's primary job.
 ## Intelligence and analysis
 
 - `people-intelligence` — create consented stakeholder briefs.
-- `comp-intel` — collect and normalize offline competitive evidence, stop for digest-bound
-  review, validate an evidence-backed synthesis package, and transactionally apply approved
-  local state changes. The current foundation includes synthetic and local-file adapters;
-  web, GitHub, optional Slack, public golden packs, and the thin plugin wrapper remain later
-  implementation slices. See the
-  [current Draft Codex product-requirements suite](product-requirements/comp-intel/README.md)
-  for the proposed reusable workflow, migration, integrations, and distribution architecture.
-  The [source inventory](DOC-comp-intel-source-inventory-v1.0.md) and
-  [superseded expansion draft](DOC-comp-intel-product-requirements-v1.0.md) preserve the
-  preceding analysis and decision history.
+- `comp-intel` — run a reusable competitive-intelligence practice: configure a market and
+  sources, collect attributable signals, review evidence, analyze competitor and narrative
+  changes, find positioning gaps, draft an executive brief, and propose reviewed registry and
+  tracker updates. The [starter-kit guide](../skills/comp-intel/README.md) lists every working
+  document and includes a complete fictional example. It is agent-neutral and works with
+  adopter-provided source access; the bundled controller is optional advanced support. The
+  [source inventory](DOC-comp-intel-source-inventory-v1.0.md) and
+  [earlier Codex migration suite](product-requirements/comp-intel/README.md) remain non-binding
+  design history.
 - `pmm-weekly-impact` — connect shipped work to outcomes and next bets.
 
 ## Marketing and sales drafting or review

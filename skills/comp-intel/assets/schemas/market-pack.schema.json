@@ -18,8 +18,9 @@
         "properties": {
           "competitor_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]+$"},
           "display_name": {"type": "string"},
-          "status": {"enum": ["active", "monitor", "dormant"]},
-          "aliases": {"type": "array", "items": {"type": "string"}}
+          "status": {"enum": ["active", "monitor", "watchlist", "dormant"]},
+          "aliases": {"type": "array", "items": {"type": "string"}},
+          "ambiguity_filters": {"type": "array", "items": {"type": "string"}}
         }
       }
     },
