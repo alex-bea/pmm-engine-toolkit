@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACK_VERSION = "1.0.0"
+PACK_VERSION = "1.1.0"
 PACK_SOURCE = "https://github.com/alex-bea/pmm-engine-toolkit"
 SKILL_DIR = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = Path(".agents/governance/manifest.yaml")
@@ -26,9 +26,19 @@ STANDARD_NAMES = (
     "STD-approval-gates-v1.0.md",
     "STD-evidence-privacy-v1.0.md",
     "STD-governance-document-metadata-v1.0.md",
+    "STD-runtime-enforcement-v1.0.md",
     "STD-skill-dependencies-v1.0.md",
     "STD-skill-primitives-v1.0.md",
     "STD-skill-structure-v1.0.md",
+)
+
+ENFORCEMENT_SCRIPTS = (
+    "approval_verifier.py",
+    "claude_pretooluse.py",
+    "codex_pretooluse.py",
+    "governance_control.py",
+    "governance_policy.py",
+    "publisher_guard.py",
 )
 
 
@@ -75,7 +85,7 @@ def json_yaml(data: Any) -> str:
     return json.dumps(data, indent=2, sort_keys=False) + "\n"
 
 
-def source_entries(*, with_ci: bool) -> dict[Path, bytes]:
+def source_entries(*, with_ci: bool, with_enforcement: bool = False) -> dict[Path, bytes]:
     entries: dict[Path, bytes] = {}
     for name in STANDARD_NAMES:
         source = SKILL_DIR / "references" / name
@@ -88,10 +98,28 @@ def source_entries(*, with_ci: bool) -> dict[Path, bytes]:
             SKILL_DIR / "assets/schemas/governance-manifest.schema.json",
         Path(".agents/governance/schemas/skill-registry.schema.json"):
             SKILL_DIR / "assets/schemas/skill-registry.schema.json",
+        Path(".agents/governance/schemas/source-policy.schema.json"):
+            SKILL_DIR / "assets/schemas/source-policy.schema.json",
+        Path(".agents/governance/schemas/workflow-run.schema.json"):
+            SKILL_DIR / "assets/schemas/workflow-run.schema.json",
+        Path(".agents/governance/schemas/policy-decision.schema.json"):
+            SKILL_DIR / "assets/schemas/policy-decision.schema.json",
+        Path(".agents/governance/schemas/publisher-adapter.schema.json"):
+            SKILL_DIR / "assets/schemas/publisher-adapter.schema.json",
         Path(".agents/governance/templates/SKILL.md"):
             SKILL_DIR / "assets/templates/SKILL.md",
         Path(".agents/governance/templates/openai.yaml"):
             SKILL_DIR / "assets/templates/openai.yaml",
+        Path(".agents/governance/templates/AGENTS.md"):
+            SKILL_DIR / "assets/templates/AGENTS.md",
+        Path(".agents/governance/templates/claude-settings.json"):
+            SKILL_DIR / "assets/templates/claude-settings.json",
+        Path(".agents/governance/templates/source-policy.yaml"):
+            SKILL_DIR / "assets/templates/source-policy.yaml",
+        Path(".agents/governance/templates/workflow-run.yaml"):
+            SKILL_DIR / "assets/templates/workflow-run.yaml",
+        Path(".agents/governance/templates/publisher-adapter.yaml"):
+            SKILL_DIR / "assets/templates/publisher-adapter.yaml",
         Path(".agents/governance/bin/govern_skills.py"):
             Path(__file__).resolve(),
     }
@@ -99,6 +127,9 @@ def source_entries(*, with_ci: bool) -> dict[Path, bytes]:
         copies[Path(".github/workflows/skill-governance.yml")] = (
             SKILL_DIR / "assets/templates/skill-governance-ci.yml"
         )
+    if with_enforcement:
+        for name in ENFORCEMENT_SCRIPTS:
+            copies[Path(".agents/governance/bin") / name] = SKILL_DIR / "scripts" / name
     for target, source in copies.items():
         if not source.is_file():
             raise FileNotFoundError(f"governance pack source is missing: {source}")
@@ -110,7 +141,9 @@ def registry_seed() -> bytes:
     return json_yaml({"version": "1.0", "skills": []}).encode()
 
 
-def manifest_content(repo: Path, entries: dict[Path, bytes]) -> bytes:
+def manifest_content(
+    repo: Path, entries: dict[Path, bytes], *, with_enforcement: bool
+) -> bytes:
     path = repo / MANIFEST_PATH
     if path.exists():
         try:
@@ -121,7 +154,7 @@ def manifest_content(repo: Path, entries: dict[Path, bytes]) -> bytes:
         manifest = None
     if not isinstance(manifest, dict):
         manifest = {
-            "schema_version": "1.0",
+            "schema_version": "1.1",
             "source": PACK_SOURCE,
             "components": {},
         }
@@ -132,8 +165,24 @@ def manifest_content(repo: Path, entries: dict[Path, bytes]) -> bytes:
     components["skills"] = {
         "version": PACK_VERSION,
         "files": {path.as_posix(): sha256(data) for path, data in sorted(entries.items())},
+        "enforcement_classes": ["instruction-only", "static-validator"],
+        "activation": "installed",
     }
-    manifest["schema_version"] = "1.0"
+    if with_enforcement:
+        enforcement_paths = {
+            path: data for path, data in entries.items()
+            if path.name in ENFORCEMENT_SCRIPTS
+        }
+        components["enforcement"] = {
+            "version": PACK_VERSION,
+            "files": {
+                path.as_posix(): sha256(data)
+                for path, data in sorted(enforcement_paths.items())
+            },
+            "enforcement_classes": ["runtime-guard"],
+            "activation": "installed-inactive",
+        }
+    manifest["schema_version"] = "1.1"
     manifest["source"] = PACK_SOURCE
     return json_yaml(manifest).encode()
 
@@ -152,12 +201,49 @@ def ci_is_managed(repo: Path) -> bool:
     return isinstance(files, dict) and ".github/workflows/skill-governance.yml" in files
 
 
-def planned_writes(repo: Path, *, with_ci: bool) -> dict[Path, bytes]:
-    managed = source_entries(with_ci=with_ci or ci_is_managed(repo))
+def enforcement_is_managed(repo: Path) -> bool:
+    path = repo / MANIFEST_PATH
+    if not path.is_file():
+        return False
+    try:
+        manifest = read_structured(path)
+    except ValueError:
+        return False
+    return isinstance(manifest, dict) and isinstance(
+        manifest.get("components", {}).get("enforcement"), dict
+    )
+
+
+def enforcement_seed() -> bytes:
+    return json_yaml({
+        "schema_version": 1,
+        "enabled": False,
+        "mode": "enforce",
+        "execution_mode": "interactive",
+        "run_state_globs": ["state/runs/*.yaml", "state/runs/**/*.yaml"],
+        "protected_path_globs": [
+            ".agents/governance/**", ".claude/settings*.json", ".codex/**",
+        ],
+        "publisher_tool_globs": ["mcp__*publish*", "*publisher*", "*send_message*"],
+    }).encode()
+
+
+def planned_writes(
+    repo: Path, *, with_ci: bool, with_enforcement: bool
+) -> dict[Path, bytes]:
+    install_enforcement = with_enforcement or enforcement_is_managed(repo)
+    managed = source_entries(
+        with_ci=with_ci or ci_is_managed(repo),
+        with_enforcement=install_enforcement,
+    )
     entries = dict(managed)
     if not (repo / REGISTRY_PATH).exists():
         entries[REGISTRY_PATH] = registry_seed()
-    entries[MANIFEST_PATH] = manifest_content(repo, managed)
+    if with_enforcement and not (repo / ".agents/governance/enforcement.yaml").exists():
+        entries[Path(".agents/governance/enforcement.yaml")] = enforcement_seed()
+    entries[MANIFEST_PATH] = manifest_content(
+        repo, managed, with_enforcement=install_enforcement
+    )
     return entries
 
 
@@ -353,17 +439,45 @@ def audit(repo: Path) -> list[Finding]:
     return findings
 
 
-def render_findings(findings: list[Finding], output_format: str) -> None:
+def enforcement_status(repo: Path) -> dict[str, str]:
+    policy_path = repo / ".agents/governance/enforcement.yaml"
+    enabled = False
+    if policy_path.is_file():
+        try:
+            policy = read_structured(policy_path)
+            enabled = isinstance(policy, dict) and policy.get("enabled") is True
+        except ValueError:
+            enabled = False
+    return {
+        "instruction-only": "active",
+        "static-validator": "active" if (repo / MANIFEST_PATH).is_file() else "inactive",
+        "runtime-guard": "policy-enabled-hook-unverified" if enabled else "inactive",
+        "capability-boundary": "external-unverified",
+        "external-authority": "external-unverified",
+    }
+
+
+def render_findings(findings: list[Finding], output_format: str, repo: Path) -> None:
+    status = enforcement_status(repo)
     if output_format == "json":
-        print(json.dumps({"findings": [asdict(item) for item in findings]}, indent=2))
+        print(json.dumps({
+            "findings": [asdict(item) for item in findings],
+            "enforcement": status,
+        }, indent=2))
         return
     if not findings:
         print("Skill governance audit passed with no findings.")
+        print("Enforcement status:")
+        for name, value in status.items():
+            print(f"- {name}: {value}")
         return
     for finding in findings:
         suffix = " [fixable]" if finding.fixable else ""
         print(f"{finding.severity.upper()} {finding.id} {finding.path}: {finding.message}{suffix}")
     print(f"\nAdvisory findings: {len(findings)}")
+    print("Enforcement status:")
+    for name, value in status.items():
+        print(f"- {name}: {value}")
 
 
 def generated_openai(name: str) -> bytes:
@@ -390,7 +504,10 @@ def fix_entries(repo: Path, selected: str | None) -> tuple[dict[Path, bytes], se
     generated_updates: set[Path] = set()
 
     restore_pack = bool(ids & {"GOV001", "GOV002"})
-    managed_sources = source_entries(with_ci=ci_is_managed(repo)) if restore_pack else {}
+    install_enforcement = enforcement_is_managed(repo)
+    managed_sources = source_entries(
+        with_ci=ci_is_managed(repo), with_enforcement=install_enforcement
+    ) if restore_pack else {}
     if restore_pack:
         for rel, data in managed_sources.items():
             if not (repo / rel).exists():
@@ -423,7 +540,9 @@ def fix_entries(repo: Path, selected: str | None) -> tuple[dict[Path, bytes], se
         generated_updates.add(REGISTRY_PATH)
 
     if restore_pack:
-        entries[MANIFEST_PATH] = manifest_content(repo, managed_sources)
+        entries[MANIFEST_PATH] = manifest_content(
+            repo, managed_sources, with_enforcement=install_enforcement
+        )
         generated_updates.add(MANIFEST_PATH)
     return entries, generated_updates
 
@@ -456,6 +575,10 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("--apply", action="store_true", help="Write the displayed plan")
     init_parser.add_argument("--dry-run", action="store_true", help="Explicitly select the default no-write mode")
     init_parser.add_argument("--with-ci", action="store_true", help="Install blocking CI as an explicit opt-in")
+    init_parser.add_argument(
+        "--with-enforcement", action="store_true",
+        help="Install inactive runtime-control assets as an explicit opt-in",
+    )
 
     fix_parser = commands.add_parser("fix", help="Plan or apply safe mechanical fixes")
     add_repo_argument(fix_parser)
@@ -474,12 +597,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "audit":
         findings = audit(repo)
-        render_findings(findings, args.format)
+        render_findings(findings, args.format, repo)
         return 1 if args.strict and findings else 0
 
     if args.command == "initialize":
         try:
-            entries = planned_writes(repo, with_ci=args.with_ci)
+            entries = planned_writes(
+                repo, with_ci=args.with_ci,
+                with_enforcement=args.with_enforcement,
+            )
         except (FileNotFoundError, ValueError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2

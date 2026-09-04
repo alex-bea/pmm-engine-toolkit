@@ -29,6 +29,13 @@ A public skill package is complete when:
    secrets are absent.
 10. Direct GitHub Skill Installer installation does not depend on files outside the selected
     skill directory.
+11. Harness-specific adapters are thin and use one shared policy implementation.
+12. External approval and publisher implementations are explicit optional adapters; their
+    absence denies only actions that require them and never triggers an undeclared fallback.
+13. Direct installation without a plugin hook remains usable for audit and planning but
+    reports the runtime guard as inactive.
+14. Credentials, enabled external-adapter configuration, mutable run state, and protected
+    audit records remain adopter-owned and outside the installed package.
 
 Plugin mirrors of canonical repository standards must be checked for byte-for-byte parity
 in CI so the installable copy cannot drift from its source.

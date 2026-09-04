@@ -47,6 +47,12 @@ deterministic initializer/audit/fix scripts, installable schemas and templates, 
 examples with optional PMM profiles. The document audit is read-only and validates only
 opted-in Markdown structure and local paths. CI verifies mirrored standards against `docs/`.
 
+The `govern-skills` package also includes a shared runtime policy decision, thin Claude Code
+and Codex PreToolUse adapters, schema-version-2 run control, an external approval-verifier
+contract, and a publisher guard. Runtime installation is opt-in and inactive by default.
+External verifier and publisher implementations, credentials, enabled adopter policy,
+mutable run state, and protected audit records are not part of the public package.
+
 The `plugins/pmm-instinct-review/` `0.2.0` Draft release candidate additionally contains a
 Codex plugin manifest, marketplace registration, plugin-relative hooks, a bundled skill, a
 standard-library Python runtime, explicit Codex and isolated portable review adapters, an
@@ -69,6 +75,10 @@ candidate-file import command.
 - Examples use fictional organizations and people and must never be treated as evidence.
 - No private chats, native Codex history, runtime configuration, audits, instincts, or
   normalized transcripts are part of the public export.
+- No private skill registry, harness permission list, run state, approval event, publisher
+  endpoint, credential, or real governance output is part of the runtime-governance export.
+- The cross-harness example is independently fictional and uses reserved `.invalid`
+  domains; it is not an anonymized private run.
 - PMM Instinct Review examples use the fictional Northstar Reports scenario and `.invalid`
   domains. No private-to-fictional crosswalk, private route table, Claude desktop capture
   tooling, private hook, mutable adopter state, or real session example is exported.

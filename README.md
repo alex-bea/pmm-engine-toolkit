@@ -11,8 +11,9 @@ marketing artifacts, synthesizing signals, and maintaining repository hygiene:
   file size, churn, and test health.
 - **Standards and templates** — public skill structure, evidence/privacy, approval-gate,
   tracker, and dependency-closure rules with reusable formats and synthetic examples.
-- **Codex governance plugin** — approval-gated initialization, advisory audits, safe
-  mechanical fixes, optional blocking CI for skills and work, and opt-in document audits.
+- **Skill governance plugin** — approval-gated initialization, advisory audits, safe
+  mechanical fixes, optional blocking CI, and optional Claude Code/Codex runtime guards
+  backed by external approval and publisher boundaries.
 
 This repository deliberately contains no customer data, operating outputs, private source
 registries, account identifiers, credentials, or private Git history. Integrations are
@@ -129,6 +130,11 @@ The three plugin skills can also be installed independently from their GitHub di
 with Codex's built-in `$skill-installer`. See the complete
 [installation and adoption guide](docs/CODEX-GOVERNANCE-PLUGIN.md), including the
 [document-governance baseline](docs/CODEX-DOCUMENT-GOVERNANCE.md).
+
+Runtime controls install disabled and are separate from the advisory audit. A hook alone is
+not a complete security boundary: strong enforcement also requires administrator-protected
+policy, restricted shell/network and tool paths, independently verified digest-bound human
+approval, protected CI, and publisher credentials unavailable to the agent.
 
 ## Community and governance
 

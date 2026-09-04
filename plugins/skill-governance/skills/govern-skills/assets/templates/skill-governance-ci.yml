@@ -29,6 +29,11 @@ jobs:
           python-version: '3.11'
       - name: Validate governed skills
         run: python .agents/governance/bin/govern_skills.py audit --repo . --strict
+      - name: Validate governed workflow runs when installed
+        run: |
+          if [ -f .agents/governance/bin/governance_control.py ]; then
+            python .agents/governance/bin/governance_control.py --repo . validate-all
+          fi
       - name: Validate work tracker when installed
         run: |
           if [ -f .agents/governance/bin/govern_work_tracker.py ]; then

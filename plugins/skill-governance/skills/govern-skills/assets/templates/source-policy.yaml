@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "policy_id": "example-release-policy",
+  "status": "template",
+  "approval_authority": {
+    "authority_id": "example-git-review",
+    "verifier_config": "/etc/governance/approval-verifier.json"
+  },
+  "allowed_sources": [
+    {
+      "id": "replace-with-approved-source",
+      "adapter": "replace-with-read-only-adapter",
+      "description": "Replace through reviewed repository configuration before use."
+    }
+  ]
+}

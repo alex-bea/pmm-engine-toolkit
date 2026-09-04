@@ -53,10 +53,13 @@ REQUIRED_SHARED = {
     "docs/STD-approval-gates-v1.0.md",
     "docs/STD-skill-dependencies-v1.0.md",
     "docs/STD-governance-document-metadata-v1.0.md",
+    "docs/STD-runtime-enforcement-v1.0.md",
     "docs/CODEX-GOVERNANCE-PLUGIN.md",
     "docs/CODEX-DOCUMENT-GOVERNANCE.md",
     ".agents/plugins/marketplace.json",
     "plugins/skill-governance/.codex-plugin/plugin.json",
+    "plugins/skill-governance/CHANGELOG.md",
+    "plugins/skill-governance/hooks/hooks.json",
     "requirements-build.lock",
     "requirements-build.txt",
     "requirements.lock",
@@ -92,6 +95,7 @@ STANDARD_MIRRORS = {
         "STD-approval-gates-v1.0.md",
         "STD-evidence-privacy-v1.0.md",
         "STD-governance-document-metadata-v1.0.md",
+        "STD-runtime-enforcement-v1.0.md",
         "STD-skill-dependencies-v1.0.md",
         "STD-skill-primitives-v1.0.md",
         "STD-skill-structure-v1.0.md",
@@ -199,12 +203,23 @@ def validate_governance_plugin(errors: list[str]) -> None:
         return
     if manifest.get("name") != "skill-governance":
         errors.append("governance plugin manifest name mismatch")
-    if manifest.get("version") != "0.2.0":
-        errors.append("governance plugin manifest version must be 0.2.0")
+    if manifest.get("version") != "0.3.0":
+        errors.append("governance plugin manifest version must be 0.3.0")
     if manifest.get("skills") != "./skills/":
         errors.append("governance plugin must declare ./skills/")
-    if "apps" in manifest or "mcpServers" in manifest or "hooks" in manifest:
+    if "apps" in manifest or "mcpServers" in manifest:
         errors.append("governance plugin declares an unsupported or unimplemented component")
+    hook_path = PLUGIN_ROOT / "hooks" / "hooks.json"
+    try:
+        hooks = json.loads(hook_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid governance plugin hooks: {exc}")
+        hooks = {}
+    pre_tool = hooks.get("hooks", {}).get("PreToolUse", []) if isinstance(hooks, dict) else []
+    if not isinstance(pre_tool, list) or not pre_tool:
+        errors.append("governance plugin must declare a PreToolUse hook")
+    elif "codex_pretooluse.py" not in json.dumps(pre_tool):
+        errors.append("governance plugin PreToolUse hook must call codex_pretooluse.py")
 
     try:
         marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))
@@ -237,13 +252,30 @@ def validate_governance_plugin(errors: list[str]) -> None:
         "govern-skills": (
             "agents/openai.yaml",
             "scripts/govern_skills.py",
+            "scripts/governance_policy.py",
+            "scripts/governance_control.py",
+            "scripts/approval_verifier.py",
+            "scripts/publisher_guard.py",
+            "scripts/claude_pretooluse.py",
+            "scripts/codex_pretooluse.py",
             "assets/schemas/governance-manifest.schema.json",
             "assets/schemas/skill-registry.schema.json",
+            "assets/schemas/source-policy.schema.json",
+            "assets/schemas/workflow-run.schema.json",
+            "assets/schemas/policy-decision.schema.json",
+            "assets/schemas/publisher-adapter.schema.json",
             "assets/templates/SKILL.md",
             "assets/templates/openai.yaml",
             "assets/templates/skill-registry.yaml",
             "assets/templates/skill-governance-ci.yml",
-            "assets/examples/pmm-engine/EX-pmm-engine-skill-governance.md",
+            "assets/templates/AGENTS.md",
+            "assets/templates/claude-settings.json",
+            "assets/templates/source-policy.yaml",
+            "assets/templates/workflow-run.yaml",
+            "assets/templates/publisher-adapter.yaml",
+            "assets/examples/fictional/EX-governance-adoption.md",
+            "references/RUN-govern-skills-workflow-v1.0.md",
+            "references/STD-runtime-enforcement-v1.0.md",
         ),
         "govern-work-tracker": (
             "agents/openai.yaml",

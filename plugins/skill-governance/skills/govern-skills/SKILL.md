@@ -1,84 +1,72 @@
 ---
 name: govern-skills
-description: Initialize, audit, and safely repair portable Codex skill governance covering package structure, naming, trigger metadata, registry entries, lifecycle, dependency closure, evidence quality, and approval gates. Use when a user asks to govern a repository, standardize skills, install the governance pack, audit skill quality, fix mechanical governance drift, create a skill registry, or add opt-in governance CI.
+description: Audit and safely repair portable skill governance, manage lifecycle records, or harden approval-gated workflows for Claude Code and Codex with shared policy decisions, pre-tool hooks, protected CI, external approval verification, and credential-isolated publishing. Use when a user asks to govern a repository, standardize skills, inspect enforcement gaps, install governance, or design non-bypassable workflow gates.
 ---
 
 # Govern Skills
 
 ## Overview
 
-Establish a repository-owned contract for consistently shaped Codex skills. Keep audits
-read-only and advisory by default. Gate every initializer or fix write behind a displayed
-plan and explicit user approval.
+Establish a repository-owned skill-governance contract and state the enforcement level of
+every material rule. Keep audits read-only by default. Treat loaded instructions as guidance,
+not as a security boundary.
 
 ## Workflow
 
-1. Resolve the target repository and inspect its instructions, Git status, skill roots,
-   existing governance files, and dependency system.
-2. Run the deterministic audit before proposing changes:
+1. Resolve the repository, read its instructions, inspect Git status, locate skill roots,
+   and discover existing governance, hook, sandbox, CI, approval, and publishing surfaces.
+2. Read `references/RUN-govern-skills-workflow-v1.0.md` and follow the selected `audit`,
+   `repair`, `lifecycle`, or `enforcement` mode.
+3. Run the deterministic audit before proposing a change:
 
    ```bash
    python3 scripts/govern_skills.py audit --repo <repository>
    ```
 
-3. Read only the standards needed to explain the findings:
-
-   - Read `references/STD-skill-structure-v1.0.md` for package layout, names, `SKILL.md`,
-     and `agents/openai.yaml`.
-   - Read `references/STD-ai-skill-governance-prd-v1.0.md` for registry, lifecycle,
-     ownership, activation, deprecation, and agent authority.
-   - Read `references/STD-governance-document-metadata-v1.0.md` for governed document
-     identity and the `SKILL.md` metadata exception.
-   - Read `references/STD-skill-dependencies-v1.0.md` for direct-install and dependency
-     closure.
-   - Read `references/STD-skill-primitives-v1.0.md` for authoring quality and testing.
-   - Read `references/STD-approval-gates-v1.0.md` before any write.
-   - Read `references/STD-evidence-privacy-v1.0.md` when skills use evidence, people,
-     private context, high-stakes claims, or external connectors.
-
-4. Classify each finding as mechanical and fixable, semantic and review-required, or an
-   intentional local extension.
-5. For initialization, run a dry-run and present the exact paths:
+4. Classify every relevant rule as `instruction-only`, `static-validator`,
+   `runtime-guard`, `capability-boundary`, or `external-authority`. Never use an
+   unqualified claim that a rule is enforced.
+5. For initialization or repair, run a dry-run and show the exact paths. Add
+   `--with-ci` or `--with-enforcement` only when the user explicitly chooses those layers:
 
    ```bash
    python3 scripts/govern_skills.py initialize --repo <repository> --dry-run
-   ```
-
-   Add `--with-ci` only when the user explicitly opts into blocking CI.
-6. For repair, run a dry-run. Use `--finding <ID>` when the user approves only one finding:
-
-   ```bash
    python3 scripts/govern_skills.py fix --repo <repository> --dry-run
    ```
 
-7. Wait for explicit approval. Then repeat the same command with `--apply` and re-run the
-   audit. Do not translate a request for an audit into permission to write.
-8. Report created, updated, unchanged, conflicting, and manual-review files separately.
+6. Wait for explicit approval, repeat the same command with `--apply`, and re-run the audit
+   and relevant behavioral tests.
+
+## Enforcement contract
+
+- Claude Code and Codex adapters call the same `scripts/governance_policy.py` decision core.
+- Invalid or unavailable policy, run state, digest, verifier, or publisher state denies a
+  sensitive action.
+- The digest-bound source policy selects the external verifier. It establishes human
+  identity, reviewed revision, decision, timing, artifact path, and digest; the caller
+  cannot substitute a verifier, name, or link as proof.
+- Scheduled workers may collect declared staging evidence but cannot approve, advance a
+  human gate, become publish-ready, or publish.
+- Publication is available only through `scripts/publisher_guard.py`; the external adapter,
+  not the agent or skill package, holds credentials.
+- Strong guarantees require hook and policy files outside agent-writable paths, restricted
+  alternate shell and network routes, protected CI, and isolated credentials.
+
+Read `references/STD-runtime-enforcement-v1.0.md` before designing or activating runtime
+controls. Read the evidence/privacy standard before handling private inputs or external
+services.
 
 ## Write boundaries
 
-- Never overwrite a differing standard, schema, template, skill file, or interface file.
-- Preserve unrelated files and registry fields.
-- Create missing registry entries as `draft`, version `0.1.0`, owner `unassigned`.
-- Never promote a skill to `active`, choose an owner, invent a replacement, or weaken a
-  gate without an explicit user decision.
-- Treat `.agents/governance/manifest.yaml` as generated installation metadata. Show its
-  update in the plan before writing it.
-- Keep blocking CI opt-in. The normal `audit` command returns success with advisory
-  findings; `audit --strict` returns nonzero when findings exist.
-
-## Installed repository shape
-
-Initialization installs standards, schemas, templates, a registry, a deterministic audit
-script, and a versioned file-hash manifest under `.agents/governance/`. Repository skills
-default to `.agents/skills/<skill-name>/`. The installer does not create or alter actual
-skills without a separate approved fix.
-
-Read `assets/examples/pmm-engine/EX-pmm-engine-skill-governance.md` only when the user
-wants a PMM-specific example. Keep that profile separate from the generic rules.
+- Never overwrite a differing managed file.
+- Never infer lifecycle state, ownership, approval, or publication authority.
+- Keep adopter-owned source policies, state, verifier configuration, publisher
+  configuration, and credentials outside the installed skill package.
+- Direct installation without a verified active hook remains useful for audit and planning
+  but must report the runtime guard as inactive or `policy-enabled-hook-unverified`.
 
 ## Failure handling
 
-Stop and explain the exact conflict when a managed target already differs, metadata cannot
-be parsed, the repository is ambiguous, or the requested fix needs semantic judgment. Do
-not use `--apply` as a workaround for an unresolved conflict.
+Stop when a managed target conflicts, metadata cannot be parsed, external authority cannot
+be verified, or a sensitive action cannot be evaluated. Do not bypass a failed control with
+another tool, shell command, network route, or direct file mutation.

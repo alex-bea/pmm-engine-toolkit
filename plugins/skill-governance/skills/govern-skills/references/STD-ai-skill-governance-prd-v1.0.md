@@ -18,8 +18,10 @@ change_control: Pull request review
 ## Purpose and authority
 
 Keep skill packages consistent, reviewable, safe, portable, and independently installable.
-This standard owns skill registration, lifecycle, ownership, activation, deprecation, and
-approval boundaries. The skill-structure standard owns the files inside a skill package.
+This standard owns skill registration, lifecycle, ownership, activation, deprecation,
+approval boundaries, and truthful enforcement claims. The skill-structure standard owns the
+files inside a skill package. The runtime-enforcement standard owns technical controls across
+harnesses.
 
 ## Registry
 
@@ -65,6 +67,27 @@ intended paths and changes, then obtain explicit approval before initializing go
 applying fixes, changing lifecycle state, publishing, performing an external write, or
 taking a destructive action. Approval for one action does not authorize a broader action.
 
+Conversational approval is sufficient only for the scoped local write the user controls.
+Approval that authorizes a protected workflow transition or publication must be established
+by the configured external authority and bind the authorized human, reviewed revision,
+artifact path, artifact digest, decision, and time. A caller-supplied name or well-formed URL
+is evidence to verify, not proof.
+
+Scheduled workers may collect declared staging evidence. They may not create approval,
+advance a human-review gate, enter a publish-ready stage, or publish.
+
+## Enforcement claims
+
+Classify every material rule as `instruction-only`, `static-validator`, `runtime-guard`,
+`capability-boundary`, or `external-authority`. Never claim that a rule is enforced merely
+because a model loaded it, a validator passed, or one hook can be bypassed through another
+available tool.
+
+Claude Code and Codex adapters use one shared policy decision. Strong enforcement also
+requires protected policy and state, restricted shell and network routes, independent
+approval verification, and publisher credentials unavailable to the agent. See
+`STD-runtime-enforcement-v1.0.md`.
+
 ## Privacy and IP
 
 - Never commit credentials, private URLs, internal identifiers, personal data, customer
@@ -76,5 +99,8 @@ taking a destructive action. Approval for one action does not authorize a broade
 ## Validation
 
 Before release, confirm registry and folder agreement, required files, dependency closure,
-metadata, lifecycle state, synthetic examples, tests, and public-safety rules. Advisory
-findings are the default for local adoption. Blocking CI is an explicit opt-in.
+metadata, lifecycle state, synthetic examples, tests, and public-safety rules. When runtime
+controls are included, also test harness parity, scheduled restrictions, stale digests,
+forged approval, verifier outage, direct publisher calls, and alternate paths. Advisory
+findings are the default for local adoption. Blocking CI and runtime enforcement are
+separate explicit opt-ins.

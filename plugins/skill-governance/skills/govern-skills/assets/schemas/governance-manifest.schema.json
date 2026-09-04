@@ -5,7 +5,7 @@
   "required": ["schema_version", "source", "components"],
   "additionalProperties": false,
   "properties": {
-    "schema_version": {"const": "1.0"},
+    "schema_version": {"enum": ["1.0", "1.1"]},
     "source": {"type": "string", "format": "uri"},
     "components": {
       "type": "object",
@@ -21,6 +21,16 @@
               "type": "string",
               "pattern": "^[a-f0-9]{64}$"
             }
+          },
+          "enforcement_classes": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": ["instruction-only", "static-validator", "runtime-guard", "capability-boundary", "external-authority"]
+            }
+          },
+          "activation": {
+            "enum": ["installed", "installed-inactive", "enabled", "external-unverified"]
           }
         }
       }

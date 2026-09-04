@@ -36,6 +36,20 @@ Generated artifacts may reproduce information from their inputs. Review and reda
 before committing, sharing, or publishing them. Synthetic examples in this repository are
 formatting references, not real people, customers, or claims.
 
+## Skill governance runtime controls
+
+The optional governance hooks inspect the current tool name and only the arguments needed to
+classify a path, command, transition, or publication attempt. Structured decisions contain
+the result, reason code, harness, action class, enforcement class, and explanation. They do
+not retain prompts, content bodies, full tool arguments, cookies, authorization headers,
+credentials, or private artifact content.
+
+Runtime enforcement is disabled by default. Adopters own enabled policy, workflow run state,
+external verifier configuration, publisher configuration, service-side approval evidence,
+and publisher receipts. Store those outside agent-writable and publicly committed paths.
+The toolkit does not operate a hosted verifier or publisher and receives no data from those
+adopter-configured services.
+
 ## External services
 
 Optional connectors, Git hosting, package registries, and other external services operate

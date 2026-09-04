@@ -86,13 +86,18 @@ standards and templates in `docs/` before modifying a package.
 
 The installable `skill-governance` plugin is separate from the 25 PMM workflow packages:
 
-- `govern-skills` — initialize, audit, and safely repair skill governance.
+- `govern-skills` — initialize, audit, and safely repair skill governance, or install an
+  inactive shared control plane for separately managed Claude Code and Codex enforcement.
 - `govern-work-tracker` — initialize, audit, and safely repair roadmap, epic, and task
   tracking.
 - `govern-documents` — audit opted-in Markdown metadata, declared dependencies, and local
   links without changing document content.
 
 All three plugin skills are generic. PMM-specific material is isolated to synthetic examples.
+
+`govern-skills` reports instruction, static-validation, runtime-guard, capability, and
+external-authority layers separately. It does not claim that installing a skill or hook
+alone makes governance non-bypassable.
 
 Both installable plugins follow the Codex plugin manifest contract. `pmm-instinct-review`
 also declares session hooks; its bundled skill follows the same skill-package contract.
