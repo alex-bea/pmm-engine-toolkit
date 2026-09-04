@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operate the portable Codex instinct-review lifecycle."""
+"""Operate the human-gated instinct-review lifecycle."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import json
 import sys
 from pathlib import Path
 
+from pmm_instinct.adapters import resolve_adapter
 from pmm_instinct.runtime import (
     apply_backfill,
     apply_promotion,
@@ -21,7 +22,6 @@ from pmm_instinct.runtime import (
     load_config,
     preflight,
     promotion_preview,
-    resolve_paths,
     retry_failed,
     resolve_zero_candidate_audits,
     review_cluster,
@@ -29,6 +29,7 @@ from pmm_instinct.runtime import (
     safe_session_id,
     start_detached_worker,
     update_config,
+    write_priority_snapshot,
 )
 
 
@@ -94,7 +95,12 @@ def _session_start(paths) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--adapter", choices=("codex", "portable"), default="codex")
     parser.add_argument("--codex-home", help="Override ~/.codex (useful for tests and isolated installs).")
+    parser.add_argument(
+        "--state-root",
+        help="Required explicit isolated state root for --adapter portable.",
+    )
     commands = parser.add_subparsers(dest="command", required=True)
 
     commands.add_parser("status", help="Show capture, queue, review, and promotion status.")
@@ -122,6 +128,7 @@ def build_parser() -> argparse.ArgumentParser:
     retry.add_argument("--session")
     commands.add_parser("cleanup", help="Remove normalized transcripts for processed audits.")
     commands.add_parser("list-priority", help="List ranked unreviewed suggestion clusters.")
+    commands.add_parser("snapshot-priority", help="Persist the current priority snapshot explicitly.")
     resolve_zero = commands.add_parser("resolve-zero", help="Mark zero-candidate audits reviewed.")
     resolve_zero.add_argument("--confirm", action="store_true")
 
@@ -130,6 +137,8 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--decision", choices=("accept", "reject", "edit", "match"), required=True)
     review.add_argument("--edited-rule")
     review.add_argument("--edited-rationale")
+    review.add_argument("--strong-correction", action="store_true")
+    review.add_argument("--contradicted", action="store_true")
     review.add_argument("--confirm", action="store_true")
 
     promote = commands.add_parser("promote", help="Preview or apply one instinct promotion.")
@@ -154,12 +163,27 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    paths = resolve_paths(args.codex_home)
     try:
+        adapter = resolve_adapter(
+            args.adapter,
+            codex_home=args.codex_home,
+            state_root=args.state_root,
+        )
+        adapter.require_command(args.command)
+        paths = adapter.paths
         if args.command == "hook":
             return _session_start(paths) if args.event == "session-start" else _session_end(paths)
         if args.command == "status":
-            _json(runtime_status(paths))
+            receipt = runtime_status(paths)
+            receipt["adapter"] = adapter.name
+            receipt["capture_supported"] = adapter.capture_supported
+            if not adapter.capture_supported:
+                receipt["enabled"] = False
+                receipt["preflight"] = {
+                    "applicable": False,
+                    "reason": "portable review-only adapter",
+                }
+            _json(receipt)
             return 0
         if args.command == "on":
             config = load_config(paths, create=True)
@@ -202,6 +226,9 @@ def main() -> int:
         if args.command == "list-priority":
             _json(backlog(paths))
             return 0
+        if args.command == "snapshot-priority":
+            _json({"priority_snapshot_path": str(write_priority_snapshot(paths))})
+            return 0
         if args.command == "resolve-zero":
             _json(resolve_zero_candidate_audits(paths, confirm=args.confirm))
             return 0
@@ -213,6 +240,9 @@ def main() -> int:
                     args.decision,
                     edited_rule=args.edited_rule,
                     edited_rationale=args.edited_rationale,
+                    source_runtime=adapter.name,
+                    strong_correction=args.strong_correction,
+                    contradicted=args.contradicted,
                     confirm=args.confirm,
                 )
             )
@@ -231,7 +261,15 @@ def main() -> int:
                 _json(promotion_preview(paths, args.instinct, **kwargs))
             return 0
         if args.command == "import-candidates":
-            _json(import_candidates(paths, args.candidate_file, cwd=args.cwd, confirm=args.confirm))
+            _json(
+                import_candidates(
+                    paths,
+                    args.candidate_file,
+                    cwd=args.cwd,
+                    source_runtime=adapter.name,
+                    confirm=args.confirm,
+                )
+            )
             return 0
     except (FileNotFoundError, json.JSONDecodeError, PermissionError, RuntimeError, ValueError) as error:
         print(f"ERROR: {error}", file=sys.stderr)

@@ -1,6 +1,6 @@
 ---
 name: pmm-instinct-review
-description: Capture, review, and promote evidence-backed working preferences from completed Codex sessions. Use for $pmm-instinct-review, continuous learning status/on/off, review Codex instincts or suggestions, retry failed extraction, backfill recent sessions, clean up processed transcripts, import candidate lessons, or preview and apply an approved promotion.
+description: Capture eligible Codex sessions or review explicitly imported candidates in an isolated portable store, then create and promote only human-approved working preferences. Use for $pmm-instinct-review, continuous learning status/on/off, review instincts or suggestions, retry failed extraction, backfill recent Codex sessions, clean up processed evidence, import candidate lessons, or preview and apply an approved promotion.
 ---
 
 # PMM Instinct Review
@@ -12,6 +12,7 @@ Read `references/DOC-product-requirements.md`,
 `references/DOC-implementation-blueprint.md`, and `references/RUN-workflow.md` before
 changing capture state, resolving a review cluster, or promoting an instinct. Use
 `references/DOC-submission-test-cases.md` when preparing or reviewing a public release.
+Read `assets/state-contracts.md` when inspecting or creating persistent state.
 
 ## Safety contract
 
@@ -22,6 +23,8 @@ changing capture state, resolving a review cluster, or promoting an instinct. Us
   insertion only after the user selects a destination class.
 - Never delete native Codex session history.
 - Never mutate a skill inside the Codex plugin cache.
+- Select `codex` or `portable` explicitly. Portable mode requires `--state-root`, never reads
+  native agent state, and does not support capture, hooks, extraction, or promotion.
 
 ## Operator routing
 
@@ -30,7 +33,8 @@ changing capture state, resolving a review cluster, or promoting an instinct. Us
   corresponding user request.
 - Calibration: run `backfill --limit 5 --older-than-minutes 30 --dry-run` before `--apply`.
 - Recovery: run `retry`, `worker --drain`, or `cleanup`.
-- Review: run `list-priority`, present one candidate card, then apply the explicit decision
+- Review: run `list-priority`, optionally run `snapshot-priority`, present one candidate card,
+  then apply the explicit decision
   with `review --cluster ... --decision ... --confirm`; use `--edited-rationale` only with an
   `edit` decision. Resolve an explicitly confirmed zero-candidate bucket with
   `resolve-zero --confirm`.
@@ -39,6 +43,9 @@ changing capture state, resolving a review cluster, or promoting an instinct. Us
   --confirm` only after that matching destination-level preview.
 - Legacy candidate files: run `import-candidates ... --confirm` after showing the import
   summary.
+- Portable review: add `--adapter portable --state-root <explicit-path>` before the command;
+  import the adopter-owned candidate JSON explicitly, then use status, priority, and review
+  commands only.
 
 The plugin owns only `~/.codex/instinct-review/`. Uninstalling the plugin leaves that
 directory intact.

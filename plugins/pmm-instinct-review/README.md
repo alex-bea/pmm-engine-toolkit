@@ -1,125 +1,151 @@
-# PMM Instinct Review for Codex (draft)
+# PMM Instinct Review `0.2.0` (draft)
 
-This plugin implements a local, human-gated improvement loop:
+PMM Instinct Review is a local, human-gated improvement loop for durable working
+preferences:
 
 ```text
-eligible completed session -> redacted normalized copy -> queued extraction
--> explicit review -> approved instinct -> separate promotion approval -> cleanup
+eligible evidence -> bounded candidate extraction/import -> ranked review
+-> approved instinct -> exact promotion preview -> separate write approval
 ```
 
-It targets macOS Codex and Python 3.11 or newer. The release remains a draft until its
-pull request is approved.
+The Codex adapter can capture eligible completed sessions automatically after explicit
+consent. The portable adapter lets Codex, Claude Code, or another local work agent review an
+explicit candidate bundle in an isolated adopter-owned directory. Portable mode does not
+capture sessions, run hooks or models, read native agent stores, or promote instructions.
+
+This `0.2.0` release remains a draft until its pull request is approved. The package uses
+Python 3.11+ and the standard library only.
 
 ## Privacy and consent
 
-Installation does not enable capture. Enabling creates local transcript-derived state and
-runs a second Codex model invocation for each eligible session. Confirm that your employer's
-policy permits both actions before enabling on a work device.
+Installation does not enable capture. Codex enablement records explicit consent before any
+chat-derived state is created. Confirm that local transcript-derived storage and a second
+Codex model invocation comply with the policies for the device and source material.
 
-The plugin has no telemetry or hosted PMM service. It never changes native Codex history.
-It stores redacted user/assistant text temporarily under `~/.codex/instinct-review/` and
-deletes that normalized copy after review resolution. Plugin removal preserves this user-owned
-directory.
+The plugin has no telemetry or hosted PMM service and never changes native session history.
+Codex normalized user/assistant text is redacted, bounded, stored temporarily under
+`~/.codex/instinct-review/`, and removed only after every candidate associated with the audit
+has a decision. Operational logs contain state, counts, and sanitized errors—not transcript
+text. Plugin removal preserves the adopter-owned state directory.
 
-For the complete product and implementation contract, see the bundled
-[product requirements](skills/pmm-instinct-review/references/DOC-product-requirements.md),
-[implementation blueprint](skills/pmm-instinct-review/references/DOC-implementation-blueprint.md),
-and [public submission test cases](skills/pmm-instinct-review/references/DOC-submission-test-cases.md).
+Imported candidate text and normalized transcript text are untrusted evidence. Neither is
+executed as instructions. Review and promotion are separate human decisions.
 
-## Install from the toolkit marketplace
+## Install for Codex
 
 ```bash
 codex plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
 codex plugin add pmm-instinct-review@pmm-engine-toolkit
 ```
 
-When `codex` is not on `PATH`, use the ChatGPT app-bundled executable:
-
-```bash
-"/Applications/ChatGPT.app/Contents/Resources/codex" plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
-"/Applications/ChatGPT.app/Contents/Resources/codex" plugin add pmm-instinct-review@pmm-engine-toolkit
-```
-
-For the standalone Codex app, replace the executable with
-`/Applications/Codex.app/Contents/Resources/codex`.
-
-Open `/hooks` in Codex and separately inspect and trust the plugin's `SessionStart` and
-`SessionEnd` hooks. Then ask:
+If `codex` is not on `PATH`, use the executable bundled with the installed Codex host. Open
+`/hooks`, inspect the plugin-relative `SessionStart` and `SessionEnd` hooks, and trust them
+separately. Then ask:
 
 ```text
 Use $pmm-instinct-review to enable continuous learning. I acknowledge local chat storage.
 ```
 
-The first enablement records a timestamp in the local configuration. If Python, Codex, the
-extractor schema, or a model policy cannot be resolved, enablement fails without turning
-capture on.
+Enablement fails closed if Python, the Codex executable, the extractor schema, or model policy
+cannot be resolved. The SessionEnd hook only captures and launches a detached worker; model
+work remains outside the hook timeout.
+
+## Use the isolated portable adapter
+
+Portable review is an explicit CLI surface that can be invoked from either Codex or Claude
+Code. Choose a state root that is outside native agent stores and outside the installed plugin:
+
+```bash
+python3 plugins/pmm-instinct-review/skills/pmm-instinct-review/scripts/instinct_review.py \
+  --adapter portable \
+  --state-root "$PWD/.local/instinct-review" \
+  import-candidates ./candidate-bundle.json --confirm
+
+python3 plugins/pmm-instinct-review/skills/pmm-instinct-review/scripts/instinct_review.py \
+  --adapter portable \
+  --state-root "$PWD/.local/instinct-review" \
+  list-priority
+```
+
+Portable commands are limited to `status`, `list-priority`, `snapshot-priority`,
+`resolve-zero`, `review`, `cleanup`, and `import-candidates`. Capture, hooks, backfill, queue
+workers, enablement, retries, and promotion fail closed. Adapter selection never falls back to
+Codex state.
+
+The import file is a JSON array. Each item requires `id`, `lesson`, `source`, `observed_on`,
+and a non-empty `evidence` array; optional `type` and `skill` values refine clustering. See
+[`assets/state-contracts.md`](skills/pmm-instinct-review/assets/state-contracts.md) and the
+fictional example set for complete contracts.
 
 ## Operator requests
 
-Use `$pmm-instinct-review` with any of these requests:
+Use `$pmm-instinct-review` for:
 
-- `continuous learning status`, `continuous learning on`, or `continuous learning off`;
-- `dry-run the five-session backfill` or `apply the five-session backfill`;
-- `drain the extraction queue` or `retry failed extraction`;
-- `clean up processed transcripts`;
-- `list priority suggestions`, `resolve the zero-candidate bucket`, or `review Codex instincts`;
-- `preview promotion for <instinct-id>`, select `project`, `global`, `both`, `run`, `ref`, or
-  `standard`, then inspect the exact destination before the separate confirmation; or
-- `import candidates from <local-json-path>` for the retired standalone workflow.
+- continuous learning status, on, or off;
+- a bounded five-session Codex backfill dry run and confirmed apply;
+- queue drain, failed-job retry, or processed-evidence cleanup;
+- the three backlog buckets: zero candidates, positive clusters, and missing suggestions;
+- voice-first priority listing or an explicitly persisted priority snapshot;
+- one confirmed `accept`, `reject`, `edit`, or type-aware exact `match` decision; and
+- a promotion destination selection, exact preview, then matching apply confirmation.
 
-The deterministic entrypoint in a source checkout is:
+Positive clusters rank by review area, support, source-skill breadth, repository/cwd breadth,
+newness, and recency. The candidate card contains what happened, user feedback, proposed
+behavior, rationale, support/source, dates, and match state. It contains no routing. An
+approved instinct records its conservative destination suggestion, but no path is resolved
+until promotion review.
 
-```bash
-python3 plugins/pmm-instinct-review/skills/pmm-instinct-review/scripts/instinct_review.py --help
-```
+Promotion requires an active instinct with confidence of at least `0.5`. Supported Codex
+destinations are `project`, `global`, `both`, `run`, `ref`, and `standard`. The exact target,
+managed-section insertion, and duplicate status are persisted in a signed preview. Apply
+stages every target before replacement and requires a second confirmation. A successful or
+already-covered result becomes terminal and leaves the default promotion queue.
 
-Each review card leads with what happened, the user's feedback, proposed future behavior, and
-why it matters; it does not include routing. `accept`, `reject`, `edit`, or `match` is required.
-Promotion is unavailable below confidence `0.5` and always requires a destination-selection
-preview followed by a matching apply confirmation. Exact duplicates are recorded as covered,
-not inserted. New rules are written under `## PMM Instinct Review — Promoted Guidance`.
-
-Voice-to-REF promotion is opt-in: add an explicit relative path under `voice_ref_routes` in
-the user-owned `~/.codex/instinct-review/config.json`, for example
-`{"voice_ref_routes":{"my-skill":"references/REF-voice.md"}}`. The destination must
-already exist, be writable, and sit outside the plugin cache; the plugin never guesses it.
-
-## Controlled smoke test
-
-1. Confirm status reports `enabled: false` and that an ordinary session creates no audit.
-2. Trust both hooks in `/hooks`.
-3. Enable learning with the privacy acknowledgment.
-4. Complete a main task with at least five user turns. Include a durable correction such as
-   "For future reports, lead with the decision, not the chronology."
-5. End the task, then check status. Expect one audit and one queued, succeeded, or visibly
-   retryable failed extraction job.
-6. Start or resume a task. If extraction produced a positive candidate, the start hook adds one
-   pending-review notice per task.
-7. Review the cluster. Confirm the native session remains and its normalized copy is removed.
-
-A valid zero-candidate extraction is possible when the model finds no durable behavioral signal.
-The Codex hook runner currently caps command hooks at three seconds, so `SessionEnd` only captures
-and launches a detached worker; it never waits for model extraction.
-
-## Rollback and recovery
-
-Ask `$pmm-instinct-review` to turn continuous learning off before uninstalling. Remove the
-plugin through Codex's plugin interface. No uninstall action deletes
-`~/.codex/instinct-review/`; reinstalling the plugin allows its next start hook or a manual
-queue drain to recover retryable jobs. Delete that state only as a separate, explicit local
-data-management action.
+Voice-to-REF promotion is adopter-configured through `voice_ref_routes` in
+`~/.codex/instinct-review/config.json`. The target must already exist, be writable, and be
+outside the plugin cache. The runtime never guesses a private route.
 
 ## Runtime state
+
+Codex owns:
 
 ```text
 ~/.codex/instinct-review/
 ├── config.json
 ├── sessions/
+│   └── instinct-priority.json
 ├── queue/
 ├── instincts/
 ├── logs/
 └── state/
 ```
 
-Operational logs contain timestamps, states, candidate counts, and sanitized errors only.
-They never contain transcript text.
+Portable mode owns exactly the explicit `--state-root` with the same review-state folders.
+It does not read or write `~/.codex`, a Claude store, or another adapter root.
+
+## Controlled smoke test
+
+1. Confirm `status` reports capture disabled and creates no state.
+2. Inspect and trust both Codex hooks.
+3. Enable with the privacy acknowledgment.
+4. Complete an eligible main task with at least five user turns and a durable correction.
+5. Confirm the audit and queued, succeeded, or visibly retryable extraction state.
+6. Run `list-priority`; inspect one card and record an explicit decision.
+7. Confirm native history remains and normalized evidence is removed only after all decisions.
+8. For an eligible instinct, select a destination, inspect the exact preview, then separately
+   confirm apply. Confirm its status becomes `promoted` or `covered`.
+
+A valid zero-candidate extraction is success and remains in its own explicitly resolved
+bucket. Read-only status and priority listing do not create or migrate state.
+
+## Rollback and recovery
+
+Turn Codex capture off before uninstalling. Removing the plugin does not delete adopter-owned
+state. Reinstallation can recover retryable queued jobs. Delete a state root only as a
+separate, explicit local data-management action. Existing `0.1.0` records load with
+conservative in-memory defaults; status does not rewrite them.
+
+Detailed contracts are in the bundled [product requirements](skills/pmm-instinct-review/references/DOC-product-requirements.md),
+[implementation blueprint](skills/pmm-instinct-review/references/DOC-implementation-blueprint.md),
+[workflow](skills/pmm-instinct-review/references/RUN-workflow.md), and
+[submission tests](skills/pmm-instinct-review/references/DOC-submission-test-cases.md).

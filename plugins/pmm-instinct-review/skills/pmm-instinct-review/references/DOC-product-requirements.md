@@ -1,9 +1,25 @@
-# PMM Instinct Review — Product Requirements
+---
+doc_type: DOC
+normative: false
+requires:
+  - DOC-implementation-blueprint.md
+  - RUN-workflow.md
+status: Draft
+version: "0.2.0"
+owner: toolkit-maintainers
+consumers:
+  - plugin adopters
+  - public toolkit maintainers
+change_control: Pull request review
+---
+
+# PMM Instinct Review — Product Requirements (`0.2.0` draft)
 
 ## Purpose
 
-PMM Instinct Review is a local, Codex-first improvement loop. It turns repeated working
-preferences and corrections from eligible completed sessions into reviewable suggestions,
+PMM Instinct Review is a local improvement loop with Codex capture and an isolated portable
+review adapter. It turns repeated working preferences and corrections from eligible completed
+sessions or explicit candidate imports into reviewable suggestions,
 then into durable guidance only when a human explicitly approves both the rule and its final
 destination.
 
@@ -24,9 +40,8 @@ The release is designed to improve three outcomes:
 ## Product model
 
 ```text
-eligible completed Codex session
-  → bounded, redacted normalized copy
-  → schema-validated suggestions
+eligible completed Codex session → bounded, redacted normalized copy → schema-validated suggestions
+or explicit portable candidate bundle → isolated review-only store
   → deterministic clusters and ranked backlog
   → explicit review decision
   → active instinct
@@ -34,7 +49,8 @@ eligible completed Codex session
   → scoped guidance plus recorded destination
 ```
 
-The runtime state is local to the installing user at `~/.codex/instinct-review/`. The plugin
+Codex state is local to the installing user at `~/.codex/instinct-review/`; portable review
+requires an explicit separate state root. The plugin
 does not provide a hosted service, analytics, telemetry, shared database, vector store, or
 automatic publishing system.
 
@@ -43,7 +59,8 @@ automatic publishing system.
 | Role | Responsibility |
 |---|---|
 | Installing user / designated owner | Decides whether to enable capture, accepts or rejects each rule, and confirms every promotion |
-| Codex plugin | Captures eligible evidence, runs bounded extraction, summarizes state, and performs only confirmed local actions |
+| Codex adapter | Captures eligible evidence, runs bounded extraction, summarizes state, and performs only confirmed local actions |
+| Portable adapter | Imports explicit compatible candidate JSON into one isolated state root and supports review only |
 | Skill or repository maintainer | Owns the destination guidance and reviews changes through its normal repository process |
 
 No lifecycle hook, extractor, background worker, schedule, or model may approve an instinct
@@ -55,6 +72,8 @@ or promote guidance. A review decision and a promotion decision are always separ
 
 - Codex capture, normalization, extraction, queue recovery, review, promotion, cleanup, and
   rollback.
+- Portable status, explicit candidate import, priority reporting, review, and cleanup with no
+  native-agent state access.
 - Evidence-backed suggestion types: correction, confirmation, voice, scope, and workflow.
 - Deterministic grouping, duplicate checks, confidence scoring, source-skill discovery, and
   routing previews.
@@ -69,6 +88,7 @@ or promote guidance. A review decision and a promotion decision are always separ
   tool results, patches, browser results, or world-state payloads.
 - Changing a plugin-cache skill, reading or changing a separate runtime's state, or using a
   different model as an undisclosed fallback.
+- Automatic Claude Code capture, private desktop hooks, or portable promotion.
 - Retaining a complete copy of a user's session history.
 
 ## Quality rubric
@@ -131,7 +151,11 @@ A model can propose a candidate. It cannot establish durability or authorise a c
   rationale, support, source skills, repositories, first/last seen, and matching-instinct
   state.
 - Ranking highlights voice/framing patterns, then workflow, scope, correction, and
-  confirmation. Ranking changes review order only; it never makes a decision.
+  confirmation. Within that order it uses support, source-skill breadth, repository/cwd
+  breadth, newness, and recency. Ranking changes review order only; it never makes a decision.
+- Matching requires both candidate type and normalized rule. `list-priority` is read-only;
+  `snapshot-priority` explicitly persists the full three-bucket priority contract and stale
+  active-instinct count.
 - Codex presents one candidate card at a time for the candidate-to-instinct decision. The
   card contains exactly the decision-relevant context: **what happened**, **your feedback**,
   **proposed future behavior**, **why it matters**, and concise support/source details.
@@ -141,8 +165,13 @@ A model can propose a candidate. It cannot establish durability or authorise a c
 - A legacy imported candidate without `why_it_matters` receives the visible fallback:
   "Without this rule, the correction described in the evidence could recur." It is not
   re-extracted solely to supply the rationale.
-- An active instinct records its type, support, confidence, source skill(s), source
-  repository/repositories, rationale, suggested destination, and actual promotion state.
+- An instinct records its type, support, confidence, source runtime, source skill(s), source
+  repository/repositories, rationale, suggested destination, explicit correction/
+  contradiction state, and actual promotion outcome. Legacy omissions receive conservative
+  in-memory defaults.
+- Confidence is `0.30` for 1–2 supports, `0.50` for 3–5, `0.70` for 6–10, and `0.85` for 11+.
+  A `0.05` correction bonus applies only when the owner explicitly classifies it as strong;
+  an explicit contradiction subtracts `0.10`.
 
 ### Promotion and cross-skill learning
 
@@ -169,6 +198,17 @@ A model can propose a candidate. It cannot establish durability or authorise a c
   Guidance`, creating that section only when it is absent. For multi-target promotion, all
   writes are staged before any destination is replaced; promotion state is recorded only
   after every selected write succeeds.
+- A changed result becomes `promoted`; an all-duplicate result becomes `covered`. Both are
+  terminal and leave the default promotion queue.
+
+### Adapter isolation and compatibility
+
+- Adapter selection is explicit. Portable mode requires `--state-root`, refuses a native agent
+  store or plugin directory, reports capture unsupported, and makes capture/hook/extraction/
+  promotion commands unavailable.
+- Existing `0.1.0` configuration, audits, queues, suggestions, review ledgers, instincts, and
+  promotion previews load without destructive migration. Status and priority listing never
+  rewrite state.
 
 ## Approval gates
 

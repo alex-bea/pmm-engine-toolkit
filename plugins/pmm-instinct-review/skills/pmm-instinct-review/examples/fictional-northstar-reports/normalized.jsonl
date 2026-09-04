@@ -1,0 +1,10 @@
+{"index": 1, "role": "user", "text": "Draft the weekly decision report from the approved notes."}
+{"index": 2, "role": "assistant", "text": "I will organize the report as a chronology of the week's events."}
+{"index": 3, "role": "user", "text": "For recurring reports, lead with the decision and supporting evidence before the chronology."}
+{"index": 4, "role": "assistant", "text": "Understood. I will put the decision and evidence first, followed by the timeline."}
+{"index": 5, "role": "user", "text": "Use only the approved notes and leave unresolved items labeled as open questions."}
+{"index": 6, "role": "assistant", "text": "The report now leads with the decision, cites the approved evidence, and separates open questions."}
+{"index": 7, "role": "user", "text": "That structure is correct for future decision reports."}
+{"index": 8, "role": "assistant", "text": "I will retain that report structure for explicit review as a durable preference."}
+{"index": 9, "role": "user", "text": "Send the draft only to reports@northstar.invalid."}
+{"index": 10, "role": "assistant", "text": "The fictional draft is ready for reports@northstar.invalid."}

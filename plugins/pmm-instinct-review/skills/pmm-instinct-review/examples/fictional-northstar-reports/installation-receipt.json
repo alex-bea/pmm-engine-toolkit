@@ -1,0 +1,20 @@
+{
+  "plugin_version": "0.2.0",
+  "adapter": "codex",
+  "capture_supported": true,
+  "state_root": "/work/northstar-reports/state",
+  "installed_enabled": false,
+  "enabled_after_explicit_request": true,
+  "privacy_acknowledged_at": "2026-09-01T09:15:00+00:00",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "python": true,
+      "codex": true,
+      "extractor_schema": true,
+      "model_policy": true
+    }
+  },
+  "state_preserved_on_disable": true,
+  "state_preserved_on_plugin_removal": true
+}

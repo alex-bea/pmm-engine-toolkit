@@ -14,6 +14,7 @@ SCRIPTS = SKILL / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from pmm_instinct import runtime
+from pmm_instinct.adapters import resolve_adapter
 
 
 def write_transcript(
@@ -90,12 +91,57 @@ def capture_with_suggestion(paths, transcript: Path, session_id: str, rule: str,
     return result
 
 
+def write_candidate_audit(
+    paths,
+    *,
+    session_id: str,
+    day: str,
+    candidate_type: str,
+    rule: str,
+    source_skill: str = "",
+    cwd: str = "",
+):
+    paths.sessions.mkdir(parents=True, exist_ok=True)
+    suggestions = paths.sessions / f"{session_id}-suggestions.md"
+    runtime.atomic_write_text(
+        suggestions,
+        runtime.render_suggestions(
+            session_id,
+            [
+                {
+                    "type": candidate_type,
+                    "rule": rule,
+                    "evidence": "The user corrected the proposed structure.",
+                    "context": "A recurring fictional report was under review.",
+                    "why_it_matters": "The correction prevents the same structural error from recurring.",
+                }
+            ],
+            source_skill or None,
+        ),
+    )
+    audit = paths.sessions / f"{day}-1200-{session_id}-audit.md"
+    runtime.atomic_write_text(
+        audit,
+        "\n".join(
+            [
+                "processed: false",
+                f"**session_id:** {session_id}",
+                f"**suggestions_path:** {suggestions}",
+                f"**cwd:** {cwd}",
+                f"**skill:** {source_skill}",
+                "",
+            ]
+        ),
+    )
+    return audit
+
+
 class PluginContractTests(unittest.TestCase):
     def test_manifest_and_marketplace_registration(self):
         manifest = json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "pmm-instinct-review")
-        self.assertEqual(manifest["version"], "0.1.0")
+        self.assertEqual(manifest["version"], "0.2.0")
         entries = [entry for entry in marketplace["plugins"] if entry["name"] == "pmm-instinct-review"]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["source"]["path"], "./plugins/pmm-instinct-review")
@@ -117,6 +163,120 @@ class PluginContractTests(unittest.TestCase):
             paths = runtime.resolve_paths(tmp)
         self.assertEqual(paths.store, Path(tmp) / "instinct-review")
         self.assertNotIn(str(PLUGIN), str(paths.store))
+
+    def test_templates_and_complete_fictional_lifecycle_are_bundled(self):
+        assets = SKILL / "assets"
+        example = SKILL / "examples" / "fictional-northstar-reports"
+        expected_assets = {
+            "config-template.json",
+            "state-contracts.md",
+            "instinct-template.md",
+            "output-template.md",
+        }
+        expected_examples = {
+            "README.md",
+            "config.json",
+            "normalized.jsonl",
+            "audit.md",
+            "queue.json",
+            "suggestions.md",
+            "status.json",
+            "priority-snapshot.json",
+            "bucket-summary.md",
+            "candidate-card.md",
+            "instinct.md",
+            "promotion-preview.json",
+            "installation-receipt.json",
+            "AGENTS-before.md",
+            "AGENTS-after.md",
+        }
+        self.assertTrue(expected_assets <= {path.name for path in assets.iterdir()})
+        self.assertEqual(expected_examples, {path.name for path in example.iterdir()})
+        for path in example.iterdir():
+            if path.suffix == ".json":
+                json.loads(path.read_text(encoding="utf-8"))
+        before = (example / "AGENTS-before.md").read_text(encoding="utf-8")
+        after = (example / "AGENTS-after.md").read_text(encoding="utf-8")
+        expected = runtime._render_guidance_update(
+            before,
+            "- Lead recurring decision reports with the decision and supporting evidence before chronology.",
+        )
+        self.assertEqual(after, expected)
+
+    def test_fictional_preview_signature_and_cluster_score_recompute(self):
+        example = SKILL / "examples" / "fictional-northstar-reports"
+        preview = json.loads((example / "promotion-preview.json").read_text(encoding="utf-8"))
+        self.assertEqual(preview["signature"], runtime._preview_signature(preview))
+        snapshot = json.loads((example / "priority-snapshot.json").read_text(encoding="utf-8"))
+        cluster = snapshot["areas"][0]["clusters"][0]
+        expected_score = runtime.TYPE_WEIGHTS[cluster["type"]] + cluster["support_count"] + 2
+        self.assertEqual(cluster["impact_score"], expected_score)
+        self.assertEqual(cluster["cluster_id"], runtime.cluster_id(cluster["type"], cluster["normalized_rule"]))
+
+
+class AdapterTests(unittest.TestCase):
+    def test_portable_adapter_requires_an_explicit_isolated_root(self):
+        with self.assertRaisesRegex(ValueError, "explicit --state-root"):
+            resolve_adapter("portable")
+        with self.assertRaisesRegex(ValueError, "native agent store"):
+            resolve_adapter("portable", state_root=Path.home() / ".codex" / "instinct-review")
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = resolve_adapter("portable", state_root=Path(tmp) / "review-state")
+            self.assertFalse(adapter.capture_supported)
+            self.assertEqual(adapter.paths.store, (Path(tmp) / "review-state").resolve())
+
+    def test_portable_status_is_read_only_and_capture_commands_are_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            adapter = resolve_adapter("portable", state_root=Path(tmp) / "review-state")
+            receipt = runtime.runtime_status(adapter.paths)
+            self.assertFalse(adapter.paths.store.exists())
+            self.assertEqual(receipt["active_instincts"], 0)
+            for command in ("on", "hook", "backfill", "worker", "retry", "promote"):
+                with self.assertRaisesRegex(PermissionError, "review-only"):
+                    adapter.require_command(command)
+
+    def test_portable_import_and_review_never_touch_codex_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            codex_marker = root / "codex-state" / "marker"
+            codex_marker.parent.mkdir()
+            codex_marker.write_text("unchanged\n", encoding="utf-8")
+            adapter = resolve_adapter("portable", state_root=root / "portable-state")
+            source = root / "candidates.json"
+            source.write_text(
+                json.dumps(
+                    [
+                        {
+                            "id": "fictional-1",
+                            "lesson": "Lead with the decision.",
+                            "source": "fictional-review.md",
+                            "observed_on": "2026-09-01",
+                            "evidence": ["The user corrected the order."],
+                            "type": "workflow",
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            receipt = runtime.import_candidates(
+                adapter.paths,
+                source,
+                source_runtime=adapter.name,
+                confirm=True,
+            )
+            cluster = runtime.clusters(adapter.paths)[0]
+            reviewed = runtime.review_cluster(
+                adapter.paths,
+                cluster.cluster_id,
+                "accept",
+                source_runtime=adapter.name,
+                confirm=True,
+            )
+            instinct = runtime.load_instincts(adapter.paths)[0]
+            self.assertEqual(receipt["errors"], [])
+            self.assertTrue(Path(reviewed["instinct_path"]).is_file())
+            self.assertEqual(instinct.source_runtime, "portable")
+            self.assertEqual(codex_marker.read_text(encoding="utf-8"), "unchanged\n")
 
 
 class NormalizerTests(unittest.TestCase):
@@ -463,6 +623,152 @@ class ReviewAndPromotionTests(unittest.TestCase):
             runtime.review_cluster(paths, selected.cluster_id, "match", confirm=True)
             self.assertEqual(runtime.load_instincts(paths)[0].seen_count, 2)
 
+    def test_exact_match_requires_type_and_normalized_rule(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            first = root / "workflow.jsonl"
+            write_transcript(first, session_id="workflow")
+            capture_with_suggestion(paths, first, "workflow", "Use one summary.", candidate_type="workflow")
+            cluster = runtime.clusters(paths)[0]
+            runtime.review_cluster(paths, cluster.cluster_id, "accept", confirm=True)
+            second = root / "correction.jsonl"
+            write_transcript(second, session_id="correction")
+            capture_with_suggestion(paths, second, "correction", "Use one summary.", candidate_type="correction")
+            cluster = runtime.clusters(paths)[0]
+            self.assertEqual(cluster.match_state, "new")
+            runtime.review_cluster(paths, cluster.cluster_id, "accept", confirm=True)
+            self.assertEqual({item.instinct_type for item in runtime.load_instincts(paths)}, {"workflow", "correction"})
+
+    def test_priority_is_voice_first_then_breadth_newness_and_recency(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = runtime.resolve_paths(root / "codex")
+            repo_one = root / "one"
+            repo_two = root / "two"
+            (repo_one / ".git").mkdir(parents=True)
+            (repo_two / ".git").mkdir(parents=True)
+            for index, (skill, cwd, day) in enumerate(
+                (("skill-a", repo_one, "2026-08-20"), ("skill-b", repo_two, "2026-08-21")),
+                start=1,
+            ):
+                write_candidate_audit(
+                    paths,
+                    session_id=f"broad-{index}",
+                    day=day,
+                    candidate_type="workflow",
+                    rule="Use one approved outline.",
+                    source_skill=skill,
+                    cwd=str(cwd),
+                )
+            write_candidate_audit(
+                paths,
+                session_id="voice-1",
+                day="2026-08-01",
+                candidate_type="voice",
+                rule="Use plain language.",
+                cwd=str(repo_one),
+            )
+            write_candidate_audit(
+                paths,
+                session_id="scope-old",
+                day="2026-08-10",
+                candidate_type="scope",
+                rule="Keep the release narrow.",
+            )
+            write_candidate_audit(
+                paths,
+                session_id="scope-new",
+                day="2026-08-30",
+                candidate_type="scope",
+                rule="Defer optional integrations.",
+            )
+            ranked = runtime.clusters(paths)
+            self.assertEqual(ranked[0].candidate_type, "voice")
+            workflow = next(item for item in ranked if item.rule == "Use one approved outline.")
+            self.assertEqual(workflow.source_skills, ("skill-a", "skill-b"))
+            self.assertEqual(len(workflow.session_cwds), 2)
+            scopes = [item for item in ranked if item.candidate_type == "scope"]
+            self.assertEqual([item.rule for item in scopes], ["Defer optional integrations.", "Keep the release narrow."])
+
+    def test_priority_snapshot_and_status_include_stale_count_without_read_only_rewrite(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = runtime.resolve_paths(Path(tmp) / "codex")
+            paths.instincts.mkdir(parents=True)
+            legacy = paths.instincts / "pmm-instinct-2026-07-01-001.md"
+            runtime.atomic_write_text(
+                legacy,
+                runtime._serialize_frontmatter(
+                    {
+                        "id": legacy.stem,
+                        "type": "workflow",
+                        "confidence": 0.3,
+                        "created": "2026-07-01",
+                        "last_seen": "2026-07-01",
+                        "seen_count": 1,
+                        "status": "active",
+                    },
+                    "Use one summary.\n\n**Evidence:** Fictional evidence.",
+                ),
+            )
+            before = legacy.read_bytes()
+            self.assertEqual(runtime.runtime_status(paths)["stale_instincts"], 1)
+            runtime.backlog(paths)
+            self.assertEqual(legacy.read_bytes(), before)
+            destination = runtime.write_priority_snapshot(paths)
+            snapshot = json.loads(destination.read_text(encoding="utf-8"))
+            self.assertEqual(snapshot["instincts"]["stale_candidates"], 1)
+            self.assertEqual(runtime.load_instincts(paths)[0].suggested_destination, "")
+            write_candidate_audit(
+                paths,
+                session_id="legacy-match",
+                day="2026-09-01",
+                candidate_type="workflow",
+                rule="Use one summary.",
+            )
+            cluster = runtime.clusters(paths)[0]
+            runtime.review_cluster(
+                paths,
+                cluster.cluster_id,
+                "match",
+                source_runtime="portable",
+                confirm=True,
+            )
+            metadata, _ = runtime._parse_frontmatter(legacy.read_text(encoding="utf-8"))
+            self.assertEqual(metadata["source_runtime"], "portable")
+            self.assertTrue(metadata["suggested_destination"])
+            self.assertIn("promotion_outcome", metadata)
+
+    def test_strong_correction_and_contradiction_are_explicit_instinct_state(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            for index in range(3):
+                transcript = root / f"correction-{index}.jsonl"
+                write_transcript(transcript, session_id=f"correction-{index}")
+                capture_with_suggestion(
+                    paths,
+                    transcript,
+                    f"correction-{index}",
+                    "Keep the evidence beside the claim.",
+                    candidate_type="correction",
+                )
+            cluster = runtime.clusters(paths)[0]
+            runtime.review_cluster(
+                paths,
+                cluster.cluster_id,
+                "accept",
+                strong_correction=True,
+                contradicted=True,
+                confirm=True,
+            )
+            instinct = runtime.load_instincts(paths)[0]
+            metadata, _ = runtime._parse_frontmatter(instinct.path.read_text(encoding="utf-8"))
+            self.assertTrue(metadata["strong_correction"])
+            self.assertTrue(instinct.contradicted)
+            self.assertEqual(instinct.confidence, 0.45)
+            self.assertTrue(instinct.suggested_destination)
+
     def test_confidence_reaches_promotion_threshold_at_three_supports(self):
         self.assertLess(runtime.confidence_for_support(2), 0.5)
         self.assertEqual(runtime.confidence_for_support(3), 0.5)
@@ -542,14 +848,41 @@ class ReviewAndPromotionTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 runtime.apply_promotion(paths, instinct_id, destination="project")
             applied = runtime.apply_promotion(paths, instinct_id, destination="project", confirm=True)
-            duplicate = runtime.promotion_preview(paths, instinct_id, destination="project")
-            covered = runtime.apply_promotion(paths, instinct_id, destination="project", confirm=True)
             self.assertTrue(applied["applied"])
-            self.assertTrue(duplicate["targets"][0]["duplicate"])
-            self.assertEqual(covered["changed"], [])
-            self.assertEqual(covered["covered"], [str((repo / "AGENTS.md").resolve())])
+            self.assertEqual(applied["terminal_status"], "promoted")
+            promoted = runtime.load_instincts(paths)[0]
+            self.assertEqual(promoted.status, "promoted")
+            self.assertEqual(promoted.promotion_outcome, "promoted")
+            self.assertEqual(runtime.runtime_status(paths)["promotion_candidates"], 0)
+            with self.assertRaisesRegex(ValueError, "not eligible"):
+                runtime.promotion_preview(paths, instinct_id, destination="project")
             self.assertIn(runtime.PROMOTED_GUIDANCE_HEADING, (repo / "AGENTS.md").read_text(encoding="utf-8"))
             self.assertEqual((repo / "AGENTS.md").stat().st_mode & 0o777, 0o644)
+
+    def test_already_covered_promotion_becomes_terminal_without_duplicate_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / "repo"
+            (repo / ".git").mkdir(parents=True)
+            rule = "Put the decision first."
+            agents = repo / "AGENTS.md"
+            agents.write_text(f"# Instructions\n\n{runtime.PROMOTED_GUIDANCE_HEADING}\n\n- {rule}\n", encoding="utf-8")
+            before = agents.read_bytes()
+            paths = enabled_paths(root / "codex")
+            for index in range(3):
+                transcript = root / f"covered-{index}.jsonl"
+                write_transcript(transcript, session_id=f"covered-{index}", cwd=str(repo))
+                capture_with_suggestion(paths, transcript, f"covered-{index}", rule)
+            selected = runtime.clusters(paths)[0]
+            receipt = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
+            instinct_id = Path(receipt["instinct_path"]).stem
+            preview = runtime.promotion_preview(paths, instinct_id, destination="project")
+            self.assertTrue(preview["targets"][0]["duplicate"])
+            covered = runtime.apply_promotion(paths, instinct_id, destination="project", confirm=True)
+            self.assertEqual(covered["terminal_status"], "covered")
+            self.assertEqual(covered["changed"], [])
+            self.assertEqual(agents.read_bytes(), before)
+            self.assertEqual(runtime.load_instincts(paths)[0].status, "covered")
 
     def test_low_confidence_cannot_promote(self):
         with tempfile.TemporaryDirectory() as tmp:

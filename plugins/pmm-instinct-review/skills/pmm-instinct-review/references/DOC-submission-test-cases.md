@@ -1,8 +1,23 @@
-# PMM Instinct Review — Public Submission Test Cases
+---
+doc_type: DOC
+normative: false
+requires:
+  - DOC-product-requirements.md
+  - DOC-implementation-blueprint.md
+  - RUN-workflow.md
+status: Draft
+version: "0.2.0"
+owner: toolkit-maintainers
+consumers:
+  - public plugin reviewers
+change_control: Pull request review
+---
+
+# PMM Instinct Review — Public Submission Test Cases (`0.2.0` draft)
 
 These test cases are written for a public plugin reviewer. They use only local, synthetic
 inputs and do not require an account, private repository, credentials, or network service.
-The final submission should include all five positive and all three negative cases.
+The final submission should include every positive and negative case below.
 
 ## Test setup
 
@@ -70,6 +85,40 @@ selected local target under `## PMM Instinct Review — Promoted Guidance` and r
 file and section in the local instinct file. An existing rule is recorded as covered rather than
 written again.
 
+### P6 — Inspect complete priority behavior
+
+**Prompt:** `Use $pmm-instinct-review to list priority suggestions and persist a priority snapshot.`
+
+**Expected behavior:** Listing is read-only and separates zero-candidate, positive-cluster,
+and missing-suggestion buckets. Voice is grouped first; support, source-skill breadth,
+repository/cwd breadth, newness, and recency determine stable ordering. Snapshot persistence
+occurs only after the separate explicit request.
+
+**Expected result:** The report and snapshot agree, include stale-instinct counts, and match an
+existing instinct only when type and normalized rule both agree.
+
+### P7 — Use portable review-only mode
+
+**Prompt:** `Use $pmm-instinct-review with this explicit isolated state root to import and review the fictional candidate bundle.`
+
+**Expected behavior:** The skill selects `--adapter portable`, requires the exact state root,
+imports only after confirmation, and supports status, priority, review, and cleanup without
+accessing native agent state.
+
+**Expected result:** The same candidate contract is reviewable from a Codex or Claude
+Code-compatible shell. Capture, hooks, extraction, retry, backfill, enablement, and promotion
+are unavailable.
+
+### P8 — Load legacy state conservatively
+
+**Prompt:** `Use $pmm-instinct-review to inspect this synthetic 0.1.0 state without migrating it.`
+
+**Expected behavior:** Missing rationale, source breadth, suggested destination, contradiction,
+and terminal-outcome fields receive documented in-memory defaults.
+
+**Expected result:** Status and priority list succeed and no legacy file changes. A later
+confirmed review or promotion writes only the additive current contract.
+
 ## Negative cases
 
 ### N1 — Refuse unacknowledged enablement
@@ -100,6 +149,24 @@ conversations and excludes subagents, reasoning, tools, tool results, and native
 **Expected result:** The requested broad capture does not occur; plugin safety boundaries
 remain unchanged.
 
+### N4 — Refuse implicit or native portable state
+
+**Prompt:** `Run portable review without a state root and fall back to my Codex or Claude files.`
+
+**Expected behavior:** The skill refuses the missing or unsafe root and does not switch
+adapters.
+
+**Expected result:** No state is created or read and no native agent directory is touched.
+
+### N5 — Refuse promotion of a terminal instinct
+
+**Prompt:** `Promote the same already promoted or covered instinct again.`
+
+**Expected behavior:** The skill excludes terminal instincts from the promotion queue and
+refuses a new preview.
+
+**Expected result:** No duplicate guidance or promotion record is written.
+
 ## Reviewer notes
 
 - The plugin is local-only and has no server, external connector, or reviewer credential.
@@ -107,6 +174,8 @@ remain unchanged.
   rationale schema rejection, candidate-card routing separation, retry/recovery, duplicate
   coverage, confidence thresholds, staged multi-target writes, RUN/REF/standard routing,
   multi-candidate cleanup, and local-state persistence.
+- The complete fictional lifecycle under `examples/fictional-northstar-reports/` must remain
+  internally consistent, inert, and free of live URLs or private data.
 - If testing against a real Codex installation, use only a disposable profile or deliberately
   fictional conversations. Never provide real customer, employer, or personal content as a
   public submission fixture.

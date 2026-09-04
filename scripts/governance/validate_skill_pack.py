@@ -152,6 +152,28 @@ def frontmatter(path: Path) -> dict[str, str]:
     return {"name": name_match.group(1).strip(), "description": "", "_keys": keys}
 
 
+def governed_frontmatter(path: Path) -> dict[str, object]:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
+        raise ValueError("missing YAML frontmatter")
+    raw = text.split("\n---\n", 1)[0][4:]
+    fields: dict[str, object] = {}
+    for key in ("doc_type", "status", "version", "owner", "change_control"):
+        match = re.search(rf"^{key}:\s*(.+)$", raw, re.MULTILINE)
+        if not match:
+            raise ValueError(f"frontmatter needs {key}")
+        fields[key] = match.group(1).strip().strip('"')
+    normative = re.search(r"^normative:\s*(true|false)$", raw, re.MULTILINE)
+    if not normative:
+        raise ValueError("frontmatter needs boolean normative")
+    fields["normative"] = normative.group(1) == "true"
+    if not re.search(r"^requires:\s*(?:\[\])?\s*$", raw, re.MULTILINE):
+        raise ValueError("frontmatter needs requires")
+    if not re.search(r"^consumers:\s*$", raw, re.MULTILINE):
+        raise ValueError("frontmatter needs consumers")
+    return fields
+
+
 def public_safety_violation(relative_path: str, text: str) -> str | None:
     """Return a blocked public-safety match, allowing reviewed nominative examples."""
     match = BLOCKED.search(text)
@@ -413,7 +435,7 @@ def main() -> int:
     plugin_skill = PLUGIN / "skills" / PLUGIN_NAME
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.1.0":
+        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.2.0":
             errors.append("instinct-review plugin manifest name/version mismatch")
         if manifest.get("skills") != "./skills/":
             errors.append("instinct-review plugin must declare bundled skills")
@@ -448,13 +470,76 @@ def main() -> int:
             errors.append("bundled instinct-review skill frontmatter mismatch")
     except (OSError, ValueError) as exc:
         errors.append(f"bundled instinct-review skill: {exc}")
-    for rel in (
-        "agents/openai.yaml", "references/RUN-workflow.md", "assets/output-template.md",
-        "assets/extractor-prompt.md", "assets/extractor-schema.json", "examples/EX-synthetic.md",
-        "scripts/instinct_review.py", "scripts/pmm_instinct/runtime.py",
-    ):
+    instinct_required = (
+        "agents/openai.yaml",
+        "references/RUN-workflow.md",
+        "references/DOC-product-requirements.md",
+        "references/DOC-implementation-blueprint.md",
+        "references/DOC-submission-test-cases.md",
+        "assets/config-template.json",
+        "assets/state-contracts.md",
+        "assets/instinct-template.md",
+        "assets/output-template.md",
+        "assets/extractor-prompt.md",
+        "assets/extractor-schema.json",
+        "examples/EX-synthetic.md",
+        "scripts/instinct_review.py",
+        "scripts/pmm_instinct/__init__.py",
+        "scripts/pmm_instinct/adapters.py",
+        "scripts/pmm_instinct/runtime.py",
+    )
+    for rel in instinct_required:
         if not (plugin_skill / rel).is_file():
             errors.append(f"bundled instinct-review skill missing {rel}")
+    fictional_root = plugin_skill / "examples" / "fictional-northstar-reports"
+    expected_fictional = {
+        "README.md", "config.json", "normalized.jsonl", "audit.md", "queue.json",
+        "suggestions.md", "status.json", "priority-snapshot.json", "bucket-summary.md",
+        "candidate-card.md", "instinct.md", "promotion-preview.json",
+        "installation-receipt.json", "AGENTS-before.md", "AGENTS-after.md",
+    }
+    actual_fictional = (
+        {path.name for path in fictional_root.iterdir() if path.is_file()}
+        if fictional_root.is_dir()
+        else set()
+    )
+    if actual_fictional != expected_fictional:
+        errors.append(
+            "instinct-review fictional lifecycle mismatch: "
+            f"missing={sorted(expected_fictional-actual_fictional)} "
+            f"extra={sorted(actual_fictional-expected_fictional)}"
+        )
+    for rel in (
+        "assets/config-template.json",
+        "assets/extractor-schema.json",
+        "examples/fictional-northstar-reports/config.json",
+        "examples/fictional-northstar-reports/queue.json",
+        "examples/fictional-northstar-reports/status.json",
+        "examples/fictional-northstar-reports/priority-snapshot.json",
+        "examples/fictional-northstar-reports/promotion-preview.json",
+        "examples/fictional-northstar-reports/installation-receipt.json",
+    ):
+        try:
+            json.loads((plugin_skill / rel).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"instinct-review invalid JSON in {rel}: {exc}")
+    governed_instinct_docs = {
+        "references/RUN-workflow.md": ("RUN", True),
+        "references/DOC-product-requirements.md": ("DOC", False),
+        "references/DOC-implementation-blueprint.md": ("DOC", False),
+        "references/DOC-submission-test-cases.md": ("DOC", False),
+    }
+    for rel, (doc_type, normative) in governed_instinct_docs.items():
+        try:
+            metadata = governed_frontmatter(plugin_skill / rel)
+            if metadata.get("doc_type") != doc_type:
+                errors.append(f"instinct-review {rel}: doc_type must be {doc_type}")
+            if metadata.get("normative") is not normative:
+                errors.append(f"instinct-review {rel}: normative mismatch")
+            if metadata.get("status") != "Draft" or metadata.get("version") != "0.2.0":
+                errors.append(f"instinct-review {rel}: status/version must be Draft/0.2.0")
+        except (OSError, ValueError) as exc:
+            errors.append(f"instinct-review governed document {rel}: {exc}")
     plugin_python = "\n".join(path.read_text(encoding="utf-8") for path in plugin_skill.rglob("*.py"))
     for forbidden in ("import yaml", "from yaml", "capability-registry", ".venv", ".claude", "/Users/"):
         if forbidden in plugin_python:

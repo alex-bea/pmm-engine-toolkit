@@ -1,4 +1,4 @@
-"""Standard-library-only runtime for the PMM Instinct Review Codex plugin."""
+"""Standard-library-only runtime for the PMM Instinct Review plugin."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -31,6 +31,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
 }
 ALLOWED_TYPES = ("correction", "confirmation", "voice", "scope", "workflow")
 TYPE_WEIGHTS = {"voice": 10, "workflow": 6, "scope": 5, "correction": 4, "confirmation": 3}
+TYPE_AREAS = {
+    "voice": ("voice-framing", "Voice and framing", 5),
+    "workflow": ("execution-workflow", "Execution workflow", 4),
+    "scope": ("scope-decision-rules", "Scope and decision rules", 3),
+    "correction": ("execution-corrections", "Execution corrections", 2),
+    "confirmation": ("preference-confirmation", "Preference and confirmation", 1),
+}
 LEGACY_RATIONALE = "Without this rule, the correction described in the evidence could recur."
 PROMOTED_GUIDANCE_HEADING = "## PMM Instinct Review — Promoted Guidance"
 CONTEXT_WRAPPER_MARKERS = tuple(
@@ -140,6 +147,8 @@ class Cluster:
     latest: date | None
     impact_score: int
     impact_tier: str
+    area_key: str
+    area_label: str
     match_state: str = "new"
 
 
@@ -156,9 +165,14 @@ class Instinct:
     rule: str
     source_skill: str
     source_skills: tuple[str, ...]
+    source_runtime: str
+    source_transcript_format: str
     source_cwds: tuple[str, ...]
     source_repositories: tuple[Path, ...]
     why_it_matters: str
+    contradicted: bool
+    suggested_destination: str
+    promotion_outcome: str
     promoted_to: tuple[str, ...]
 
 
@@ -1076,8 +1090,34 @@ def _write_review_ledger(paths: RuntimePaths, ledger: dict[str, Any]) -> None:
     atomic_write_json(paths.state / "review-decisions.json", ledger)
 
 
+def _area_for_type(candidate_type: str) -> tuple[str, str, int]:
+    return TYPE_AREAS.get(candidate_type, ("other", "Other", 0))
+
+
+def _impact_tier(impact: int, support: int, skill_count: int, cwd_count: int) -> str:
+    if impact >= 20 or (support >= 10 and skill_count >= 3):
+        return "critical"
+    if impact >= 12 or support >= 8 or skill_count >= 2 or cwd_count >= 3:
+        return "high"
+    if impact >= 6 or support >= 4:
+        return "medium"
+    return "low"
+
+
+def _cluster_sort_key(item: Cluster) -> tuple[Any, ...]:
+    area_priority = _area_for_type(item.candidate_type)[2]
+    recency = item.latest.toordinal() if item.latest else 0
+    return (-area_priority, -item.impact_score, -item.support_count, -recency, item.cluster_id)
+
+
 def _all_clusters(paths: RuntimePaths, *, include_decided: bool) -> list[Cluster]:
     ledger = _review_ledger(paths)
+    instincts = load_instincts(paths)
+    instinct_keys = {
+        (instinct.instinct_type, normalize_rule(instinct.rule))
+        for instinct in instincts
+        if instinct.status == "active"
+    }
     grouped: dict[tuple[str, str], list[Candidate]] = {}
     for audit in find_audits(paths, pending_only=True):
         for candidate in load_candidates(audit):
@@ -1089,10 +1129,23 @@ def _all_clusters(paths: RuntimePaths, *, include_decided: bool) -> list[Cluster
             grouped.setdefault((candidate.candidate_type, normalized), []).append(candidate)
     records: list[Cluster] = []
     for (candidate_type, normalized), items in grouped.items():
+        items = sorted(items, key=lambda item: (item.audit_date or date.min, item.session_id))
         first = items[0]
         support = len({item.session_id for item in items})
-        impact = TYPE_WEIGHTS.get(candidate_type, 0) + min(support, 5)
-        tier = "high" if impact >= 12 else "medium" if impact >= 8 else "low"
+        source_skills = tuple(sorted({item.source_skill for item in items if item.source_skill}))
+        session_cwds = tuple(sorted({item.cwd for item in items if item.cwd}))
+        match_state = "exact" if (candidate_type, normalized) in instinct_keys else "new"
+        skill_breadth = max(0, len(source_skills) - 1) * 2
+        cwd_breadth = max(0, len(session_cwds) - 1)
+        impact = (
+            TYPE_WEIGHTS.get(candidate_type, 2)
+            + support
+            + skill_breadth
+            + cwd_breadth
+            + (2 if match_state == "new" else 0)
+        )
+        tier = _impact_tier(impact, support, len(source_skills), len(session_cwds))
+        area_key, area_label, _ = _area_for_type(candidate_type)
         dates = sorted(item.audit_date for item in items if item.audit_date)
         records.append(
             Cluster(
@@ -1106,27 +1159,30 @@ def _all_clusters(paths: RuntimePaths, *, include_decided: bool) -> list[Cluster
                 support_count=support,
                 session_ids=tuple(sorted({item.session_id for item in items})),
                 audit_paths=tuple(sorted({item.audit_path for item in items})),
-                source_skills=tuple(sorted({item.source_skill for item in items if item.source_skill})),
-                session_cwds=tuple(sorted({item.cwd for item in items if item.cwd})),
+                source_skills=source_skills,
+                session_cwds=session_cwds,
                 earliest=dates[0] if dates else None,
                 latest=dates[-1] if dates else None,
                 impact_score=impact,
                 impact_tier=tier,
+                area_key=area_key,
+                area_label=area_label,
+                match_state=match_state,
             )
         )
-    instincts = load_instincts(paths)
-    instinct_rules = {normalize_rule(instinct.rule) for instinct in instincts if instinct.status == "active"}
-    return sorted(
-        [replace(item, match_state="exact" if item.normalized_rule in instinct_rules else "new") for item in records],
-        key=lambda item: (-item.impact_score, -item.support_count, item.cluster_id),
-    )
+    return sorted(records, key=_cluster_sort_key)
 
 
 def clusters(paths: RuntimePaths) -> list[Cluster]:
     return _all_clusters(paths, include_decided=False)
 
 
-def confidence_for_support(support: int, *, correction: bool = False) -> float:
+def confidence_for_support(
+    support: int,
+    *,
+    strong_correction: bool = False,
+    contradicted: bool = False,
+) -> float:
     if support >= 11:
         confidence = 0.85
     elif support >= 6:
@@ -1135,9 +1191,11 @@ def confidence_for_support(support: int, *, correction: bool = False) -> float:
         confidence = 0.50
     else:
         confidence = 0.30
-    if correction:
+    if strong_correction:
         confidence += 0.05
-    return min(1.0, round(confidence, 2))
+    if contradicted:
+        confidence -= 0.10
+    return max(0.0, min(1.0, round(confidence, 2)))
 
 
 def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
@@ -1218,9 +1276,14 @@ def load_instincts(paths: RuntimePaths) -> list[Instinct]:
                     rule=_body_rule(body),
                     source_skill=source_skill,
                     source_skills=source_skills,
+                    source_runtime=str(metadata.get("source_runtime") or ""),
+                    source_transcript_format=str(metadata.get("source_transcript_format") or ""),
                     source_cwds=_metadata_strings(metadata, "source_cwds"),
                     source_repositories=tuple(Path(item) for item in _metadata_strings(metadata, "source_repositories")),
                     why_it_matters=_body_labeled_value(body, "Why it matters") or LEGACY_RATIONALE,
+                    contradicted=bool(metadata.get("contradicted", False)),
+                    suggested_destination=str(metadata.get("suggested_destination") or ""),
+                    promotion_outcome=str(metadata.get("promotion_outcome") or ""),
                     promoted_to=tuple(str(item) for item in promoted if str(item)),
                 )
             )
@@ -1251,11 +1314,48 @@ def _source_repositories(cwds: Iterable[str]) -> tuple[Path, ...]:
     return tuple(repositories)
 
 
+def suggested_destination_for_cluster(cluster: Cluster) -> str:
+    """Return a conservative destination hint without resolving or writing a path."""
+
+    if cluster.candidate_type == "voice":
+        return "ref" if cluster.source_skills else "global"
+    if len(cluster.source_skills) >= 3:
+        return "standard"
+    if cluster.source_skills and cluster.candidate_type in {"workflow", "scope", "correction"}:
+        return "run"
+    if len(_source_repositories(cluster.session_cwds)) == 1:
+        return "project"
+    return "both" if cluster.session_cwds else "global"
+
+
+def stale_instincts(
+    instincts: Iterable[Instinct],
+    *,
+    today: date | None = None,
+    stale_days: int = 28,
+) -> list[Instinct]:
+    current = today or date.today()
+    return sorted(
+        (
+            instinct
+            for instinct in instincts
+            if instinct.status == "active"
+            and instinct.seen_count == 1
+            and (current - instinct.created).days > stale_days
+        ),
+        key=lambda instinct: (instinct.created, instinct.instinct_id),
+    )
+
+
 def _write_new_instinct(
     paths: RuntimePaths,
     cluster: Cluster,
     rule: str | None = None,
     why_it_matters: str | None = None,
+    *,
+    source_runtime: str = "codex",
+    strong_correction: bool = False,
+    contradicted: bool = False,
 ) -> Path:
     ensure_store(paths)
     instincts = load_instincts(paths)
@@ -1268,17 +1368,27 @@ def _write_new_instinct(
     metadata = {
         "id": identifier,
         "type": cluster.candidate_type,
-        "confidence": confidence_for_support(cluster.support_count, correction=cluster.candidate_type == "correction"),
+        "confidence": confidence_for_support(
+            cluster.support_count,
+            strong_correction=strong_correction,
+            contradicted=contradicted,
+        ),
         "created": created.isoformat(),
         "last_seen": (cluster.latest or created).isoformat(),
         "seen_count": cluster.support_count,
         "status": "active",
         "source_skill": cluster.source_skills[0] if len(cluster.source_skills) == 1 else "",
         "source_skills": list(cluster.source_skills),
-        "source_runtime": "codex",
-        "source_transcript_format": "normalized-jsonl-v1",
+        "source_runtime": source_runtime,
+        "source_transcript_format": (
+            "normalized-jsonl-v1" if source_runtime == "codex" else "explicit-candidate-json-v1"
+        ),
         "source_cwds": list(cluster.session_cwds),
         "source_repositories": [str(path) for path in _source_repositories(cluster.session_cwds)],
+        "strong_correction": strong_correction,
+        "contradicted": contradicted,
+        "suggested_destination": suggested_destination_for_cluster(cluster),
+        "promotion_outcome": "",
         "promoted_to": [],
     }
     body = "\n\n".join(
@@ -1291,17 +1401,39 @@ def _write_new_instinct(
     return atomic_write_text(paths.instincts / f"{identifier}.md", _serialize_frontmatter(metadata, body))
 
 
-def _update_instinct(instinct: Instinct, cluster: Cluster) -> Path:
+def _update_instinct(
+    instinct: Instinct,
+    cluster: Cluster,
+    *,
+    source_runtime: str = "codex",
+    strong_correction: bool = False,
+    contradicted: bool = False,
+) -> Path:
     metadata, body = _parse_frontmatter(instinct.path.read_text(encoding="utf-8"))
     seen = instinct.seen_count + cluster.support_count
     metadata["seen_count"] = seen
     metadata["last_seen"] = (cluster.latest or date.today()).isoformat()
-    metadata["confidence"] = confidence_for_support(seen, correction=instinct.instinct_type == "correction")
+    metadata["strong_correction"] = bool(metadata.get("strong_correction", False)) or strong_correction
+    metadata["contradicted"] = bool(metadata.get("contradicted", False)) or contradicted
+    metadata["confidence"] = confidence_for_support(
+        seen,
+        strong_correction=bool(metadata["strong_correction"]),
+        contradicted=bool(metadata["contradicted"]),
+    )
     metadata["source_cwds"] = sorted(set(instinct.source_cwds) | set(cluster.session_cwds))
     metadata["source_skills"] = sorted(set(instinct.source_skills) | set(cluster.source_skills))
     metadata["source_repositories"] = sorted(
         {str(path) for path in instinct.source_repositories} | {str(path) for path in _source_repositories(cluster.session_cwds)}
     )
+    metadata["source_runtime"] = str(metadata.get("source_runtime") or source_runtime)
+    metadata["source_transcript_format"] = str(
+        metadata.get("source_transcript_format")
+        or ("normalized-jsonl-v1" if source_runtime == "codex" else "explicit-candidate-json-v1")
+    )
+    metadata["suggested_destination"] = str(
+        metadata.get("suggested_destination") or suggested_destination_for_cluster(cluster)
+    )
+    metadata["promotion_outcome"] = str(metadata.get("promotion_outcome") or "")
     return atomic_write_text(instinct.path, _serialize_frontmatter(metadata, body))
 
 
@@ -1350,6 +1482,9 @@ def review_cluster(
     *,
     edited_rule: str | None = None,
     edited_rationale: str | None = None,
+    source_runtime: str = "codex",
+    strong_correction: bool = False,
+    contradicted: bool = False,
     confirm: bool = False,
 ) -> dict[str, Any]:
     if decision not in {"accept", "reject", "edit", "match"}:
@@ -1363,15 +1498,29 @@ def review_cluster(
         raise ValueError("edit requires a non-empty edited rule")
     if decision != "edit" and edited_rationale is not None:
         raise ValueError("edited rationale is allowed only with an edit decision")
+    if strong_correction and selected.candidate_type != "correction":
+        raise ValueError("strong correction applies only to correction candidates")
     matching = next(
-        (item for item in load_instincts(paths) if item.status == "active" and normalize_rule(item.rule) == selected.normalized_rule),
+        (
+            item
+            for item in load_instincts(paths)
+            if item.status == "active"
+            and item.instinct_type == selected.candidate_type
+            and normalize_rule(item.rule) == selected.normalized_rule
+        ),
         None,
     )
     instinct_path: Path | None = None
     if decision == "match":
         if not matching:
             raise ValueError("match decision requires an exact active instinct")
-        instinct_path = _update_instinct(matching, selected)
+        instinct_path = _update_instinct(
+            matching,
+            selected,
+            source_runtime=source_runtime,
+            strong_correction=strong_correction,
+            contradicted=contradicted,
+        )
     elif decision in {"accept", "edit"}:
         if matching:
             raise ValueError("an exact active instinct exists; use match")
@@ -1380,6 +1529,9 @@ def review_cluster(
             selected,
             (edited_rule or "").strip() or None,
             (edited_rationale or "").strip() or None,
+            source_runtime=source_runtime,
+            strong_correction=strong_correction,
+            contradicted=contradicted,
         )
     ledger = _review_ledger(paths)
     previous_sessions = set(ledger.get(selected.cluster_id, {}).get("session_ids", []))
@@ -1409,6 +1561,8 @@ def review_cluster(
         "cluster_id": selected.cluster_id,
         "decision": decision,
         "instinct_path": str(instinct_path) if instinct_path else None,
+        "strong_correction": strong_correction,
+        "contradicted": contradicted,
         "resolved_audits": [str(path) for path in resolved_paths],
         "cleanup_warnings": warnings,
     }
@@ -1429,21 +1583,20 @@ def resolve_zero_candidate_audits(paths: RuntimePaths, *, confirm: bool = False)
 def backlog(paths: RuntimePaths) -> dict[str, Any]:
     pending = find_audits(paths, pending_only=True)
     items = clusters(paths)
-    zero = sum(suggestion_count(audit.suggestions_path) == 0 for audit in pending)
-    missing = sum(suggestion_count(audit.suggestions_path) is None for audit in pending)
+    zero_audits = [audit for audit in pending if suggestion_count(audit.suggestions_path) == 0]
+    missing_audits = [audit for audit in pending if suggestion_count(audit.suggestions_path) is None]
     unresolved = sum(bool(audit.normalized_path and audit.normalized_path.exists()) for audit in pending)
-    return {
-        "pending_audits": len(pending),
-        "positive_clusters": len(items),
-        "positive_suggestions": sum((suggestion_count(audit.suggestions_path) or 0) for audit in pending),
-        "zero_candidate_audits": zero,
-        "missing_suggestions": missing,
-        "unresolved_normalized_transcripts": unresolved,
-        "clusters": [
+    serialized: list[dict[str, Any]] = []
+    for item in items:
+        source_repositories = [str(path) for path in _source_repositories(item.session_cwds)]
+        serialized.append(
             {
                 "cluster_id": item.cluster_id,
                 "type": item.candidate_type,
+                "area_key": item.area_key,
+                "area_label": item.area_label,
                 "rule": item.rule,
+                "normalized_rule": item.normalized_rule,
                 "evidence": item.evidence,
                 "context": item.context,
                 "why_it_matters": item.why_it_matters or LEGACY_RATIONALE,
@@ -1454,21 +1607,104 @@ def backlog(paths: RuntimePaths) -> dict[str, Any]:
                     "why_it_matters": item.why_it_matters or LEGACY_RATIONALE,
                     "support_count": item.support_count,
                     "source_skills": list(item.source_skills),
+                    "source_repositories": source_repositories,
                     "session_cwds": list(item.session_cwds),
                     "first_seen": item.earliest.isoformat() if item.earliest else None,
                     "last_seen": item.latest.isoformat() if item.latest else None,
                     "existing_match": item.match_state,
                 },
                 "support_count": item.support_count,
+                "session_ids": list(item.session_ids),
+                "audit_paths": [str(path) for path in item.audit_paths],
                 "source_skills": list(item.source_skills),
+                "source_repositories": source_repositories,
                 "session_cwds": list(item.session_cwds),
+                "first_seen": item.earliest.isoformat() if item.earliest else None,
+                "last_seen": item.latest.isoformat() if item.latest else None,
                 "impact_score": item.impact_score,
                 "impact_tier": item.impact_tier,
                 "match_state": item.match_state,
             }
-            for item in items
-        ],
+        )
+    areas = []
+    for area_key, area_label, _ in sorted(TYPE_AREAS.values(), key=lambda value: -value[2]):
+        area_clusters = [item for item in serialized if item["area_key"] == area_key]
+        if area_clusters:
+            areas.append(
+                {
+                    "area_key": area_key,
+                    "area_label": area_label,
+                    "cluster_count": len(area_clusters),
+                    "clusters": area_clusters,
+                }
+            )
+    tier_counts = {
+        tier: sum(item["impact_tier"] == tier for item in serialized)
+        for tier in ("critical", "high", "medium", "low")
     }
+    match_counts = {
+        state: sum(item["match_state"] == state for item in serialized)
+        for state in ("new", "exact")
+    }
+    return {
+        "pending_audits": len(pending),
+        "positive_clusters": len(items),
+        "positive_suggestions": sum((suggestion_count(audit.suggestions_path) or 0) for audit in pending),
+        "zero_candidate_audits": len(zero_audits),
+        "missing_suggestions": len(missing_audits),
+        "unresolved_normalized_transcripts": unresolved,
+        "priority_summary": {
+            "impact_tiers": tier_counts,
+            "areas": {area["area_key"]: area["cluster_count"] for area in areas},
+            "match_states": match_counts,
+        },
+        "buckets": {
+            "zero_candidate": {
+                "count": len(zero_audits),
+                "audit_ids": [audit.session_id for audit in zero_audits],
+            },
+            "positive_clusters": {"count": len(items)},
+            "missing_suggestions": {
+                "count": len(missing_audits),
+                "audit_ids": [audit.session_id for audit in missing_audits],
+            },
+        },
+        "areas": areas,
+        "clusters": serialized,
+    }
+
+
+def priority_snapshot_path(paths: RuntimePaths) -> Path:
+    return paths.sessions / "instinct-priority.json"
+
+
+def build_priority_snapshot(
+    paths: RuntimePaths,
+    *,
+    generated_at: datetime | None = None,
+    today: date | None = None,
+) -> dict[str, Any]:
+    snapshot = backlog(paths)
+    instincts = load_instincts(paths)
+    return {
+        "schema_version": 1,
+        "generated_at": (generated_at or utc_now()).isoformat(timespec="seconds"),
+        "store": str(paths.store),
+        "priority_snapshot_path": str(priority_snapshot_path(paths)),
+        "backlog": {key: value for key, value in snapshot.items() if key not in {"clusters", "areas"}},
+        "instincts": {
+            "active": sum(item.status == "active" for item in instincts),
+            "promotion_candidates": sum(
+                item.status == "active" and item.confidence >= 0.5 for item in instincts
+            ),
+            "stale_candidates": len(stale_instincts(instincts, today=today)),
+        },
+        "areas": snapshot["areas"],
+    }
+
+
+def write_priority_snapshot(paths: RuntimePaths) -> Path:
+    return atomic_write_json(priority_snapshot_path(paths), build_priority_snapshot(paths))
 
 
 def _nearest_repository(path: str | Path) -> Path | None:
@@ -1815,6 +2051,10 @@ def apply_promotion(
         set(instinct.promoted_to)
         | {f"{item['path']} § {PROMOTED_GUIDANCE_HEADING}" for item in preview["targets"]}
     )
+    changed = [str(path) for path, _ in updates]
+    covered = [item["path"] for item in preview["targets"] if item["duplicate"]]
+    metadata["status"] = "promoted" if changed else "covered"
+    metadata["promotion_outcome"] = metadata["status"]
     evidence = _body_labeled_value(body, "Evidence") or "Clustered from approved session suggestions."
     updated_body = "\n\n".join(
         [
@@ -1826,8 +2066,9 @@ def apply_promotion(
     atomic_write_text(instinct.path, _serialize_frontmatter(metadata, updated_body))
     preview_record_path.unlink(missing_ok=True)
     preview["applied"] = True
-    preview["changed"] = [str(path) for path, _ in updates]
-    preview["covered"] = [item["path"] for item in preview["targets"] if item["duplicate"]]
+    preview["changed"] = changed
+    preview["covered"] = covered
+    preview["terminal_status"] = metadata["status"]
     return preview
 
 
@@ -1896,6 +2137,7 @@ def import_candidates(
     source: str | Path,
     *,
     cwd: str = "",
+    source_runtime: str = "codex",
     confirm: bool = False,
 ) -> dict[str, Any]:
     if not confirm:
@@ -1952,7 +2194,7 @@ def import_candidates(
                     f"**session_id:** {source_id}",
                     f"**suggestions_path:** {suggestions_path}",
                     "**source_transcript_format:** explicit-candidate-json-v1",
-                    "**source_runtime:** codex",
+                    f"**source_runtime:** {source_runtime}",
                     f"**cwd:** {cwd}",
                     f"**skill:** {source_skill}",
                     "",
@@ -1989,14 +2231,21 @@ def preflight(paths: RuntimePaths, *, codex_binary: str | None = None) -> dict[s
 def runtime_status(paths: RuntimePaths) -> dict[str, Any]:
     config = load_config(paths)
     instincts = load_instincts(paths)
+    current_backlog = backlog(paths)
     return {
         "enabled": bool(config.get("enabled")),
         "privacy_acknowledged_at": config.get("privacy_acknowledged_at"),
         "extractor_model": config.get("extractor_model"),
         "queue": queue_counts(paths),
-        "backlog": {key: value for key, value in backlog(paths).items() if key != "clusters"},
+        "backlog": {
+            key: value
+            for key, value in current_backlog.items()
+            if key not in {"clusters", "areas"}
+        },
         "active_instincts": sum(item.status == "active" for item in instincts),
         "promotion_candidates": sum(item.status == "active" and item.confidence >= 0.5 for item in instincts),
+        "stale_instincts": len(stale_instincts(instincts)),
+        "priority_snapshot_path": str(priority_snapshot_path(paths)),
         "store": str(paths.store),
         "preflight": preflight(paths),
     }

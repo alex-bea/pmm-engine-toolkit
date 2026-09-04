@@ -1,0 +1,20 @@
+{
+  "preview_id": "nsr-preview-001",
+  "instinct_id": "pmm-instinct-2026-09-03-001",
+  "decision": "project",
+  "rule": "Lead recurring decision reports with the decision and supporting evidence before chronology.",
+  "why_it_matters": "Decision-first structure lets reviewers evaluate the outcome and evidence before reading process detail.",
+  "insertion": "- Lead recurring decision reports with the decision and supporting evidence before chronology.",
+  "section": "## PMM Instinct Review — Promoted Guidance",
+  "targets": [
+    {
+      "path": "/work/northstar-reports/AGENTS.md",
+      "duplicate": false
+    }
+  ],
+  "signature": "a3e0792f37db198f31ee7801c95b39a420892cedf2475cc9928355e83c52d67c",
+  "previewed_at": "2026-09-03T17:08:00+00:00",
+  "confirmation_required": true,
+  "applied": false,
+  "terminal_status_after_apply": "promoted"
+}
