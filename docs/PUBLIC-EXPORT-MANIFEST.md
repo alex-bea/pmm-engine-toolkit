@@ -23,6 +23,12 @@ requires adopter-positioning approval before comparison, and permits an explicit
 baseline. An earlier Draft Codex migration suite under `product-requirements/comp-intel/` is
 retained as non-binding design history.
 
+The `marketing-brief` package preserves the full PMM Engine template-fill method: the
+canonical seven-section template and limits, detailed source precedence and field ownership,
+generic Tier 1–3 launch guidance, multi-launch and edit behavior, and a complete fictional
+source packet with its finished brief. It is stateless and directly installable; private
+examples were used only to calibrate structure and depth and are not part of the export.
+
 ## Package contract
 
 Every skill includes:
