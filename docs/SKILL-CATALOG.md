@@ -42,7 +42,13 @@ The categories are mutually exclusive by each skill's primary job.
 
 - `guidance-review` — check copy against a supplied claims guide.
 - `linkedin-ghostwriter` — draft from consented voice profiles and sources.
-- `marketing-brief` — create an evidence-bound marketing brief.
+- `marketing-brief` — turn approved product and launch inputs into one concise, source-bound
+  brief per launch using the canonical seven-section PMM template. The skill includes full
+  source-precedence and launch-tier rules, missing-data and edit behavior, and a complete
+  fictional source-to-brief example. It is agent-neutral, stateless, and directly installable
+  without repository-root dependencies. See the [starter guide](../skills/marketing-brief/README.md),
+  [source inventory](DOC-marketing-brief-source-inventory-v1.0.md), and
+  [product requirements](DOC-marketing-brief-product-requirements-v1.0.md).
 - `pre-read-sharpener` — make an executive pre-read decision-ready.
 - `product-page-copywriter` — draft product and use-case page copy.
 - `sales-one-pager` — produce a prospect-facing one-pager.
