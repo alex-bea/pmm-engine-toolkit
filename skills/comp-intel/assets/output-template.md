@@ -2,6 +2,8 @@
 
 Status: Draft — local review does not authorize external publication.
 
+Coverage status: `[FULL / LIMITED COVERAGE]`
+
 | Run | Mode | Window | Prepared | Evidence review |
 |---|---|---|---|---|
 | `[run ID]` | `[baseline / standard / resume]` | `[inclusive start]` to `[exclusive end]` | `[YYYY-MM-DD]` | `[reviewer, date, version/digest]` |
@@ -55,6 +57,12 @@ State which configured priority each selected signal maps to. The lens affects r
 ## Limitations and unknowns
 
 - `[Material limitation or open question]`
+
+## Source enrichment
+
+- **Highest-value source to add next:** `[specific source or source type]`
+- **Gap it would resolve:** `[claim, date, positioning, pricing, adoption, or other gap]`
+- **Verification step:** `[how the PMM can approve, replace, or reject the candidate]`
 
 ## Claims and evidence
 

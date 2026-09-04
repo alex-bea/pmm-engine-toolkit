@@ -9,7 +9,9 @@ Owner: `[positioning owner]`
 Last reviewed: `[YYYY-MM-DD]`
 
 This file stores what the adopter is currently allowed to say and where the competitive
-response is incomplete. Do not add a counter merely because it sounds persuasive.
+response is incomplete after competitor research. The approved `adopter-positioning.md` file
+is the upstream source for audiences, category, value, differentiation, claims, proof, and
+comparison criteria. Do not add a counter merely because it sounds persuasive.
 
 ## How to use this file
 

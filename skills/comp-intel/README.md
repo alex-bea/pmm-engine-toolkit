@@ -20,16 +20,57 @@ subdirectories together so all relative links resolve.
 Then ask the agent to use `comp-intel` or invoke `$comp-intel` in runtimes that support
 explicit skill names.
 
-## Set up your market
+## Your first 30 minutes
+
+Start with your product website plus competitor names and homepages. Ask:
+
+```text
+Use $comp-intel to set up this market and run my first baseline.
+```
+
+The agent will:
+
+1. create a separate workspace for the product, geography, or product-geography scope;
+2. use each competitor homepage to propose official product, pricing, blog, changelog,
+   release-note, documentation, repository, and social sources;
+3. ask you to verify those links before saving them to the canonical source map;
+4. inspect available Slack and Drive metadata, suggest a manageable set of likely sources,
+   and ask permission before reading any content;
+5. ask whether you have other useful sources;
+6. draft your product positioning from approved sources and revise it with you;
+7. record your positioning approval; and
+8. run the first baseline, clearly labeling limited coverage and recommending what to add next.
+
+The target is about 30 minutes of PMM attention. Research and rendering may continue after the
+interactive setup. Read `references/RUN-onboarding.md` for the exact procedure.
+
+## What to bring and where it goes
+
+You can start with only the first two rows. The agent proposes the rest and records each
+decision as setup progresses.
+
+| Information or source | Required to start? | Saved in |
+|---|---|---|
+| Product name, website, and product/geography scope | yes | `market-pack.yaml` |
+| Competitor names and homepages | yes | `market-pack.yaml` |
+| Proposed competitor product, pricing, blog, changelog, release, docs, repository, and social links | agent discovers; PMM verifies | Pending in `onboarding-state.md`; verified results in `source-map.md` |
+| Approved product docs, positioning, strategy, priorities, or proof | no | Access record in `source-map.md`; synthesized position in `adopter-positioning.md` |
+| Approved Slack channels, Drive files, local notes, or other internal sources | no | `source-map.md` with approved access scope and sensitivity |
+| Existing competitor facts or past narrative captures | no | `competitor-registry.md` and, when comparative, `positioning-context.md` |
+| Optional stakeholder or business priorities | no | `stakeholder-lens.yaml` |
+
+## Files the setup creates
 
 Create an adopter-owned folder outside the installed skill and copy these templates into it:
 
 | Copy this file | What you fill in |
 |---|---|
 | `assets/market-pack-template.yaml` | Market name, competitor roster, analysis categories, and date policy |
-| `assets/source-map-template.md` | Approved internal, community, web, repository, pricing, and social sources plus search terms |
+| `assets/onboarding-state-template.md` | Setup progress, pending source candidates, approvals, and safe resume point |
+| `assets/source-map-template.md` | Verified competitor and adopter sources used by future runs |
+| `assets/adopter-positioning-template.md` | Approved audience, problem, category, value, differentiation, claims, proof, and comparison criteria |
 | `assets/competitor-registry-template.md` | Durable competitor facts, current narrative, watch items, and source dates |
-| `assets/positioning-context-template.md` | Your reviewed claims, per-competitor counters, concessions, and missing responses |
+| `assets/positioning-context-template.md` | Post-research competitor comparisons, counters, concessions, and missing responses |
 | `assets/stakeholder-lens-template.yaml` | Optional decision priorities used to rank—not manufacture—signals |
 | `assets/tracker-templates.md` | Battlecard gaps, narrative changes, and unconfirmed win/loss signals |
 | `assets/run-record-template.md` | Mode, scope, loaded inputs, stage history, and safe resume point |
@@ -68,6 +109,7 @@ The runbook supports four modes:
 | Document | Purpose |
 |---|---|
 | `SKILL.md` | Routes the agent, states boundaries, and defines the end-to-end output contract |
+| `references/RUN-onboarding.md` | Guides first-run source discovery, verification, positioning approval, baseline, and enrichment |
 | `references/RUN-workflow.md` | Gives the exact collection, analysis, review, and update procedure |
 | `references/REF-analyst-contract.md` | Defines evidence quality, analyst judgment, gap rules, and executive-writing standards |
 | `references/DOC-setup-and-mapping.md` | Shows how to replace placeholders with your market, sources, permissions, and owners |

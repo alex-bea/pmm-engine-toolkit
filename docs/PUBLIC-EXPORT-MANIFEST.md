@@ -13,8 +13,11 @@ self-contained governance skills that can be installed independently from GitHub
 
 The repository also contains a complete, agent-neutral competitive-intelligence starter kit
 under `skills/comp-intel/`: a working analyst method, fillable source/registry/positioning/
-tracker templates, review gates, a complete fictional example, and an optional deterministic
-controller. An earlier Draft Codex migration suite under `product-requirements/comp-intel/` is
+tracker templates, a guided first-run procedure, review gates, a complete fictional example,
+and an optional deterministic controller. The setup procedure starts with adopter and
+competitor homepages, keeps unverified source candidates outside the canonical source map,
+requires adopter-positioning approval before comparison, and permits an explicitly limited
+baseline. An earlier Draft Codex migration suite under `product-requirements/comp-intel/` is
 retained as non-binding design history.
 
 ## Package contract
@@ -56,8 +59,8 @@ import command.
   normalized transcripts are part of the public export.
 - Competitive-intelligence adopters must map their own internal names, channels, company
   systems, permissions, existing intelligence data, reviewers, and output destinations. The
-  package provides blank templates and a fully fictional worked example; no live mapping is
-  included or inferred.
+  package provides blank templates, source-verification and content-access gates, and a fully
+  fictional worked example; no live mapping is included or inferred.
 
 ## Verification
 

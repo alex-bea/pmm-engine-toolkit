@@ -2,6 +2,10 @@
 
 Status: pending exact-draft review
 
+Market: `fictional-devtools-us`
+
+Baseline coverage: limited
+
 ## Battlecard gaps
 
 | Gap ID | Opened | Competitor | Verified claim | Affected buyer/use case | Coverage | Needed response | Evidence | Owner | Status |
@@ -12,7 +16,7 @@ Status: pending exact-draft review
 
 | Change ID | Observed | Competitor | Type | Prior | Current | Implication | Evidence | Status |
 |---|---|---|---|---|---|---|---|---|
-| NAR-001 | 2026-08-25 | BluePeak | expansion | “Ship without guessing.” | “See what every team ships and uses.” | Inference: broader team-buyer focus | BP-PRIOR-01, E-003 | proposed |
+| NAR-001 | 2026-08-25 | BluePeak | expansion | “Ship without guessing.” | “See what every team ships and uses.” | Inference: broader team-buyer focus | E-008, E-003 | proposed |
 
 ## Win/loss signals
 
@@ -22,4 +26,4 @@ No new row. E-006 is an internal evaluation question, not a win or loss.
 
 | Run ID | Mode | Window | Evidence review | Draft review | Registry updated | Key limitation | Briefing |
 |---|---|---|---|---|---|---|---|
-| fictional-devtools-2026-08-26 | standard | 2026-08-18 to 2026-08-26 | pending | pending | no | No adoption or plan-entitlement evidence | draft-briefing.md |
+| fictional-devtools-us-2026-08-26 | baseline | 2026-06-01 to 2026-08-26 | approved | pending | no | Limited source families; no adoption or plan-entitlement evidence | draft-briefing.md |

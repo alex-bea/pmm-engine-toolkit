@@ -22,8 +22,10 @@ Status: draft pending pull-request approval.
 
 This review covers the public `skills/comp-intel/` package changes that translate a mature
 private operating method into a generic analyst workflow, fillable templates, and a fictional
-worked example. It also covers the related catalog, contributor-routing, export-manifest, test,
-and IP-inventory changes in the same candidate.
+worked example. The candidate includes the guided onboarding runbook, resumable setup record,
+verified source-map structure, adopter-positioning approval file, limited-baseline behavior,
+and source-enrichment handoff. It also covers the related catalog, contributor-routing,
+export-manifest, test, and IP-inventory changes in the same candidate.
 
 It does not cover adopter data, live source connections, private migration, external
 publication, a marketplace submission, or any future real-company example.
@@ -47,13 +49,15 @@ customer or deal information. No finding remains in `skills/comp-intel/`.
 
 Live mappings, evidence, stakeholder context, registries, trackers, and reports are explicitly
 adopter-owned and stored outside the installed skill. The templates require sensitivity and
-public-safety labels, and the workflow keeps publication and external messaging out of scope.
+public-safety labels. Candidate URLs remain outside the canonical source map until adopter
+verification, and internal message or document contents remain unread until the adopter grants
+access. The workflow keeps publication and external messaging out of scope.
 
 ## Verification evidence
 
 - Skill Creator validation: pass.
 - Competitive-intelligence contract validation: pass.
-- Full unit suite: 114 tests pass.
+- Full unit suite: 117 tests pass.
 - Public skill-package validator: 25 skills and two plugins pass.
 - Governed-document strict audit: 34 documents pass, including this review.
 - GitHub Actions validator: three pinned, least-privilege workflows pass.

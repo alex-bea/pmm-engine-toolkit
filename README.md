@@ -89,9 +89,11 @@ toolkit without copying private operating context.
 The [competitive-intelligence starter kit](skills/comp-intel/README.md) publishes the reusable
 framework of a mature working practice: source mapping, collection logic, evidence standards,
 competitor registries, positioning and narrative analysis, gap trackers, executive briefing,
-review gates, and a complete fictional example. Copy the skill into Claude Code, Codex, or
-another compatible agent environment, fill the adopter-owned templates, and use the guided
-workflow with whatever source access you authorize.
+review gates, and a complete fictional example. Its guided first run turns a product website
+and competitor homepages into a verified source map, reviewed adopter positioning, and a
+clearly scoped baseline with about 30 minutes of PMM input. Copy the skill into Claude Code,
+Codex, or another compatible agent environment and use the sources you authorize. See the
+[first-run onboarding procedure](skills/comp-intel/references/RUN-onboarding.md).
 
 The document-led workflow is the default. An optional standard-library controller adds
 synthetic/local-file adapters, deterministic evidence manifests, digest-bound review records,

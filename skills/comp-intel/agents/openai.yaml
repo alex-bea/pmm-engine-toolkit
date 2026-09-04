@@ -1,4 +1,4 @@
 interface:
   display_name: "Competitive Intelligence"
-  short_description: "Run a practical evidence-backed competitor scan"
-  default_prompt: "Use $comp-intel to run a competitive scan for my configured market and stop for evidence review before updating anything."
+  short_description: "Set up and run a sourced competitor baseline"
+  default_prompt: "Use $comp-intel to set up my market from competitor homepages, verify sources and positioning with me, and run the first baseline."
