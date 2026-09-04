@@ -1,0 +1,30 @@
+schema_version: 1
+lens_id: fictional-harborkey-pmm-lead
+status: approved
+owner_role: Fictional product-marketing lead
+sensitivity: internal
+fictional: true
+priorities:
+  - priority: Migration readiness
+    what_to_flag:
+      - Competitors publishing account export or incumbent migration guidance
+      - Evaluation evidence that key portability changes a buying decision
+    decision_or_action: Decide whether HarborKey needs reviewed migration proof or enablement
+  - priority: Policy-control differentiation
+    what_to_flag:
+      - Competitors unifying authentication and transaction permissions
+      - Competitors adding auditable agent or session controls
+    decision_or_action: Reassess whether HarborKey's approved policy claim remains differentiated
+  - priority: Category expansion
+    what_to_flag:
+      - Wallet providers expanding into payments or money movement
+      - Ownership changes that create a broader bundled platform
+    decision_or_action: Decide whether category language or partner strategy needs review
+executive_style:
+  max_signals: 2
+  lead_with_conclusion: true
+  max_sentences_per_signal: 4
+  one_action_or_ask_per_signal: true
+limitations:
+  - This fictional role-based lens may rank and frame reviewed signals but cannot change evidence status, confidence, or sensitivity.
+  - It contains no personal profile or inferred individual preference.

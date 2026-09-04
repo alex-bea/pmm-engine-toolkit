@@ -78,7 +78,9 @@ Create an adopter-owned folder outside the installed skill and copy these templa
 | `assets/output-template.md` | The briefing produced for each run |
 
 Follow `references/DOC-setup-and-mapping.md` for the setup checklist. The complete fictional
-worked example starts at `examples/EX-synthetic.md`.
+worked example starts at `examples/EX-synthetic.md`. Its HarborKey embedded-wallet scenario
+fills all 11 human-readable templates at the depth of a mature working practice, while using
+only non-reversible fictional facts and reserved `.invalid` URLs.
 
 ## Run it
 
@@ -117,7 +119,7 @@ The runbook supports four modes:
 | `references/DOC-review-and-apply.md` | Defines the human review gates and safe local-update procedure |
 | `references/DOC-troubleshooting.md` | Explains safe degradation and failure handling |
 | `assets/*-template.*` | Provides blank, reusable working files for the adopter's own context |
-| `examples/EX-synthetic.md` | Walks through a complete fictional run and links each filled example file |
+| `examples/EX-synthetic.md` | Walks through a full-depth fictional embedded-wallet baseline and links one completed counterpart for every human-readable template |
 | `scripts/` and `assets/schemas/` | Optional deterministic controller for teams that need machine-checked manifests and approvals |
 
 ## Safety boundary

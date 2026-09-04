@@ -1,0 +1,103 @@
+schema_version: 1
+market_id: harborkey-embedded-wallets
+display_name: HarborKey embedded-wallet infrastructure
+version: 1.0.0
+status: example-only
+fictional: true
+scope:
+  scope_type: product
+  product: HarborKey Wallet Platform
+  geography: not-applicable
+  market_definition: >-
+    Infrastructure used by software teams to embed account creation, authentication,
+    programmable wallet controls, and transaction execution into customer applications.
+  exclusions:
+    - Standalone consumer wallets
+    - General payment processors without embedded-wallet capabilities
+    - Base-layer networks without a wallet developer product
+adopter:
+  display_name: HarborKey
+  homepage: https://harborkey.example.invalid/
+workspace_files:
+  source_map: source-map.md
+  adopter_positioning: adopter-positioning.md
+  competitor_registry: competitor-registry.md
+  positioning_context: positioning-context.md
+  trackers: trackers.md
+competitors:
+  - competitor_id: asterport
+    display_name: AsterPort
+    homepage: https://asterport.example.invalid/
+    status: active
+    aliases: [Aster Port, AsterPort SDK]
+    ambiguity_filters: [wallet, authentication, embedded account]
+  - competitor_id: brindleauth
+    display_name: BrindleAuth
+    homepage: https://brindleauth.example.invalid/
+    status: active
+    aliases: [Brindle Auth, Brindle Wallets]
+    ambiguity_filters: [wallet, identity, developer]
+  - competitor_id: cinderkey
+    display_name: CinderKey
+    homepage: https://cinderkey.example.invalid/
+    status: monitor
+    aliases: [Cinder Key]
+    ambiguity_filters: [wallet, authentication, SDK]
+  - competitor_id: dovetail-wallets
+    display_name: Dovetail Wallets
+    homepage: https://dovetail-wallets.example.invalid/
+    status: monitor
+    aliases: [Dovetail, Dovetail SDK]
+    ambiguity_filters: [wallet, onboarding, conversion]
+  - competitor_id: emberpass
+    display_name: EmberPass
+    homepage: https://emberpass.example.invalid/
+    status: active
+    aliases: [Ember Pass, EmberPass Finance]
+    ambiguity_filters: [wallet, fintech, programmable account]
+  - competitor_id: fableaccount
+    display_name: FableAccount
+    homepage: https://fableaccount.example.invalid/
+    status: watchlist
+    aliases: [Fable Account, Fable SDK]
+    ambiguity_filters: [smart account, wallet infrastructure, signing]
+analysis:
+  categories: [product, positioning, pricing, go_to_market, customer, ownership, narrative]
+  max_executive_signals: 2
+  business_priorities:
+    - Defend HarborKey's unified policy-control position
+    - Improve migration readiness for teams replacing an incumbent wallet provider
+    - Track competitors expanding from wallet SDKs into money movement
+window_policy:
+  date_basis: [event_at, published_at]
+  missing_date: retain_with_limitation
+  baseline_days: 123
+  standard_days: 3
+status_policy:
+  active: Verified material signal or live evaluation in the last 30 days
+  monitor: Direct competitor with no material signal in the last 30 days
+  watchlist: Adjacent provider with a named expansion or evaluation trigger
+  dormant: No material signal or continuing market relevance in the last 180 days
+sources:
+  - source_id: verified-public-web
+    adapter_id: web
+    required: true
+    enabled: true
+    config:
+      source_map: source-map.md
+      allowed_domains: verified-entries-only
+  - source_id: approved-internal-slack
+    adapter_id: slack
+    required: false
+    enabled: true
+    config:
+      source_map: source-map.md
+      content_scope: approved-channels-and-window-only
+  - source_id: approved-local-notes
+    adapter_id: local_files
+    required: false
+    enabled: true
+    config:
+      allowed_root: ./approved-notes
+      files: [wallet-evaluations.md]
+optional_failure_policy: continue_with_warning

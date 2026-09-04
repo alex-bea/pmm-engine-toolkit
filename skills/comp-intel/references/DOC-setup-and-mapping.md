@@ -93,7 +93,8 @@ A verified homepage is enough to run a limited baseline. Missing blogs, changelo
 notes, pricing, product pages, documentation, social accounts, or internal sources must be
 reported prominently. End by walking the PMM through the highest-value missing source.
 
-The fictional package under `examples/fictional-devtools/` shows every minimum file filled in.
+The full-depth fictional package under `examples/fictional-embedded-wallets/` shows every
+human-readable template filled in and cross-referenced through one limited baseline.
 
 ## Optional structured setup
 
