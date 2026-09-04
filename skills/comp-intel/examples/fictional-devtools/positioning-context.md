@@ -1,23 +1,28 @@
 # Fictional positioning context
 
-Status: example only
+Status: Draft — proposed baseline comparison; example only
+
+Market: `fictional-devtools-us`
 
 Owner: Fictional product marketing role
 
-Last reviewed: 2026-08-17
+Created: 2026-08-26
+
+Upstream adopter position: `adopter-positioning.md`, approved 2026-08-26
 
 ## LaunchPad claims currently usable
 
 | ID | Claim | Status | Fictional proof | Restriction |
 |---|---|---|---|---|
-| LP-CL-01 | LaunchPad connects deployment health to feature-adoption events. | reviewed | Fictional product documentation dated 2026-08-01 | Use for developer-observability comparisons only |
-| LP-CL-02 | LaunchPad can be configured in under ten minutes. | draft | Internal test only | Do not use externally |
+| LP-CL-01 | LaunchPad connects deployment health to feature-adoption events. | reviewed | LP-SRC-01, LP-SRC-02 | Use for developer-observability comparisons only |
+| LP-CL-02 | LaunchPad can be configured in under ten minutes. | hold | LP-SRC-03; internal test only | Do not use externally |
 
 ## Versus BluePeak
 
 ### Their primary claim
 
-BluePeak helps developers “ship without guessing.” Source: BP-PRIOR-01, observed 2026-08-10.
+BluePeak previously said “Ship without guessing” and now says “See what every team ships and
+uses.” Sources: E-008 and E-003.
 
 ### Where LaunchPad is strong
 
@@ -47,3 +52,8 @@ released capability?”
 
 - BluePeak adds adoption metrics, exports, admin roles, or enterprise proof.
 
+## Review status
+
+This comparative position is proposed from the first baseline and remains pending exact-draft
+review. Approval of `adopter-positioning.md` does not automatically approve these competitor
+conclusions.

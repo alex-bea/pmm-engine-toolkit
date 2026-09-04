@@ -3,15 +3,20 @@
 Create a working directory owned by the adopter. Do not put live configuration, evidence,
 private sources, reports, or mutable registries inside the installed skill.
 
+For a new market, follow `references/RUN-onboarding.md`. The PMM should not have to assemble
+the package unaided or know every source URL before beginning.
+
 ## Minimum setup
 
 Copy and fill:
 
-1. `assets/market-pack-template.yaml` — market and roster;
-2. `assets/source-map-template.md` — approved sources and searches;
-3. `assets/competitor-registry-template.md` — current durable knowledge;
-4. `assets/positioning-context-template.md` — reviewed claims and counter-positioning; and
-5. `assets/tracker-templates.md` — empty operational trackers.
+1. `assets/onboarding-state-template.md` — resumable setup progress and pending candidates;
+2. `assets/market-pack-template.yaml` — product/geography scope and competitor homepages;
+3. `assets/source-map-template.md` — verified sources and searches;
+4. `assets/adopter-positioning-template.md` — sourced adopter positioning for approval;
+5. `assets/competitor-registry-template.md` — current durable competitor knowledge;
+6. `assets/positioning-context-template.md` — post-research competitive comparisons; and
+7. `assets/tracker-templates.md` — operational trackers.
 
 Optionally copy `assets/stakeholder-lens-template.yaml`. Create an `evidence/` folder and an
 `outputs/` folder. Copy `assets/run-record-template.md` and
@@ -20,8 +25,10 @@ Optionally copy `assets/stakeholder-lens-template.yaml`. Create an `evidence/` f
 ```text
 competitive-intel/
 ├── markets/<market-id>/
+│   ├── onboarding-state.md
 │   ├── market-pack.yaml
 │   ├── source-map.md
+│   ├── adopter-positioning.md
 │   ├── competitor-registry.md
 │   ├── positioning-context.md
 │   ├── stakeholder-lens.yaml        # optional
@@ -37,6 +44,10 @@ competitive-intel/
 
 The layout is a convention, not a runtime requirement. Keep the same functional separation if
 you use different paths.
+
+Create a separate market directory for every product, geography, or product-geography
+combination. Sources may repeat, but their relevance and comparison context must be explicit in
+each market.
 
 ## Map before live use
 
@@ -73,9 +84,14 @@ Use one registry and positioning file per market when comparison criteria differ
 
 ## First run
 
-Run a baseline before recurring scans. Choose and record an absolute extended window, verify
-the full roster, capture the current narrative and pricing state for every competitor, seed the
-gap tracker, and review all durable facts before applying them.
+Before competitor analysis, verify the source map and approve the adopter-positioning draft.
+Then run a baseline before recurring scans. Choose and record an absolute extended window,
+verify the full roster, capture the current narrative and pricing state for every competitor,
+seed the gap tracker, and review all durable facts before applying them.
+
+A verified homepage is enough to run a limited baseline. Missing blogs, changelogs, release
+notes, pricing, product pages, documentation, social accounts, or internal sources must be
+reported prominently. End by walking the PMM through the highest-value missing source.
 
 The fictional package under `examples/fictional-devtools/` shows every minimum file filled in.
 

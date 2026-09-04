@@ -8,6 +8,9 @@ analysis method.
 
 Use exactly one market or product area per run.
 
+If the market lacks a reviewed source map or approved adopter positioning, stop here and follow
+`references/RUN-onboarding.md`. Do not make the PMM construct those files without guidance.
+
 | Mode | Use it when | Collection behavior | End state |
 |---|---|---|---|
 | `baseline` | Creating the first reliable current-state view | Use an adopter-chosen extended window; inspect every rostered competitor and all required source classes | Initial registry, positioning gaps, trackers, and brief |
@@ -37,15 +40,19 @@ Load, in this order:
 
 1. `references/REF-analyst-contract.md`;
 2. the adopter's market pack;
-3. the competitor registry;
-4. the source map;
-5. optional positioning context;
-6. optional stakeholder lens; and
-7. optional authorized call notes, win/loss records, or product-positioning inputs.
+3. the reviewed source map containing verified URLs and documented `not found` results;
+4. the approved adopter-positioning file;
+5. the competitor registry;
+6. optional comparative positioning context;
+7. optional stakeholder lens; and
+8. optional authorized call notes, win/loss records, or product-positioning inputs.
 
-Validate that competitor names and aliases are unambiguous, required sources are reachable,
-and the output directory is adopter-owned. Record missing optional inputs as limitations. Halt
-when the market, window, registry, source map, or a required source is missing.
+Validate that competitor names and aliases are unambiguous, the source map contains no pending
+candidates, adopter positioning is approved, required sources are reachable, and the output
+directory is adopter-owned. An existing reviewed positioning file may satisfy the adopter-
+positioning requirement if it contains equivalent fields. Record missing optional inputs as
+limitations. Halt when the market, window, registry, reviewed source map, approved adopter
+positioning, or a required source is missing.
 
 ## 2. Collect internal signals when authorized
 
@@ -179,7 +186,8 @@ the evidence section instead.
 
 ## 10. Analyze positioning and battlecard gaps
 
-Compare verified competitor claims with the adopter's positioning context.
+Compare verified competitor claims with the approved adopter positioning and any existing
+comparative positioning context.
 
 - `STRONG`: use the existing reviewed counter or comparison criterion.
 - `WEAK`: propose review of the draft, generic, stale, or weakly supported response.
@@ -247,6 +255,12 @@ A baseline also requires:
 - explicit separation between facts established in-window and older current-state facts.
 
 The baseline window is configured by the adopter. Do not hard-code a universal number of days.
+
+When meaningful source categories are missing, complete the useful portion of the baseline and
+label the briefing `LIMITED COVERAGE`. State what was reviewed, what was unavailable, which
+comparisons remain premature, how confidence changed, and the highest-value source to add next.
+Offer to walk the PMM through verifying that source. New sources become canonical only after
+the PMM verifies them and they are written to `source-map.md`.
 
 ## Safe failure behavior
 

@@ -13,13 +13,16 @@ Status: in progress
 | Operator | `[person or agent session]` |
 | Output directory | `[adopter-owned path]` |
 | Current stage | `[configure / collect / evidence-review / synthesize / draft-review / apply / complete / blocked]` |
+| Coverage status | `[full / limited / not-yet-known]` |
 
 ## Inputs loaded
 
+- Onboarding state: `[path + status/date]`
 - Market pack: `[path + version/date]`
-- Source map: `[path + version/date]`
-- Competitor registry: `[path + version/date]`
-- Positioning context: `[path + version/date or not provided]`
+- Verified source map: `[path + version/date]`
+- Approved adopter positioning: `[path + reviewer/date]`
+- Competitor registry: `[path + version/date, or starter roster for a baseline]`
+- Comparative positioning context: `[path + version/date or not provided]`
 - Stakeholder lens: `[path + version/date or not provided]`
 - Optional downstream inputs: `[paths or not provided]`
 
@@ -44,4 +47,3 @@ Status: in progress
 
 Record hashes or version identifiers when the adopter needs exact-artifact binding. If any
 reviewed artifact changes, mark the relevant review stale and repeat it.
-

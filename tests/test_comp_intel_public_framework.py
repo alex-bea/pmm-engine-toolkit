@@ -12,6 +12,7 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
         required = [
             "README.md",
             "SKILL.md",
+            "references/RUN-onboarding.md",
             "references/RUN-workflow.md",
             "references/REF-analyst-contract.md",
             "references/DOC-setup-and-mapping.md",
@@ -19,6 +20,8 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
             "references/DOC-review-and-apply.md",
             "references/DOC-troubleshooting.md",
             "assets/source-map-template.md",
+            "assets/onboarding-state-template.md",
+            "assets/adopter-positioning-template.md",
             "assets/competitor-registry-template.md",
             "assets/positioning-context-template.md",
             "assets/stakeholder-lens-template.yaml",
@@ -34,7 +37,9 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
         example_root = PACKAGE / "examples/fictional-devtools"
         required = {
             "market-pack.yaml",
+            "onboarding-state.md",
             "source-map.md",
+            "adopter-positioning.md",
             "competitor-registry.md",
             "positioning-context.md",
             "stakeholder-lens.yaml",
@@ -78,6 +83,55 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
                 if re.search(pattern, text, flags=re.IGNORECASE):
                     findings.append(f"{path.relative_to(PACKAGE)}: {pattern}")
         self.assertEqual(findings, [])
+
+    def test_onboarding_requires_verification_before_canonical_or_content_access(self):
+        onboarding = (PACKAGE / "references/RUN-onboarding.md").read_text(encoding="utf-8")
+        normalized = " ".join(onboarding.lower().split())
+        self.assertIn(
+            "only after the pmm verifies a candidate may it be written to `source-map.md`",
+            normalized,
+        )
+        self.assertIn("do not read messages or document bodies yet", normalized)
+        self.assertIn("ask the pmm which sources may be read", normalized)
+
+        source_map = (
+            PACKAGE / "examples/fictional-devtools/source-map.md"
+        ).read_text(encoding="utf-8").lower()
+        onboarding_state = (
+            PACKAGE / "examples/fictional-devtools/onboarding-state.md"
+        ).read_text(encoding="utf-8").lower()
+        self.assertNotIn("| pending", source_map)
+        self.assertIn("pending enrichment verification", onboarding_state)
+
+    def test_fictional_example_is_a_scoped_first_baseline(self):
+        market_pack = (
+            PACKAGE / "examples/fictional-devtools/market-pack.yaml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("market_id: fictional-devtools-us", market_pack)
+        self.assertIn("scope_type: product-geography", market_pack)
+        self.assertIn("product: LaunchPad Analytics", market_pack)
+        self.assertIn("geography: United States", market_pack)
+        self.assertEqual(market_pack.count("homepage: https://"), 4)
+
+        positioning = (
+            PACKAGE / "examples/fictional-devtools/adopter-positioning.md"
+        ).read_text(encoding="utf-8")
+        run_record = (
+            PACKAGE / "examples/fictional-devtools/run-record.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Status: Approved", positioning)
+        self.assertIn("| Mode | baseline |", run_record)
+        self.assertIn("Approved adopter positioning", run_record)
+        self.assertIn("| Coverage status | limited |", run_record)
+
+    def test_limited_baseline_names_the_next_verification_step(self):
+        briefing = (
+            PACKAGE / "examples/fictional-devtools/draft-briefing.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("LIMITED COVERAGE", briefing)
+        self.assertIn("Highest-value source to add next", briefing)
+        self.assertIn("BluePeak customer-stories page", briefing)
+        self.assertIn("only an approved link is copied into `source-map.md`", briefing)
 
 
 if __name__ == "__main__":

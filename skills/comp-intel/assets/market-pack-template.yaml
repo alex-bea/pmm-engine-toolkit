@@ -3,12 +3,29 @@
   "market_id": "replace-market-id",
   "display_name": "Replace market name",
   "version": "1.0.0",
-  "market_boundary": "Describe the buyer, job, use case, and explicit exclusions.",
-  "adopter_product": "Replace with the product or organization being positioned",
+  "scope": {
+    "scope_type": "product-geography",
+    "product": "Replace product or use not-applicable",
+    "geography": "Replace geography or use not-applicable",
+    "market_definition": "Describe the buyer, job, or use case defining competition.",
+    "exclusions": ["Replace with an explicit out-of-scope category"]
+  },
+  "adopter": {
+    "display_name": "Replace adopter product or organization",
+    "homepage": "https://example.invalid/replace-adopter"
+  },
+  "workspace_files": {
+    "source_map": "source-map.md",
+    "adopter_positioning": "adopter-positioning.md",
+    "competitor_registry": "competitor-registry.md",
+    "positioning_context": "positioning-context.md",
+    "trackers": "trackers.md"
+  },
   "competitors": [
     {
       "competitor_id": "replace-competitor-id",
       "display_name": "Replace competitor name",
+      "homepage": "https://competitor.example.invalid/",
       "status": "active",
       "aliases": ["replace-alias"],
       "ambiguity_filters": ["replace-required-context-term"]

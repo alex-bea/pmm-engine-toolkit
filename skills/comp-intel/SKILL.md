@@ -14,8 +14,9 @@ counter-claim, date, source, customer outcome, or product capability.
 
 ## Choose the task
 
-- **Set up a market:** read `references/DOC-setup-and-mapping.md`, then copy and fill the
-  templates named there outside the installed skill.
+- **Set up a market or run the first baseline:** read `references/RUN-onboarding.md` and
+  `references/DOC-setup-and-mapping.md`. Guide the PMM through source verification and
+  adopter-positioning approval before competitor comparison.
 - **Run a scan or baseline:** read `references/RUN-workflow.md` and
   `references/REF-analyst-contract.md`. Use one market and an absolute date window.
 - **Resume a run:** load the saved run record, evidence log, current draft, and last completed
@@ -32,19 +33,24 @@ Resolve these before a live run:
 
 1. one market or product area;
 2. an absolute start and end date;
-3. a filled source map and competitor registry;
+3. a source map containing verified URLs and reviewed `not found` results, plus a competitor
+   registry;
 4. access only to sources the adopter has authorized; and
-5. an adopter-owned output directory.
+5. an adopter-owned output directory; and
+6. approved adopter positioning, or an existing reviewed positioning file containing the
+   equivalent audience, problem, category, value, differentiation, claims, proof, and
+   comparison criteria.
 
-Positioning context and a stakeholder lens are optional. Missing optional context reduces the
-analysis; it does not authorize guessing. Ask one concise question only when a required input
-cannot be resolved safely.
+The comparative positioning context and stakeholder lens are optional before the first
+baseline. The baseline may create the first comparative context. Missing optional inputs reduce
+the analysis; they do not authorize guessing. If setup is incomplete, route to onboarding
+instead of asking the PMM to assemble the files unaided.
 
 ## Run the method
 
 1. **Configure.** Select `baseline`, `standard`, `collection-only`, or `resume`. Load the
-   market pack, competitor registry, source map, positioning context, and optional stakeholder
-   lens.
+   market pack, reviewed source map, approved adopter positioning, competitor registry,
+   comparative positioning context, and optional stakeholder lens.
 2. **Collect.** Search approved internal sources first when available, then developer or
    community sources, then first-party public sources. Check pricing for every active
    competitor. Use social sources only to enrich an already material event.
@@ -66,6 +72,9 @@ cannot be resolved safely.
    proposed changes. External publication, messages, CRM changes, and battlecard publication
    require separate authorization.
 
+For a limited baseline, label the briefing `LIMITED COVERAGE`, explain what is missing, name
+the highest-value source to add next, and offer to walk the PMM through verifying it.
+
 Detailed collection queries, classifications, gap rules, baseline behavior, and stop
 conditions live in `references/RUN-workflow.md`.
 
@@ -78,8 +87,9 @@ Every completed run returns:
 - one or two executive signals, or an explicit “no material signal” result;
 - changed-competitor snapshots and narrative shifts;
 - strong, weak, missing, or conflicting positioning coverage;
-- proposed actions and exact local state changes; and
-- paths to the evidence log, briefing, and proposed or updated trackers.
+- proposed actions and exact local state changes;
+- paths to the evidence log, briefing, and proposed or updated trackers; and
+- the coverage status and highest-value next source when coverage is limited.
 
 A report is a draft unless the adopter's separate publication process approves it.
 
