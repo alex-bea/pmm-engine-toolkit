@@ -14,10 +14,12 @@ merge. Dependency review runs when dependency, workflow, or plugin files change.
 configured as an always-required check because GitHub will leave it absent on unrelated pull
 requests.
 
-The governance job also validates the Codex plugin manifest, marketplace entry, all three
-installable skills, mirrored standards, dry-run behavior, advisory exit behavior, strict
-exit behavior, and approval-gated writes. Document audits remain opt-in and advisory in
-this release; no document-specific workflow is installed into adopting repositories.
+The governance job also validates the Codex plugin manifest and hooks, marketplace entry,
+all three installable skills, mirrored standards, dry-run behavior, advisory exit behavior,
+strict exit behavior, approval-gated writes, shared policy decisions, harness-payload parity,
+scheduled restrictions, stale-digest denial, external-verifier failures, and publisher
+isolation. Document audits remain opt-in and advisory; no document-specific workflow is
+installed into adopting repositories.
 
 ## Security properties
 
@@ -31,6 +33,8 @@ this release; no document-specific workflow is installed into adopting repositor
 - Pull requests use the `pull_request` event; `pull_request_target` is prohibited.
 - Build tooling is installed from `requirements-build.lock` with hashes and binary-only
   mode. Runtime packages are hash-locked and built without isolated dependency downloads.
+- Governance negative tests assert that denied file mutations and publisher calls did not
+  occur. CI receives no approval-verifier or publisher credential.
 
 ## Updating dependencies
 

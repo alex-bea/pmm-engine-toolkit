@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Governance policy decision",
+  "type": "object",
+  "required": ["result", "reason_code", "explanation", "enforcement_class", "harness", "action_class"],
+  "additionalProperties": false,
+  "properties": {
+    "result": {"enum": ["allow", "deny", "require-human"]},
+    "reason_code": {"type": "string", "pattern": "^GOV_[A-Z0-9_]+$"},
+    "explanation": {"type": "string", "minLength": 1},
+    "enforcement_class": {"enum": ["instruction-only", "static-validator", "runtime-guard", "capability-boundary", "external-authority"]},
+    "harness": {"enum": ["claude", "codex", "internal"]},
+    "action_class": {"type": "string", "minLength": 1}
+  }
+}

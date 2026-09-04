@@ -1,0 +1,16 @@
+{
+  "schema_version": 2,
+  "workflow_id": "example-workflow",
+  "run_id": "example-run-001",
+  "stage": "initialized",
+  "runtime": {
+    "execution_mode": "interactive"
+  },
+  "source_policy": {
+    "path": ".agents/governance/source-policy.yaml",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "artifacts": {},
+  "approvals": {},
+  "transition_history": []
+}

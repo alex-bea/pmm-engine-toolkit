@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "adapter_id": "example-publisher",
+  "enabled": false,
+  "approved": false,
+  "command": [
+    "/usr/local/libexec/governed-publisher"
+  ],
+  "allowed_operations": [
+    "publish-approved-artifact"
+  ],
+  "timeout_seconds": 30
+}

@@ -34,3 +34,18 @@ gates as security issues. General support requests belong in the channel describ
 
 This toolkit should not require credentials or private-service access. Optional connectors
 must be configured locally and should use least-privilege access.
+
+## Governance enforcement boundary
+
+Treat bypasses of the shared governance policy, direct mutation of protected run state,
+forged approval acceptance, scheduled human-gate advancement, stale-digest publication,
+raw hook-payload logging, and direct access to publisher credentials as security issues.
+
+Repository instructions and pre-tool hooks are defense layers, not complete privilege
+boundaries. Strong enforcement requires administrator-protected policy and executables,
+restricted filesystem, shell, network, and connector capabilities, protected CI, an
+independent approval authority, and publisher credentials held only by an external adapter.
+If a user or agent can disable the hook, rewrite policy, choose its own verifier, or invoke a
+second publisher path, the affected layer must be reported as bypassable or inactive.
+Codex plugin hooks also require hash-bound trust before they run; only administrator-managed
+hook configuration can make that trust non-optional for local users.

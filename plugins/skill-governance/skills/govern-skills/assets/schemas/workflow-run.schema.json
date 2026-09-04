@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Approval-gated workflow run",
+  "type": "object",
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "required": ["path", "sha256", "disposition"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "disposition": {"const": "staging"}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "required": ["decision", "gate", "approver", "approval_ref", "reviewed_revision", "artifact_path", "artifact_sha256", "approved_at", "authority_id", "verifier_config"],
+      "additionalProperties": false,
+      "properties": {
+        "decision": {"const": "approved"},
+        "gate": {"enum": ["evidence", "claims", "framing", "copy", "publish"]},
+        "approver": {"type": "string", "minLength": 1},
+        "approval_ref": {"type": "string", "minLength": 1},
+        "reviewed_revision": {"type": "string", "minLength": 1},
+        "artifact_path": {"type": "string", "minLength": 1},
+        "artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "approved_at": {"type": "string", "format": "date-time"},
+        "authority_id": {"type": "string", "minLength": 1},
+        "verifier_config": {"type": "string", "pattern": "^/"}
+      }
+    },
+    "transition": {
+      "type": "object",
+      "required": ["from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": {"enum": ["initialized", "collection", "evidence_review", "claims_review", "framing_review", "copy_review", "staging_ready", "publish_ready"]},
+        "to": {"enum": ["collection", "evidence_review", "claims_review", "framing_review", "copy_review", "staging_ready", "publish_ready", "published"]}
+      }
+    },
+    "publication": {
+      "type": "object",
+      "required": ["operation", "receipt_id", "published_at", "artifact_sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {"type": "string", "minLength": 1},
+        "receipt_id": {"type": "string", "minLength": 1},
+        "published_at": {"type": "string", "format": "date-time"},
+        "artifact_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  },
+  "required": ["schema_version", "workflow_id", "run_id", "stage", "runtime", "source_policy", "artifacts", "approvals", "transition_history"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 2},
+    "workflow_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "stage": {"enum": ["initialized", "collection", "evidence_review", "claims_review", "framing_review", "copy_review", "staging_ready", "publish_ready", "published"]},
+    "runtime": {
+      "type": "object",
+      "required": ["execution_mode"],
+      "additionalProperties": false,
+      "properties": {"execution_mode": {"enum": ["interactive", "scheduled"]}}
+    },
+    "source_policy": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {"$ref": "#/$defs/artifact"},
+        "claims": {"$ref": "#/$defs/artifact"},
+        "framing": {"$ref": "#/$defs/artifact"},
+        "copy": {"$ref": "#/$defs/artifact"},
+        "staging": {"$ref": "#/$defs/artifact"}
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {"$ref": "#/$defs/approval"},
+        "claims": {"$ref": "#/$defs/approval"},
+        "framing": {"$ref": "#/$defs/approval"},
+        "copy": {"$ref": "#/$defs/approval"},
+        "publish": {"$ref": "#/$defs/approval"}
+      }
+    },
+    "transition_history": {"type": "array", "items": {"$ref": "#/$defs/transition"}},
+    "publication": {"$ref": "#/$defs/publication"}
+  }
+}

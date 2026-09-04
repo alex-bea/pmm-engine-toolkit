@@ -24,6 +24,9 @@ itself.
 | Template | Required output shape and placeholders | `assets/` or `references/BP-*.md` |
 | Example | Illustrative, non-sensitive input and output | `examples/EX-*.md` |
 | Script | Deterministic validation or transformation | `scripts/` |
+| Policy decision | Harness-neutral allow, deny, or require-human logic | `scripts/governance_policy.py` |
+| Harness adapter | Tool-payload normalization only | `scripts/*_pretooluse.py` or plugin `hooks/` |
+| Capability boundary | Filesystem, network, tool, or credential restriction | Administrator-managed configuration |
 
 ## Quality contract
 
@@ -35,6 +38,10 @@ state after a write.
 Templates define shape, not hidden policy. Examples illustrate behavior but are never
 evidence. Knowledge references own stable rules. Scripts must not silently invent semantic
 content, weaken checks, or broaden the authorized write scope.
+
+Harness adapters must not duplicate policy logic. External verifier and publisher adapters
+must fail closed, avoid shell interpolation, and keep credentials outside model context and
+repository state.
 
 ## Testing
 
