@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "session_id": "nsr-session-003",
+  "state": "succeeded",
+  "attempts": 1,
+  "created_at": "2026-09-03T17:05:00+00:00",
+  "updated_at": "2026-09-03T17:05:04+00:00",
+  "started_at": "2026-09-03T17:05:02+00:00",
+  "finished_at": "2026-09-03T17:05:04+00:00",
+  "extractor_model": "example-session-model",
+  "native_transcript_path": "/work/northstar-reports/native/nsr-session-003.jsonl",
+  "normalized_transcript_path": "/work/northstar-reports/state/sessions/nsr-session-003-normalized.jsonl",
+  "audit_path": "/work/northstar-reports/state/sessions/2026-09-03-1705-nsr-session-003-audit.md",
+  "suggestions_path": "/work/northstar-reports/state/sessions/nsr-session-003-suggestions.md",
+  "source_format": "codex-rollout-event-msg-v1",
+  "recovered": false,
+  "candidate_count": 1,
+  "error": null
+}

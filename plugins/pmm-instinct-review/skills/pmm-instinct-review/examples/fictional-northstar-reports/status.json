@@ -1,0 +1,47 @@
+{
+  "adapter": "codex",
+  "capture_supported": true,
+  "enabled": true,
+  "privacy_acknowledged_at": "2026-09-01T09:15:00+00:00",
+  "extractor_model": "example-session-model",
+  "queue": {
+    "queued": 0,
+    "running": 0,
+    "succeeded": 3,
+    "failed": 0
+  },
+  "backlog": {
+    "pending_audits": 0,
+    "positive_clusters": 0,
+    "positive_suggestions": 0,
+    "zero_candidate_audits": 0,
+    "missing_suggestions": 0,
+    "unresolved_normalized_transcripts": 0,
+    "priority_summary": {
+      "impact_tiers": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+      "areas": {},
+      "match_states": {"new": 0, "exact": 0}
+    },
+    "buckets": {
+      "zero_candidate": {"count": 0, "audit_ids": []},
+      "positive_clusters": {"count": 0},
+      "missing_suggestions": {"count": 0, "audit_ids": []}
+    }
+  },
+  "active_instincts": 0,
+  "promotion_candidates": 0,
+  "stale_instincts": 0,
+  "priority_snapshot_path": "/work/northstar-reports/state/sessions/instinct-priority.json",
+  "store": "/work/northstar-reports/state",
+  "preflight": {
+    "ok": true,
+    "checks": {
+      "python": true,
+      "codex": true,
+      "extractor_schema": true,
+      "model_policy": true
+    },
+    "codex_binary": "/opt/example/bin/codex",
+    "extractor_model": "example-session-model"
+  }
+}

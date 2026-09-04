@@ -47,13 +47,16 @@ deterministic initializer/audit/fix scripts, installable schemas and templates, 
 examples with optional PMM profiles. The document audit is read-only and validates only
 opted-in Markdown structure and local paths. CI verifies mirrored standards against `docs/`.
 
-The `plugins/pmm-instinct-review/` release candidate additionally contains a Codex plugin
-manifest, marketplace registration, plugin-relative hooks, a bundled skill, a standard-library
-Python runtime, an extractor prompt and schema, operator documentation, product requirements,
-an implementation blueprint, public submission test cases, and synthetic tests.
-It has no dependency on a private registry or repository. The retired standalone
-`skills/pmm-instinct-review/` package is represented by the plugin's explicit candidate-file
-import command.
+The `plugins/pmm-instinct-review/` `0.2.0` Draft release candidate additionally contains a
+Codex plugin manifest, marketplace registration, plugin-relative hooks, a bundled skill, a
+standard-library Python runtime, explicit Codex and isolated portable review adapters, an
+extractor prompt and schema, complete public state/output templates, governed product and
+operator documents, focused tests, and a full fictional lifecycle. Codex capture stays
+disabled until explicit consent. Portable mode requires an explicit adopter-owned root,
+supports candidate import and review only, and never reads native agent stores or promotes
+instructions. The package has no dependency on a private registry or repository. The retired
+standalone `skills/pmm-instinct-review/` package is represented by the plugin's explicit
+candidate-file import command.
 
 ## Generalization rules applied
 
@@ -66,6 +69,9 @@ import command.
 - Examples use fictional organizations and people and must never be treated as evidence.
 - No private chats, native Codex history, runtime configuration, audits, instincts, or
   normalized transcripts are part of the public export.
+- PMM Instinct Review examples use the fictional Northstar Reports scenario and `.invalid`
+  domains. No private-to-fictional crosswalk, private route table, Claude desktop capture
+  tooling, private hook, mutable adopter state, or real session example is exported.
 - Competitive-intelligence adopters must map their own internal names, channels, company
   systems, permissions, existing intelligence data, reviewers, and output destinations. The
   package provides blank templates, source-verification and content-access gates, and a fully
@@ -99,3 +105,9 @@ The current starter-kit candidate has a Draft
 remains design history. The public starter kit contains only project-authored generic
 structures and fictional examples. Live source corpora, adopter mappings, and private outputs
 remain outside the public boundary.
+
+The PMM Instinct Review `0.2.0` candidate has separate Draft
+[privacy](legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.2.0-2026-09-04.md),
+[rights](legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.2.0-2026-09-04.md), and
+[secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-04.md) evidence. Those
+documents describe a candidate for review, not an approved release.

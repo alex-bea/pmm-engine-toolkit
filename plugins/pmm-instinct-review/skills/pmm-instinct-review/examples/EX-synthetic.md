@@ -1,8 +1,13 @@
-# Synthetic example
+# Fictional example: Northstar Reports
 
-This fictional example is formatting guidance, not evidence.
+This fully synthetic example demonstrates the public `0.2.0` contracts without copying or
+renaming private evidence. Northstar Reports is a fictional team. Its people, sessions,
+paths, dates, wording, metrics, and relationships were authored solely for this package.
 
-Three completed sessions contain the correction: "Lead with the answer, then give concise
-supporting detail." Review clusters them into one correction instinct with support `3` and
-confidence `0.55`. The operator previews insertion into a fictional repository's `AGENTS.md` and
-waits for explicit approval before writing.
+Start with [`fictional-northstar-reports/README.md`](fictional-northstar-reports/README.md).
+The example covers disabled installation, explicit consent, minimized evidence, a successful
+queue job, the three backlog buckets, breadth-aware ranking, the first human decision gate, a
+complete instinct, the second destination gate, terminal promotion state, and the exact
+managed-section change.
+
+Bundled examples are inert documentation. The runtime never reads them as live state.

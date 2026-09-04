@@ -1,7 +1,7 @@
 {
   "name": "pmm-instinct-review",
-  "version": "0.1.0",
-  "description": "Capture completed Codex sessions, extract durable working preferences, and promote only human-approved guidance.",
+  "version": "0.2.0",
+  "description": "Capture eligible Codex sessions or import portable candidates, then review and promote only human-approved guidance.",
   "author": {
     "name": "Alexander Bea",
     "url": "https://github.com/alex-bea"
@@ -9,12 +9,12 @@
   "homepage": "https://github.com/alex-bea/pmm-engine-toolkit/tree/main/plugins/pmm-instinct-review",
   "repository": "https://github.com/alex-bea/pmm-engine-toolkit",
   "license": "Apache-2.0",
-  "keywords": ["codex", "continuous-learning", "review", "productivity"],
+  "keywords": ["codex", "claude-code", "continuous-learning", "review", "productivity"],
   "skills": "./skills/",
   "interface": {
     "displayName": "PMM Instinct Review",
-    "shortDescription": "Human-gated learning from completed Codex sessions",
-    "longDescription": "Locally capture eligible Codex sessions, extract reviewable working patterns, and promote only guidance you explicitly approve.",
+    "shortDescription": "Human-gated review of durable working patterns",
+    "longDescription": "Locally capture eligible Codex sessions or review explicitly imported candidates in an isolated portable store, then promote only guidance you approve.",
     "developerName": "Alexander Bea",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
@@ -24,6 +24,7 @@
     "defaultPrompt": [
       "Use $pmm-instinct-review to show continuous learning status.",
       "Use $pmm-instinct-review to review pending Codex suggestions.",
+      "Use $pmm-instinct-review to review an explicit candidate bundle in portable mode.",
       "Use $pmm-instinct-review to preview promotion candidates."
     ]
   }

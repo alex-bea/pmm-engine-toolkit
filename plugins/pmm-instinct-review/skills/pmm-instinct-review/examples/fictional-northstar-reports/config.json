@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "privacy_acknowledged_at": "2026-09-01T09:15:00+00:00",
+  "min_user_messages": 5,
+  "max_turns": 200,
+  "max_normalized_chars": 120000,
+  "retention": "until_reviewed",
+  "extractor_model": "example-session-model",
+  "extractor_reasoning_effort": "medium",
+  "max_attempts": 3,
+  "voice_ref_routes": {}
+}

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-03T17:06:00+00:00",
+  "store": "/work/northstar-reports/state",
+  "priority_snapshot_path": "/work/northstar-reports/state/sessions/instinct-priority.json",
+  "backlog": {
+    "pending_audits": 3,
+    "positive_clusters": 1,
+    "positive_suggestions": 3,
+    "zero_candidate_audits": 0,
+    "missing_suggestions": 0,
+    "unresolved_normalized_transcripts": 3,
+    "priority_summary": {
+      "impact_tiers": {"critical": 0, "high": 0, "medium": 1, "low": 0},
+      "areas": {"execution-workflow": 1},
+      "match_states": {"new": 1, "exact": 0}
+    },
+    "buckets": {
+      "zero_candidate": {"count": 0, "audit_ids": []},
+      "positive_clusters": {"count": 1},
+      "missing_suggestions": {"count": 0, "audit_ids": []}
+    }
+  },
+  "instincts": {
+    "active": 0,
+    "promotion_candidates": 0,
+    "stale_candidates": 0
+  },
+  "areas": [
+    {
+      "area_key": "execution-workflow",
+      "area_label": "Execution workflow",
+      "cluster_count": 1,
+      "clusters": [
+        {
+          "cluster_id": "workflow-f51e5206fcb9",
+          "type": "workflow",
+          "area_key": "execution-workflow",
+          "area_label": "Execution workflow",
+          "rule": "Lead recurring decision reports with the decision and supporting evidence before chronology.",
+          "normalized_rule": "lead recurring decision reports with the decision and supporting evidence before chronology",
+          "evidence": "The user corrected a chronological draft and confirmed the decision-first revision.",
+          "context": "A recurring weekly decision report was being drafted from approved notes.",
+          "why_it_matters": "Decision-first structure lets reviewers evaluate the outcome and evidence before reading process detail.",
+          "candidate_card": {
+            "what_happened": "A recurring weekly decision report was being drafted from approved notes.",
+            "your_feedback": "The user corrected a chronological draft and confirmed the decision-first revision.",
+            "proposed_future_behavior": "Lead recurring decision reports with the decision and supporting evidence before chronology.",
+            "why_it_matters": "Decision-first structure lets reviewers evaluate the outcome and evidence before reading process detail.",
+            "support_count": 3,
+            "source_skills": [],
+            "source_repositories": ["/work/northstar-reports"],
+            "session_cwds": ["/work/northstar-reports"],
+            "first_seen": "2026-08-25",
+            "last_seen": "2026-09-03",
+            "existing_match": "new"
+          },
+          "support_count": 3,
+          "session_ids": ["nsr-session-001", "nsr-session-002", "nsr-session-003"],
+          "audit_paths": [
+            "/work/northstar-reports/state/sessions/2026-08-25-1705-nsr-session-001-audit.md",
+            "/work/northstar-reports/state/sessions/2026-08-29-1705-nsr-session-002-audit.md",
+            "/work/northstar-reports/state/sessions/2026-09-03-1705-nsr-session-003-audit.md"
+          ],
+          "source_skills": [],
+          "source_repositories": ["/work/northstar-reports"],
+          "session_cwds": ["/work/northstar-reports"],
+          "first_seen": "2026-08-25",
+          "last_seen": "2026-09-03",
+          "impact_score": 11,
+          "impact_tier": "medium",
+          "match_state": "new"
+        }
+      ]
+    }
+  ]
+}

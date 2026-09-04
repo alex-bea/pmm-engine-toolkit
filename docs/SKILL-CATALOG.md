@@ -70,10 +70,13 @@ The categories are mutually exclusive by each skill's primary job.
 
 ## Installable Codex plugins (draft)
 
-- `pmm-instinct-review` — capture eligible completed Codex sessions locally, extract
-  reviewable preferences with a second ephemeral Codex call, and promote only guidance
-  approved at both the review and destination gates. It also imports explicit candidate
-  JSON from the retired standalone package.
+- `pmm-instinct-review` (`0.2.0` draft) — capture eligible completed Codex sessions locally,
+  or import explicit candidates into a separately selected portable review-only store usable
+  from Codex or Claude Code. It ranks voice-first clusters by support, breadth, newness, and
+  recency; creates only owner-approved instincts; and promotes Codex guidance only after a
+  second exact-destination gate. The package includes complete state templates and one fully
+  fictional lifecycle. Portable mode never reads native agent stores and cannot capture or
+  promote.
 
 All 25 standalone packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
 and a synthetic example. Deterministic workflows also include scripts and tests. See the

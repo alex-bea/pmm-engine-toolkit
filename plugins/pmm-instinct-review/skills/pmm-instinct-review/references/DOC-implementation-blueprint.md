@@ -1,4 +1,18 @@
-# PMM Instinct Review — Implementation Blueprint
+---
+doc_type: DOC
+normative: false
+requires:
+  - DOC-product-requirements.md
+  - RUN-workflow.md
+status: Draft
+version: "0.2.0"
+owner: toolkit-maintainers
+consumers:
+  - public toolkit maintainers
+change_control: Pull request review
+---
+
+# PMM Instinct Review — Implementation Blueprint (`0.2.0` draft)
 
 ## Purpose
 
@@ -17,6 +31,7 @@ maintainers and work AIs changing the package. The executable user procedure rem
 6. Prefer a narrow skill or repository destination over general user-level instructions.
 7. Keep this package self-contained: standard-library Python, plugin-relative paths, local
    configuration, and no private registry or repository dependency.
+8. Select adapters explicitly and keep portable review state isolated from native agent stores.
 
 ## Component map
 
@@ -27,8 +42,11 @@ maintainers and work AIs changing the package. The executable user procedure rem
 | Hooks | `hooks/hooks.json` | Declares plugin-root-resolved SessionStart and SessionEnd commands |
 | Skill entrypoint | `skills/pmm-instinct-review/SKILL.md` | Routes user requests and carries the safety contract |
 | Operator CLI | `scripts/instinct_review.py` | Parses commands and enforces explicit confirmation flags |
+| Runtime adapters | `scripts/pmm_instinct/adapters.py` | Resolves Codex or explicit portable state and refuses unsupported portable commands |
 | Runtime core | `scripts/pmm_instinct/runtime.py` | Capture, normalization, queueing, extraction, clustering, review, routing, promotion, and cleanup |
 | Extractor assets | `assets/extractor-prompt.md`, `assets/extractor-schema.json` | Bounded candidate task and accepted output shape |
+| Public contracts | `assets/config-template.json`, `assets/state-contracts.md`, `assets/instinct-template.md`, `assets/output-template.md` | Reusable adopter-owned state and presentation contracts |
+| Fictional lifecycle | `examples/fictional-northstar-reports/` | Complete inert cross-file example for every public contract |
 | Operator runbook | `references/RUN-workflow.md` | Binding procedure for enablement, review, promotion, retention, and rollback |
 | Product docs | `references/DOC-*.md` | Product intent, implementation traceability, and submission test evidence |
 | Test suite | `tests/test_instinct_review_plugin.py` | Synthetic end-to-end and contract coverage |
@@ -41,7 +59,8 @@ maintainers and work AIs changing the package. The executable user procedure rem
 ├── sessions/
 │   ├── YYYY-MM-DD-HHMM-{session-id}-audit.md
 │   ├── {session-id}-normalized.jsonl
-│   └── {session-id}-suggestions.md
+│   ├── {session-id}-suggestions.md
+│   └── instinct-priority.json
 ├── queue/{session-id}.json
 ├── instincts/pmm-instinct-YYYY-MM-DD-NNN.md
 ├── logs/{session-id}.log
@@ -51,6 +70,10 @@ maintainers and work AIs changing the package. The executable user procedure rem
 This directory is user-owned, outside the plugin cache, and survives plugin removal. Do not
 add another persistence location without updating the privacy policy, tests, and release
 evidence.
+
+Portable mode uses the same review-state layout directly under the explicit `--state-root`.
+It has no implicit default, does not read native Codex or Claude Code stores, and cannot run
+capture, hooks, extraction, backfill, retries, or promotion.
 
 ## Data contracts
 
@@ -87,9 +110,17 @@ not part of the contract.
 ### Instinct state
 
 An owner-approved instinct contains a unique ID, type, confidence, support count, created and
-last-seen dates, source skill(s), source repository/repositories, rationale, suggested
-destination, and promotion record. A rejected cluster creates no instinct. `match` updates
-only the exact active match.
+last-seen dates, source runtime, source skill(s), source repository/repositories, rationale,
+suggested destination, strong-correction/contradiction flags, promotion outcome, and target
+record. A rejected cluster creates no instinct. `match` updates only an active instinct with
+the same type and normalized rule.
+
+### Priority behavior
+
+The core groups by candidate type plus normalized rule. It orders areas voice, workflow,
+scope, correction, and confirmation, then scores support, source-skill breadth, cwd/repository
+breadth, and newness. Recency is a deterministic tie-break. The explicit snapshot command
+persists all three buckets, summaries, areas, complete clusters, and stale-instinct counts.
 
 ## Requirement-to-test map
 
@@ -100,7 +131,9 @@ only the exact active match.
 | Normalized evidence is minimized | Event preference, fallback dedupe, excluded records, wrapper removal, redaction, and size-limit tests |
 | Extraction is controlled | Configured-model, no-fallback, schema, valid worker, retry-limit, lock, and restart-recovery tests |
 | Review requires a decision | Rationale schema, candidate-card fields without routing, accept, reject, edit, match, zero-candidate, and multi-candidate cleanup tests |
-| Promotion is separately gated | Destination selection, persisted preview, matching second confirmation, duplicate coverage, managed section, staged project/global/both, RUN/REF/standard routing tests |
+| Priority is complete and deterministic | Voice-first area, breadth/newness/recency, type-aware matching, snapshot, and stale-count tests |
+| Portable mode is isolated | Explicit-root, read-only status, command-refusal, same-import/review, and no-Codex-state tests |
+| Promotion is separately gated | Destination selection, persisted preview, matching second confirmation, duplicate coverage, terminal status, managed section, staged project/global/both, RUN/REF/standard routing tests |
 | Local state is recoverable | Cleanup retry, state durability, and independent plugin-path tests |
 | Backfill is bounded | Five-session inventory and explicit-apply test |
 
@@ -117,6 +150,8 @@ only the exact active match.
 6. Run the complete public validation suite, regenerate the IP inventory, run a fresh secrets
    scan, and update the IP review whenever the published tree changes.
 7. Do not make user capture active as part of a test, install, or release process.
+8. Load synthetic `0.1.0` state through read-only status/list paths before relying on additive
+   `0.2.0` fields; do not add an in-place migration unless compatibility tests require it.
 
 ## Release procedure
 
