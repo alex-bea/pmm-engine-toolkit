@@ -13,8 +13,11 @@ self-contained governance skills that can be installed independently from GitHub
 
 The repository also contains a complete, agent-neutral competitive-intelligence starter kit
 under `skills/comp-intel/`: a working analyst method, fillable source/registry/positioning/
-tracker templates, a guided first-run procedure, review gates, a complete fictional example,
-and an optional deterministic controller. The setup procedure starts with adopter and
+tracker templates, a guided first-run procedure, review gates, a full-depth fictional
+embedded-wallet example with one completed counterpart for every human-readable template,
+and an optional deterministic controller. The example is a non-reversible structural mirror:
+it retains reusable analytical depth but contains no real entity, fact, URL, or alias map. The
+setup procedure starts with adopter and
 competitor homepages, keeps unverified source candidates outside the canonical source map,
 requires adopter-positioning approval before comparison, and permits an explicitly limited
 baseline. An earlier Draft Codex migration suite under `product-requirements/comp-intel/` is
@@ -85,6 +88,7 @@ baseline in
 
 The current starter-kit candidate has a Draft
 [IP and privacy review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-FRAMEWORK-2026-09-03.md). The
+[sanitized example set has its own Draft review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-SANITIZED-EXAMPLE-2026-09-03.md). The
 [earlier requirements-suite review](legal/IP-PRIVACY-REVIEW-COMP-INTEL-PRDS-2026-08-28.md)
 remains design history. The public starter kit contains only project-authored generic
 structures and fictional examples. Live source corpora, adopter mappings, and private outputs

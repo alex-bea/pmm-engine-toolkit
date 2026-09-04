@@ -28,8 +28,11 @@ The categories are mutually exclusive by each skill's primary job.
   proposes official sources for verification, requests approval before reading internal
   content, drafts adopter positioning for review, and then runs a limited or full baseline.
   The [starter-kit guide](../skills/comp-intel/README.md) lists every working document and
-  includes a complete fictional example. It is agent-neutral and works with adopter-provided
-  source access; the bundled controller is optional advanced support. The
+  includes a full-depth fictional embedded-wallet example with one completed counterpart for
+  every human-readable template. The example preserves the structures and analytical depth of
+  a mature workflow without publishing a reversible alias map or real facts. It is agent-neutral
+  and works with adopter-provided source access; the bundled controller is optional advanced
+  support. The
   [source inventory](DOC-comp-intel-source-inventory-v1.0.md) and
   [earlier Codex migration suite](product-requirements/comp-intel/README.md) remain non-binding
   design history.
