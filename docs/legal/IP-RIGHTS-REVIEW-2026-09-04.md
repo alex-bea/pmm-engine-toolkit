@@ -5,15 +5,18 @@
 This review covers the `govern-skills` 0.3.0 candidate: public workflow and standards,
 shared policy and control-plane code, Claude Code and Codex adapters, plugin hook,
 configuration templates, schemas, fictional example, focused tests, documentation, privacy
-and security updates, and generated IP inventory entries.
+and security updates, an agent-facing governance adoption guide, and generated IP inventory
+entries.
 
 ## Provenance
 
 The candidate is project-authored for this repository. The private implementation was used
 only to identify reusable workflow structure, trust boundaries, validation requirements,
-and missing controls. No private operating output, populated registry, permission list, run
-record, approval event, customer or employee information, internal URL, local home path,
-credential, or private-to-fictional substitution map is included.
+missing controls, and the generic conversational adoption sequence. The public adoption
+guide is a project-authored, adopter-neutral document. No private operating output,
+populated registry, permission list, run record, approval event, customer or employee
+information, internal URL, local home path, credential, or private-to-fictional substitution
+map is included.
 
 Claude Code, Codex, Git, GitHub, Python, and JSON Schema are referenced nominatively to
 describe compatible interfaces and development tooling. No third-party source code or

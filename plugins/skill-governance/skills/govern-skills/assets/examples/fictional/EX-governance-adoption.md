@@ -192,3 +192,23 @@ changes the staged artifact. The next validation reports the artifact as stale;
 `can-publish` denies the run, and the publisher executable is never invoked. The adapters
 record only decision metadata such as `GOV_PUBLISHER_GUARD_REQUIRED`; they do not retain the
 prompt, content body, full command, or credential material.
+
+## 11. Fictional setup-readiness report
+
+This test-only report shows what the guiding agent would return before Cedar Harbor's
+administrator completes activation. It does not describe a real repository or confer any
+authority.
+
+| Layer or blocker | Current state | Evidence | Gap | Proposed action | Approval authority | Verification |
+|---|---|---|---|---|---|---|
+| Registry compatibility | `ready` | The first fictional audit found an older schema; the approved migration now validates. | None after the recorded migration. | Preserve the migrated schema and re-audit after upgrades. | Cedar Harbor repository owner | Current audit reports no schema conflict. |
+| `instruction-only` | `ready` | Fictional `AGENTS.md` is present and named in both harness setup records. | None for the named repository scope. | Preserve the instruction and confirm loading after upgrades. | Cedar Harbor repository owner | Both test harnesses report the same controlling instruction. |
+| `static-validator` | `configured-inactive` | The CI workflow is installed but not a required check. | A merge can bypass it. | Make the governance check required. | Cedar Harbor repository administrator | A synthetic noncompliant change cannot merge. |
+| `runtime-guard` | `configured-inactive` | The shared policy and both adapters are installed with enforcement disabled. | Hook trust and active fail-closed behavior are unverified. | Administrator enables managed hooks after resolving the registry blocker. | Cedar Harbor repository administrator | Both adapters deny the same stale-digest request before mutation. |
+| `capability-boundary` | `missing` | No fictional managed filesystem or network policy is evidenced. | The agent could alter policy or reach an alternate publisher. | Protect policy and executables, restrict alternate tools and network routes, and isolate credentials. | Cedar Harbor platform administrator | Negative tests prove direct file, shell, connector, and network bypasses cause no side effect. |
+| `external-authority` | `missing` | Only the reserved `code.example.invalid` test response exists. | No protected verifier establishes a real approval identity or decision. | Configure and health-check an administrator-controlled verifier. | Cedar Harbor security administrator | Forged, stale, wrong-reviewer, and outage cases remain pending. |
+| Publisher | `not-applicable` | Publication is excluded from this fictional adoption scope. | None while publication remains excluded. | Keep the publisher disabled and credentials absent. | Cedar Harbor repository owner | Direct and alternate publication tests produce no message or external side effect. |
+
+Overall status: `installed-inactive`. The compatibility blocker is resolved and repository
+assets are installed, but the static gate, runtime guard, capability boundary, and external
+authority are not yet verified as ready.

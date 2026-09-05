@@ -11,12 +11,17 @@ Establish a repository-owned skill-governance contract and state the enforcement
 every material rule. Keep audits read-only by default. Treat loaded instructions as guidance,
 not as a security boundary.
 
+For an install, setup, configuration, activation, adoption, or rollout request, read
+`references/REF-governance-adoption-guide-v1.0.md` and guide the user through its discovery,
+readiness, and scoped-approval sequence before any repository write.
+
 ## Workflow
 
 1. Resolve the repository, read its instructions, inspect Git status, locate skill roots,
    and discover existing governance, hook, sandbox, CI, approval, and publishing surfaces.
 2. Read `references/RUN-govern-skills-workflow-v1.0.md` and follow the selected `audit`,
-   `repair`, `lifecycle`, or `enforcement` mode.
+   `repair`, `lifecycle`, `enforcement`, or adoption mode. Adoption mode is governed by
+   `references/REF-governance-adoption-guide-v1.0.md`.
 3. Run the deterministic audit before proposing a change:
 
    ```bash

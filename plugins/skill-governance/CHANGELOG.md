@@ -2,6 +2,9 @@
 
 ## 0.3.0 — Draft
 
+- Added an agent-facing adoption guide that makes Claude Code and Codex inspect first,
+  report setup readiness, obtain scoped approval, and verify activation before claiming
+  governance is ready.
 - Rebuilt `govern-skills` from the private golden implementation while keeping its public
   core generic and directly installable.
 - Added one shared policy decision for Claude Code and Codex PreToolUse adapters.

@@ -1,4 +1,4 @@
 interface:
   display_name: "Govern Skills"
   short_description: "Audit and harden cross-harness skill governance"
-  default_prompt: "Use $govern-skills to audit this repository, identify enforcement gaps, and propose governed fixes."
+  default_prompt: "Use $govern-skills to guide governance setup or audit this repository, identify enforcement gaps, and propose governed fixes."
