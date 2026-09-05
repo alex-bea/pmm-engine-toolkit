@@ -63,6 +63,56 @@ class GovernancePluginTest(unittest.TestCase):
         cls.claude_hook = load_module("claude_pretooluse", CLAUDE_HOOK_SCRIPT)
         cls.codex_hook = load_module("codex_pretooluse", CODEX_HOOK_SCRIPT)
 
+    def test_govern_skills_routes_setup_through_the_adoption_guide(self):
+        skill_root = SKILL_SCRIPT.parents[1]
+        skill_text = (skill_root / "SKILL.md").read_text(encoding="utf-8")
+        guide_path = skill_root / "references/REF-governance-adoption-guide-v1.0.md"
+        guide = guide_path.read_text(encoding="utf-8")
+        agent = (skill_root / "agents/openai.yaml").read_text(encoding="utf-8")
+        example = (
+            skill_root
+            / "assets/examples/fictional/EX-governance-adoption.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("references/REF-governance-adoption-guide-v1.0.md", skill_text)
+        self.assertIn("before any repository write", skill_text)
+        for trigger in (
+            "install", "setup", "configuration", "activation", "adoption", "rollout"
+        ):
+            self.assertIn(trigger, skill_text)
+        self.assertIn("guide governance setup", agent)
+
+        for heading in (
+            "## 1. Enter Adoption Mode",
+            "## 2. Explain the Enforcement Model",
+            "## 3. Produce the Setup Readiness Report",
+            "## 5. Prepare the Exact Installation Plan",
+            "## 7. Guide Administrator Activation",
+            "## 8. Verify Before Declaring Readiness",
+            "## 9. Report the Final State",
+            "## 10. Stop Conditions",
+        ):
+            self.assertIn(heading, guide)
+        for layer in (
+            "instruction-only",
+            "static-validator",
+            "runtime-guard",
+            "capability-boundary",
+            "external-authority",
+        ):
+            self.assertIn(f"`{layer}`", guide)
+        self.assertIn(
+            "| Layer or blocker | Current state | Evidence | Gap | Proposed action | Approval authority | Verification |",
+            guide,
+        )
+        for status in ("ready", "installed-inactive", "blocked"):
+            self.assertIn(f"`{status}`", guide)
+        self.assertIn("do not cause an external side effect", guide)
+        self.assertIn("did not occur", guide)
+
+        self.assertIn("## 11. Fictional setup-readiness report", example)
+        self.assertIn("Overall status: `installed-inactive`", example)
+
     def test_document_audit_accepts_valid_opted_in_documents(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)

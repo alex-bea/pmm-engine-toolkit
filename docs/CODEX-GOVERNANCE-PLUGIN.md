@@ -51,9 +51,18 @@ needed for that skill's workflow.
 
 ## Adopt governance in a repository
 
-Ask Codex to use `$govern-skills` to audit the repository. The skill will run a read-only
-audit before proposing initialization. After reviewing and approving the dry-run, the
-initializer creates:
+Ask Codex or Claude Code to use `$govern-skills` to guide setup or audit the repository. For
+an install, setup, configuration, activation, adoption, or rollout request, the skill first
+reads its package-local
+[Governance Adoption Guide](../plugins/skill-governance/skills/govern-skills/references/REF-governance-adoption-guide-v1.0.md).
+It inspects the environment, reports compatibility and enforcement gaps, and stops before
+repository writes until the exact plan is approved. For example:
+
+```text
+Use $govern-skills to guide me through governance setup for this repository.
+```
+
+After reviewing and approving the dry-run, the initializer creates:
 
 ```text
 .agents/governance/

@@ -274,6 +274,7 @@ def validate_governance_plugin(errors: list[str]) -> None:
             "assets/templates/workflow-run.yaml",
             "assets/templates/publisher-adapter.yaml",
             "assets/examples/fictional/EX-governance-adoption.md",
+            "references/REF-governance-adoption-guide-v1.0.md",
             "references/RUN-govern-skills-workflow-v1.0.md",
             "references/STD-runtime-enforcement-v1.0.md",
         ),
