@@ -20,7 +20,10 @@ The categories are mutually exclusive by each skill's primary job.
 
 ## Intelligence and analysis
 
-- `people-intelligence` — create consented stakeholder briefs.
+- `people-intelligence` — create consented, evidence-backed professional stakeholder briefs
+  for meeting preparation and collaboration planning. It supports standalone, relational, and
+  delta modes with explicitly supplied evidence; it neither retrieves data nor profiles sensitive
+  traits. The [starter guide](../skills/people-intelligence/README.md), [public requirements](DOC-people-intelligence-product-requirements-v1.0.md), and [acceptance tests](DOC-people-intelligence-public-acceptance-tests-v1.0.md) define its direct-install, privacy, and validation boundaries.
 - `comp-intel` — run a reusable competitive-intelligence practice: configure a market and
   sources, collect attributable signals, review evidence, analyze competitor and narrative
   changes, find positioning gaps, draft an executive brief, and propose reviewed registry and
