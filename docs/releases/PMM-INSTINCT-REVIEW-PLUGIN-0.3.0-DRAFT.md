@@ -17,8 +17,7 @@ change_control: Pull request review
 # PMM Instinct Review plugin `0.3.0` — draft release notes
 
 Status: unmerged release candidate with complete local automated verification. A real Claude
-Code lifecycle smoke test, hosted checks, and pull-request owner review remain required before
-merge or release.
+Code lifecycle smoke test and pull-request owner review remain required before merge or release.
 
 ## Added
 
@@ -82,7 +81,7 @@ checks distinct from passes.
 | Generated IP inventory exact-set check | Pass: 427 rows for 427 artifacts |
 | Approved-manifest comparison | Pass: 57 of 57 paths, comprising 36 additions and 21 modifications, with no extras or action mismatches |
 | Real Claude Code lifecycle smoke test | Not run; this host has no `claude` executable, so the destination-machine test remains required |
-| Hosted pull-request checks | Not run; available only after the candidate branch and pull request are pushed |
+| Hosted pull-request checks | Pass: CodeQL, dependency review, governance, and Python 3.10–3.14 tests |
 
 An unavailable, skipped, stale, or failing required check blocks a release-readiness claim.
 These local results support pull-request review only; they do not authorize merge or release.

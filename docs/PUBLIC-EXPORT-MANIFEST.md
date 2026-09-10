@@ -135,8 +135,8 @@ The PMM Instinct Review `0.3.0` candidate has separate Draft
 [secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-10.md) records. These
 documents describe a locally frozen candidate for review. The complete automated local suite,
 strict document audit, exact 57-path manifest comparison, 427-artifact IP inventory, publicizer
-scan with unchanged-match adjudication, and zero-finding Gitleaks scan are complete. The real
-Claude lifecycle smoke test, hosted pull-request checks, and project-owner Gate B review remain
+scan with unchanged-match adjudication, zero-finding Gitleaks scan, and hosted pull-request
+checks are complete. The real Claude lifecycle smoke test and project-owner Gate B review remain
 pending, so `0.3.0` is not merge- or release-ready.
 
 The earlier PMM Instinct Review `0.2.0` candidate retains its separate Draft

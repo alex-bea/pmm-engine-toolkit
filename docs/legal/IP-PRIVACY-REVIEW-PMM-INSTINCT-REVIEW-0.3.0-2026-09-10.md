@@ -20,8 +20,8 @@ This Draft review covers the proposed native Claude additions under
 `plugins/pmm-instinct-review/`, the retained Codex and portable package, and their direct
 tests, catalog/export registration, release note, and legal/security evidence. It supports
 candidate review only. Local privacy, provenance, scanning, structural, and test checks are
-complete. A real Claude lifecycle smoke test, hosted checks, and project-owner Gate B review
-remain pending; this document does not approve merge or publication.
+complete, and the hosted pull-request checks pass. A real Claude lifecycle smoke test and
+project-owner Gate B review remain pending; this document does not approve merge or publication.
 
 ## Public-safe construction assessment
 
@@ -78,9 +78,10 @@ candidate-added content introduced none. Agent-assisted privacy and narrative re
 actionable P0, P1, or P2 issue.
 
 The destination-machine Claude smoke test was not run because this host has no `claude`
-executable. Hosted checks and project-owner narrative review also remain pending until the pull
-request exists. Those unavailable Gate B checks prevent a release-readiness or merge claim, but
-do not invalidate the completed local candidate evidence.
+executable. Hosted CodeQL, dependency review, governance, and Python 3.10–3.14 checks pass.
+Project-owner narrative review remains pending at Gate B. The missing native smoke and owner
+approval prevent a release-readiness or merge claim, but do not invalidate the completed
+candidate evidence.
 
 ## Residual risk
 
