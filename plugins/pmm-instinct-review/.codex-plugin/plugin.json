@@ -1,7 +1,7 @@
 {
   "name": "pmm-instinct-review",
-  "version": "0.2.0",
-  "description": "Capture eligible Codex sessions or import portable candidates, then review and promote only human-approved guidance.",
+  "version": "0.3.0",
+  "description": "Capture eligible Codex or Claude sessions, extract durable candidates in the background, and promote only human-approved guidance.",
   "author": {
     "name": "Alexander Bea",
     "url": "https://github.com/alex-bea"
@@ -13,8 +13,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "PMM Instinct Review",
-    "shortDescription": "Human-gated review of durable working patterns",
-    "longDescription": "Locally capture eligible Codex sessions or review explicitly imported candidates in an isolated portable store, then promote only guidance you approve.",
+    "shortDescription": "Human-gated session learning for Codex and Claude",
+    "longDescription": "Capture eligible Codex sessions or use the self-contained native Claude runtime for disabled-by-default hooks, detached extraction, and receipt-bound promotion. No candidate or promotion is approved automatically.",
     "developerName": "Alexander Bea",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
@@ -24,6 +24,7 @@
     "defaultPrompt": [
       "Use $pmm-instinct-review to show continuous learning status.",
       "Use $pmm-instinct-review to review pending Codex suggestions.",
+      "Use $pmm-instinct-review to show native Claude capture and extraction status.",
       "Use $pmm-instinct-review to review an explicit candidate bundle in portable mode.",
       "Use $pmm-instinct-review to preview promotion candidates."
     ]

@@ -49,3 +49,16 @@ If a user or agent can disable the hook, rewrite policy, choose its own verifier
 second publisher path, the affected layer must be reported as bypassable or inactive.
 Codex plugin hooks also require hash-bound trust before they run; only administrator-managed
 hook configuration can make that trust non-optional for local users.
+
+PMM Instinct Review's standalone Claude installer adds two narrowly owned handlers to the
+user's Claude settings and preserves unrelated settings. The installer creates a backup before
+changing an existing settings file, replaces only exact-shape stale handlers from this package,
+refuses an occupied or conflicting skill destination, and removes only its own handlers and
+receipt-owned skill symlink during confirmed uninstall. Captured state is deliberately preserved.
+
+Claude hooks and personal skills remain user-controlled local configuration. A user or process
+with permission to edit the Claude settings, installed bundle, interpreter, or state directory
+can disable or bypass them. Treat unexpected capture while disabled, unredacted retained
+evidence, extractor tool access, forged or stale promotion receipts, governed-target mutation,
+or removal of unrelated settings as security issues. Administrator-managed controls are
+required when local user bypass must be prevented.

@@ -1,6 +1,6 @@
 interface:
   display_name: "PMM Instinct Review"
-  short_description: "Review and promote Codex working preferences"
-  default_prompt: "Use $pmm-instinct-review to show continuous learning status and the pending review backlog."
+  short_description: "Human-gated learning for Claude and Codex"
+  default_prompt: "Use $pmm-instinct-review to identify the runtime, show its read-only status, and explain the next human decision. For a Claude installation, follow the bundled no-marketplace setup RUN."
 policy:
   allow_implicit_invocation: true

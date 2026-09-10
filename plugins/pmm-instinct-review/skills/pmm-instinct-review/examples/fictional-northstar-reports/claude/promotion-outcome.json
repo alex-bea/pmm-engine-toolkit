@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "receipt_digest": "0b7a0bf8541354eb18d8dbc646244dc8e41fe9244ad14581c41a760cafbd1720",
+  "status": "promoted",
+  "completed_at": "2026-09-10T16:38:00+00:00",
+  "target_path": "/fictional/northstar-reports/CLAUDE.md",
+  "resulting_sha256": "1257bbef10aeffdd0734b1504f70fc4dac86de99974a8595b058ef6ddcf170f7"
+}

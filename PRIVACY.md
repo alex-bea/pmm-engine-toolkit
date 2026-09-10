@@ -2,28 +2,49 @@
 
 ## Repository behavior
 
-The repository does not include analytics, telemetry, hosted services, or automatic data
-collection. Its local scripts read only the files and Git repository state explicitly
-provided to them and write only to requested local destinations.
+The repository does not include analytics, telemetry, hosted services, remote collection, or
+default-on data collection. Its scripts otherwise read only explicit inputs and write only to
+requested local destinations. The opt-in PMM Instinct Review exception below uses local native
+lifecycle hooks after separate consent; it is disabled at installation.
 
 ## PMM Instinct Review plugin
 
 Installing the plugin does not enable capture. First enablement requires explicit
-acknowledgment of local chat-derived storage. When enabled, the plugin creates user-owned
-state under `~/.codex/instinct-review/` from eligible main-thread sessions with at least five
-user messages. It keeps only redacted user and assistant text in a normalized transient copy;
-it excludes system and developer instructions, reasoning, tool calls and results, patches,
-world state, and compaction payloads.
+acknowledgment of local chat-derived storage. The Codex and Claude runtimes use separate,
+user-owned roots: `~/.codex/instinct-review/` and
+`~/.claude/pmm-instinct-review-data/`, respectively. When enabled, each native runtime
+captures eligible main-thread sessions with at least five user messages. It keeps only
+bounded, redacted user and assistant conversation text in a normalized transient copy; it
+also records local session/job identifiers, timestamps, content digests, state paths, and
+project-directory metadata needed for routing and review. Claude briefly spools a local
+metadata-only capture request containing its native transcript path before a detached worker
+normalizes the read-only transcript; the request contains no conversation text and is removed
+after success, ineligibility, its retry ceiling, or contract-invalid input has been recorded in
+a sanitized log. It excludes system and developer instructions, reasoning, tool calls and
+results, patches, world state, and compaction payloads.
 
-Extraction performs a second, ephemeral Codex model invocation in a read-only sandbox. The
-plugin has no telemetry and sends nothing to a hosted PMM service. The applicable Codex model
-service may still process the normalized input under the user's OpenAI agreement and settings.
-Users must confirm employer policy before enabling this workflow on a work device.
+Extraction performs a second, ephemeral invocation of the configured native model with tools
+disabled and no session persistence requested. Codex extraction is processed by the applicable
+OpenAI service. Claude extraction uses the configured Anthropic model through the Anthropic
+API or a supported cloud provider such as Amazon Bedrock, Google Vertex AI, or Microsoft
+Foundry. Those providers may process the normalized input under the user's account agreement
+and settings. The Claude worker's isolated `--bare` invocation does not reuse an ordinary
+subscription login or keychain. The plugin has no telemetry and sends nothing to a hosted PMM
+service. Users must confirm employer policy and provider configuration before enabling this
+workflow on a work device.
 
-Approval or rejection deletes only the normalized copy. Audits, suggestions, approved
-instincts, sanitized operational logs, and queue metadata remain local until the user removes
-them. Native Codex session history is never modified. Disabling or uninstalling the plugin
-preserves `~/.codex/instinct-review/` so queued work can recover after reinstallation.
+After every candidate cluster in an audit has a recorded human decision, or after separate
+confirmation resolves a zero-candidate audit, the runtime deletes only the normalized copy.
+Audits, suggestions, approved instincts, sanitized operational logs, and queue metadata remain
+local until the user removes them. Native Codex and Claude session histories are never
+modified. Disabling or uninstalling the package preserves the applicable state root so queued
+work can recover after reinstallation.
+
+Claude promotion is a separate data flow. A human must approve the exact target, existing
+content digest, proposed result, and preview digest before a background worker may execute a
+local update. If a destination is classified for governed review, the worker writes a local
+patch for review and does not mutate the governed target. The runtime does not approve,
+merge, publish, or send that patch automatically.
 
 ## User responsibility
 

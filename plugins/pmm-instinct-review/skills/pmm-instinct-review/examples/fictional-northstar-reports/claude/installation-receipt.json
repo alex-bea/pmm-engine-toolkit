@@ -1,0 +1,57 @@
+{
+  "active_root": "/fictional/toolkit/plugins/pmm-instinct-review",
+  "active_skill": "/fictional/toolkit/plugins/pmm-instinct-review/skills/pmm-instinct-review",
+  "bundle_preserved": true,
+  "capture_enabled": false,
+  "claude_home": "/fictional-user/.claude",
+  "installed_at": "2026-09-10T15:55:00+00:00",
+  "mode": "symlink",
+  "owned_hook_handlers": [
+    {
+      "active_script": "/fictional/toolkit/plugins/pmm-instinct-review/scripts/claude_instinct_hook.py",
+      "event": "SessionStart",
+      "handler": {
+        "args": [
+          "/fictional/toolkit/plugins/pmm-instinct-review/scripts/claude_instinct_hook.py",
+          "--state-root",
+          "/fictional-user/.claude/pmm-instinct-review-data",
+          "session-start"
+        ],
+        "command": "python3",
+        "statusMessage": "Checking the private instinct queue",
+        "timeout": 5,
+        "type": "command"
+      },
+      "matcher": "startup|resume|clear|compact",
+      "matcher_present": true,
+      "state_root": "/fictional-user/.claude/pmm-instinct-review-data"
+    },
+    {
+      "active_script": "/fictional/toolkit/plugins/pmm-instinct-review/scripts/claude_instinct_hook.py",
+      "event": "SessionEnd",
+      "handler": {
+        "args": [
+          "/fictional/toolkit/plugins/pmm-instinct-review/scripts/claude_instinct_hook.py",
+          "--state-root",
+          "/fictional-user/.claude/pmm-instinct-review-data",
+          "session-end"
+        ],
+        "command": "python3",
+        "timeout": 5,
+        "type": "command"
+      },
+      "matcher": null,
+      "matcher_present": false,
+      "state_root": "/fictional-user/.claude/pmm-instinct-review-data"
+    }
+  ],
+  "privacy_acknowledged": false,
+  "receipt_digest": "12dd386066666d895a0bcefabdf343b5f28ad29b40fb398e50f0f9e6a6f04644",
+  "schema_version": 2,
+  "settings_backup": "/fictional-user/.claude/settings.json.pmm-instinct-review.20260910T155500.000000Z.bak",
+  "settings_path": "/fictional-user/.claude/settings.json",
+  "skill_path": "/fictional-user/.claude/skills/pmm-instinct-review",
+  "source_root": "/fictional/toolkit/plugins/pmm-instinct-review",
+  "state_preserved_on_uninstall": true,
+  "state_root": "/fictional-user/.claude/pmm-instinct-review-data"
+}

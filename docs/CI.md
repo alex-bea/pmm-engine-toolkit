@@ -21,6 +21,19 @@ scheduled restrictions, stale-digest denial, external-verifier failures, and pub
 isolation. Document audits remain opt-in and advisory; no document-specific workflow is
 installed into adopting repositories.
 
+For PMM Instinct Review `0.3.0`, governance separately validates the Codex and Claude
+manifests, runtime-specific hook variables, bundle-root Claude scripts and extractor assets,
+the detailed Claude setup runbook, and the complete fictional Claude lifecycle. Focused tests
+cover standalone installation without a marketplace, disabled-by-default capture, evidence
+minimization and redaction, bounded extraction and retries, explicit review decisions,
+digest-bound promotion receipts, target-drift rejection, governed patch delivery, background
+worker isolation, uninstall scope, and the unchanged Codex/portable regression suite.
+
+The real Claude lifecycle smoke test is environment-dependent and is not replaced by
+fictional fixtures or mocked process tests. Release evidence must record it as not run when a
+compatible `claude` executable is unavailable; an unavailable check cannot be reported as a
+pass.
+
 ## Security properties
 
 - Default workflow permissions are read-only and no job references repository secrets.

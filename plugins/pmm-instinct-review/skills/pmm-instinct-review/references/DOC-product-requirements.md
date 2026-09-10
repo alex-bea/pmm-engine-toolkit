@@ -1,249 +1,241 @@
 ---
 doc_type: DOC
 normative: false
-requires:
-  - DOC-implementation-blueprint.md
-  - RUN-workflow.md
+requires: []
 status: Draft
-version: "0.2.0"
+version: "0.3.0"
 owner: toolkit-maintainers
 consumers:
-  - plugin adopters
-  - public toolkit maintainers
+  - Claude Code adopters
+  - Codex adopters
+  - public plugin reviewers
 change_control: Pull request review
 ---
 
-# PMM Instinct Review — Product Requirements (`0.2.0` draft)
+# PMM Instinct Review — Product requirements (`0.3.0` draft)
 
 ## Purpose
 
-PMM Instinct Review is a local improvement loop with Codex capture and an isolated portable
-review adapter. It turns repeated working preferences and corrections from eligible completed
-sessions or explicit candidate imports into reviewable suggestions,
-then into durable guidance only when a human explicitly approves both the rule and its final
-destination.
+PMM Instinct Review is a local improvement loop that turns repeated, evidence-backed working
+preferences into durable instructions without allowing a model, hook, or schedule to approve
+its own guidance. `0.3.0` adds self-contained native Claude Code capture, extraction, review,
+and receipt execution to the existing Codex and portable package.
 
-The product exists to improve future work without treating a model's inference, a single
-chat, or a user-provided transcript as permission to modify instructions.
+The binding operator procedures are `RUN-workflow.md` and, for native Claude adoption,
+`RUN-claude-setup.md`. This document defines outcomes and guardrails; it does not authorize a
+release or the promotion of any particular rule.
 
-## Outcomes
+## Users and outcomes
 
-The release is designed to improve three outcomes:
+| User | Need | Outcome |
+|---|---|---|
+| Claude Code adopter | Install from a Toolkit checkout without a marketplace | Discoverable personal skill, two owned hooks, disabled default, complete local runtime |
+| Claude Code user | Learn from eligible completed sessions | Fast minimized capture and detached exact-model extraction in a Claude-owned store |
+| Codex user | Continue the existing native workflow | No change to Codex commands, state, hooks, or approval boundaries |
+| Portable user | Review an explicit candidate bundle | Isolated review-only workflow without native-store access |
+| Reviewer | Decide whether a pattern is durable | Evidence card and an explicit `accept`, `reject`, `edit`, or exact `match` decision |
+| Instruction owner | Promote an eligible instinct | Exact destination preview, separate approval, immutable receipt, bounded execution |
+| Toolkit maintainer | Review a public candidate | Complete tests, fictional examples, provenance/privacy evidence, and an exact diff |
 
-1. **High-quality instincts.** Each approved rule is atomic, evidence-linked, scoped, and
-   useful in future work.
-2. **Careful cross-skill learning.** Repeated patterns can be discovered across skills and
-   repositories without overwriting a skill's local conventions.
-3. **Traceable improvement.** Every approved promotion has a recorded target and can be
-   reviewed, revised, or reversed.
+## Runtime ownership
 
-## Product model
+| Runtime | State | Native session source | Global instruction target |
+|---|---|---|---|
+| Claude standalone | `~/.claude/pmm-instinct-review-data/` | Claude transcript named by native hook, read-only | `~/.claude/CLAUDE.md` |
+| Claude local plugin | `${CLAUDE_PLUGIN_DATA}/instinct-review/` | Claude transcript named by native hook, read-only | `~/.claude/CLAUDE.md` |
+| Codex | `~/.codex/instinct-review/` | Eligible Codex rollout, read-only | `~/.codex/AGENTS.md` |
+| Portable | Required explicit safe root | None | None |
 
-```text
-eligible completed Codex session → bounded, redacted normalized copy → schema-validated suggestions
-or explicit portable candidate bundle → isolated review-only store
-  → deterministic clusters and ranked backlog
-  → explicit review decision
-  → active instinct
-  → separate promotion preview and explicit approval
-  → scoped guidance plus recorded destination
-```
+No runtime may infer, merge, migrate, or fall back to another runtime's store. Mutable state
+must remain outside the installed package.
 
-Codex state is local to the installing user at `~/.codex/instinct-review/`; portable review
-requires an explicit separate state root. The plugin
-does not provide a hosted service, analytics, telemetry, shared database, vector store, or
-automatic publishing system.
+## Goals
 
-## Users and authority
+1. Make one public package self-contained for native Claude, existing Codex, and portable use.
+2. Provide a detailed, no-marketplace Claude setup path that preserves unrelated user state.
+3. Keep native lifecycle hooks fast; run all model work in a detached recoverable worker.
+4. Minimize and redact evidence before persistence or model processing.
+5. Preserve separate human gates for candidate review and exact promotion approval.
+6. Allow background execution only after an immutable digest-bound approval receipt exists.
+7. Preserve public `0.2.0` Codex and portable behavior without destructive migration.
 
-| Role | Responsibility |
-|---|---|
-| Installing user / designated owner | Decides whether to enable capture, accepts or rejects each rule, and confirms every promotion |
-| Codex adapter | Captures eligible evidence, runs bounded extraction, summarizes state, and performs only confirmed local actions |
-| Portable adapter | Imports explicit compatible candidate JSON into one isolated state root and supports review only |
-| Skill or repository maintainer | Owns the destination guidance and reviews changes through its normal repository process |
+## Non-goals
 
-No lifecycle hook, extractor, background worker, schedule, or model may approve an instinct
-or promote guidance. A review decision and a promotion decision are always separate.
-
-## Scope
-
-### Included
-
-- Codex capture, normalization, extraction, queue recovery, review, promotion, cleanup, and
-  rollback.
-- Portable status, explicit candidate import, priority reporting, review, and cleanup with no
-  native-agent state access.
-- Evidence-backed suggestion types: correction, confirmation, voice, scope, and workflow.
-- Deterministic grouping, duplicate checks, confidence scoring, source-skill discovery, and
-  routing previews.
-- Promotion to a repository `AGENTS.md`, a user-level `~/.codex/AGENTS.md`, or one exact
-  writable user/project skill outside the plugin cache.
-- Explicit import of candidate JSON from an earlier standalone workflow.
-
-### Excluded
-
-- Automatic enablement, approval, promotion, publishing, messaging, or scheduling.
-- Capturing subagents, native Codex history, system/developer messages, reasoning, tool calls,
-  tool results, patches, browser results, or world-state payloads.
-- Changing a plugin-cache skill, reading or changing a separate runtime's state, or using a
-  different model as an undisclosed fallback.
-- Automatic Claude Code capture, private desktop hooks, or portable promotion.
-- Retaining a complete copy of a user's session history.
-
-## Quality rubric
-
-The owner should approve a rule only when all relevant checks pass:
-
-| Dimension | Review question |
-|---|---|
-| Grounded | Does the cluster include short redacted evidence and enough context to interpret it? |
-| Durable | Is it repeated, or is it an unmistakable explicit correction rather than a one-off request? |
-| Atomic | Does it express one actionable behavior? |
-| Scoped | Does its type, affected skill, and destination fit the behavior it changes? |
-| Safe | Is it free of untrusted pasted instructions, credentials, private payloads, and prohibited session content? |
-| Non-conflicting | Is later contrary evidence shown and resolved rather than ignored? |
-| Testable | Could a reviewer tell from a future output or workflow whether the rule was followed? |
-
-A model can propose a candidate. It cannot establish durability or authorise a change.
+- Auto-accepting a candidate, creating an approval receipt, or weakening confirmation.
+- Merging governed patches, approving pull requests, publishing, or sending instructions to a
+  hosted PMM service.
+- Reading Claude desktop chats, silently backfilling Claude history, or capturing a transcript
+  that a native lifecycle hook did not identify.
+- Requiring a marketplace, connector, database, vector store, or telemetry service.
+- Directly writing governed `RUN-*.md`, `REF-*.md`, or `STD-*.md` files from a worker.
+- Deleting native history or adopter-owned state during disable or uninstall.
 
 ## Functional requirements
 
-### Trust-first enablement
+### PIRC-REQ-001 — Self-contained dual-runtime package
 
-- Installation leaves capture disabled.
-- The user separately inspects and trusts the plugin's `SessionStart` and `SessionEnd` hooks.
-- First enablement requires an explicit acknowledgment that the plugin will create local
-  chat-derived state and invoke a second Codex extraction run.
-- Disabling stops future capture but retains local state. Removing the plugin preserves that
-  state and native Codex history.
+Every Claude manifest, hook, script, prompt, schema, setup document, and runtime dependency
+must resolve inside `plugins/pmm-instinct-review/` or its explicit adopter-owned state. The
+existing Codex and portable files remain available. No public file may resolve a private
+checkout or author-specific path.
 
-### Evidence minimization
+### PIRC-REQ-002 — Standalone Claude install without a marketplace
 
-- Capture accepts only enabled main-thread sessions with at least five user messages.
-- Normalization keeps only user and assistant text needed for extraction, removes unsupported
-  payload classes, redacts known credential patterns, removes context-only wrappers and
-  adjacent fallback duplicates, and applies configured size limits.
-- The normalized copy is untrusted evidence, not executable instruction text.
-- An audit decision triggers deletion of only the corresponding normalized copy. Audit,
-  suggestion, instinct, queue, and sanitized-log records remain local until the user removes
-  them.
+The package-root installer supports live-symlink and pinned-copy modes. A fresh state root is
+disabled; a valid receipt-owned upgrade preserves and truthfully reports existing state. An
+unowned pre-enabled or pre-acknowledged root is refused. The installer links the nested skill
+at `~/.claude/skills/pmm-instinct-review`, owns exactly one `SessionStart` and one
+`SessionEnd` settings handler, preserves unrelated settings, backs up a changed settings
+file, refuses occupied destinations, and performs a narrow uninstall that preserves state.
 
-### Extraction and queue integrity
+### PIRC-REQ-003 — Disabled default and explicit privacy acknowledgement
 
-- Session-end capture writes an audit and queue record without waiting for model extraction.
-- The worker invokes the configured Codex model exactly in an ephemeral read-only mode. It
-  never switches models silently.
-- Each suggestion must match the fixed type/rule/evidence/context/`why_it_matters` schema.
-  `why_it_matters` is one evidence-bound sentence, no more than 300 characters, that
-  explains the operational consequence of ignoring the proposed rule. It may not introduce
-  facts beyond the captured evidence and context. Invalid output produces a visible failed
-  job, not a partially trusted suggestion.
-- Zero candidates is a successful result.
-- Queue transitions are recoverable and single-worker protected. Failed work is bounded and
-  manually retryable.
+Install and status do not enable capture. First enablement requires an explicit acknowledgement
+that bounded redacted user/assistant text is stored locally and sent to the configured Claude
+model. Missing Claude fails closed. The setup procedure must keep capture disabled until its
+separate bare-mode authentication preflight succeeds.
 
-### Review and instinct creation
+The extractor uses Claude Code `--bare`. It cannot use an ordinary Claude subscription
+login/keychain. This candidate supports an inherited `ANTHROPIC_API_KEY` or supported
+Bedrock, Vertex AI, or Microsoft Foundry provider credentials; the installer does not store
+credentials and the runtime does not pass a custom `--settings` file.
 
-- The backlog separates zero-candidate audits, positive clusters, and missing/failed
-  suggestion work.
-- Clustering uses normalized type plus rule. Each cluster retains evidence, context,
-  rationale, support, source skills, repositories, first/last seen, and matching-instinct
-  state.
-- Ranking highlights voice/framing patterns, then workflow, scope, correction, and
-  confirmation. Within that order it uses support, source-skill breadth, repository/cwd
-  breadth, newness, and recency. Ranking changes review order only; it never makes a decision.
-- Matching requires both candidate type and normalized rule. `list-priority` is read-only;
-  `snapshot-priority` explicitly persists the full three-bucket priority contract and stale
-  active-instinct count.
-- Codex presents one candidate card at a time for the candidate-to-instinct decision. The
-  card contains exactly the decision-relevant context: **what happened**, **your feedback**,
-  **proposed future behavior**, **why it matters**, and concise support/source details.
-  It must not show a destination, file path, or routing metadata at this first gate.
-- The only cluster actions are explicit `accept`, `reject`, `edit`, or `match`. An unresolved
-  cluster remains unchanged. An `edit` may amend both the proposed behavior and its rationale.
-- A legacy imported candidate without `why_it_matters` receives the visible fallback:
-  "Without this rule, the correction described in the evidence could recur." It is not
-  re-extracted solely to supply the rationale.
-- An instinct records its type, support, confidence, source runtime, source skill(s), source
-  repository/repositories, rationale, suggested destination, explicit correction/
-  contradiction state, and actual promotion outcome. Legacy omissions receive conservative
-  in-memory defaults.
-- Confidence is `0.30` for 1–2 supports, `0.50` for 3–5, `0.70` for 6–10, and `0.85` for 11+.
-  A `0.05` correction bonus applies only when the owner explicitly classifies it as strong;
-  an explicit contradiction subtracts `0.10`.
+### PIRC-REQ-004 — Fast non-model hooks
 
-### Promotion and cross-skill learning
+`SessionEnd` performs only consent/eligibility checks, atomic capture-request spooling, and a
+fully detached launch. The worker streams normalization and atomic evidence persistence before
+extraction. `SessionStart` performs only fixed layout validation, a forced detached launch, and
+one bounded read of the worker-produced status snapshot; stale recovery, review reconciliation,
+and retained-store enumeration run in the worker. It may emit one bounded snapshot brief. No
+lifecycle hook invokes a model. Hook commands use package-relative or
+installer-resolved paths and a supported Claude command-hook shape. The standalone settings
+handler carries its own shutdown budget. The optional plugin handler is asynchronous because a
+plugin timeout cannot extend Claude Code's shared SessionEnd budget; standalone installation is
+required for reliable non-interactive `claude -p` capture.
 
-- Only an active instinct at the configured confidence threshold is eligible for promotion.
-- Promotion is an explicit, separate operation for one selected instinct; the owner first
-  chooses a destination class, then receives the resolved target and write preview. Creating
-  an instinct never implies a promotion choice.
-- A single named skill rule may target that skill's registered workflow document. A voice
-  rule may target only an explicitly mapped skill reference document. A pattern supported by
-  three or more source skills may target an owner-selected governed standard. The plugin must
-  leave a missing or unmapped skill target unresolved rather than guess or create a new skill
-  document.
-- Repository behavior can target the nearest repository `AGENTS.md`; general behavior can
-  target the user-level `~/.codex/AGENTS.md`; `both` targets both. A target must be outside
-  the plugin cache and writable by the installing user.
-- After the owner selects a destination class, the plugin previews the exact destination,
-  proposed insertion, and duplicate state before any write. Application requires a second,
-  destination-level explicit confirmation.
-- Cross-repository evidence is a useful routing signal, not permission to generalize. The
-  owner chooses the target after reading the preview.
-- If existing guidance already contains the normalized rule, the plugin offers to record that
-  the instinct is already covered without writing a duplicate.
-- New guidance is appended under the managed heading `## PMM Instinct Review — Promoted
-  Guidance`, creating that section only when it is absent. For multi-target promotion, all
-  writes are staged before any destination is replaced; promotion state is recorded only
-  after every selected write succeeds.
-- A changed result becomes `promoted`; an all-duplicate result becomes `covered`. Both are
-  terminal and leave the default promotion queue.
+### PIRC-REQ-005 — Minimized isolated Claude evidence
 
-### Adapter isolation and compatibility
+Capture accepts only enabled, acknowledged main sessions meeting the post-normalization user
+message minimum. It excludes sidechains, subagents, workers, extractors, system/developer
+content, context-only wrappers, reasoning, tools, results, patches, and world state. It keeps
+only bounded redacted user/assistant text in one private evidence object under the explicit
+Claude state root. Native history is read-only.
 
-- Adapter selection is explicit. Portable mode requires `--state-root`, refuses a native agent
-  store or plugin directory, reports capture unsupported, and makes capture/hook/extraction/
-  promotion commands unavailable.
-- Existing `0.1.0` configuration, audits, queues, suggestions, review ledgers, instincts, and
-  promotion previews load without destructive migration. Status and priority listing never
-  rewrite state.
+### PIRC-REQ-006 — Bounded Claude extraction
+
+The worker uses the exact configured model, `--bare`, JSON output, the bundled JSON Schema,
+one maximum turn, no session persistence, non-interactive permissions, an empty built-in tool
+set, and explicit `--disallowedTools "mcp__*"` so MCP tools are unavailable. It sends only
+bounded evidence on standard input, accepts zero to five validated candidates, treats zero as success, and
+persists neither raw stderr nor evidence text in operational logs.
+
+### PIRC-REQ-007 — Recoverable idempotent queue
+
+Jobs bind runtime, session ID, transcript digest, and schema version. Claude states are
+`queued`, `processing`, `retryable`, `completed`, and `failed`. Writes and locks are atomic,
+stale leases recover, automatic attempts stop at the configured ceiling, manual retry is
+explicit, and duplicate hook delivery cannot create another job.
+
+### PIRC-REQ-008 — Human-gated review and retention
+
+Claude provides read-only priority listing, explicit zero-candidate resolution, and confirmed
+`accept`, `reject`, `edit`, and exact type-aware `match`. A worker never creates an instinct.
+Normalized evidence is deleted only after every candidate in its audit has a human decision;
+audits, suggestions, decisions, instincts, and sanitized state remain.
+
+### PIRC-REQ-009 — Receipt-bound promotion automation
+
+Promotion first produces an exact preview binding instinct, destination class, delivery mode,
+target path, current target digest, rule, rationale, insertion, full resulting text, and
+resulting digest. A separate confirmed command creates an immutable receipt. Only then may a
+worker apply the exact local result or create an exact governed review patch. Execution is
+idempotent, reuses an existing approval for the same preview, binds outcomes to the approved
+target/result, recovers an exact write interrupted before outcome persistence, and refuses
+target drift or receipt tampering.
+
+### PIRC-REQ-010 — Narrow destinations and delivery modes
+
+- `global`: local-only to `~/.claude/CLAUDE.md`;
+- `project`: local-only to an exact `CLAUDE.md`;
+- `skill`: review-only to an exact `RUN-*.md` or `REF-*.md`; and
+- `standard`: review-only to an exact `STD-*.md`.
+
+Installed packages, plugin caches, and runtime state are never valid destinations. Governed
+review delivery writes a patch and does not change its target.
+
+### PIRC-REQ-011 — Explicit ownership and updates
+
+Every command receives an explicit standalone state root, plugin-data root, or deliberately
+configured `PMM_INSTINCT_STATE_ROOT`. Symlink installs follow a validated Toolkit checkout;
+copy installs remain pinned until deliberate replacement. Disable and uninstall preserve
+state. No mode infers an ambient home-directory store.
+
+### PIRC-REQ-012 — Detailed setup and truthful receipts
+
+`RUN-claude-setup.md` covers boundary disclosure, closure, authentication preflight,
+check/install, hooks, discovery, consent, smoke testing, extraction, review, receipt promotion,
+update, disable, conflicts, and uninstall. A final receipt distinguishes passed, failed, and
+not-run stages and may not claim native readiness without an authenticated lifecycle check.
+
+### PIRC-REQ-013 — Complete fictional examples
+
+One independently authored Northstar Reports scenario covers installation, configuration,
+minimized evidence, queue, suggestion, decision, instinct, promotion preview/receipt/outcome,
+governed patch behavior, and before/after Claude instructions. Every value is fictional;
+network values use `.invalid`, and linked digests are internally consistent.
+
+### PIRC-REQ-014 — `0.2.0` compatibility
+
+Existing Codex and portable commands, hooks, state contracts, examples, and tests remain valid.
+The Claude runtime is additive, standard-library only, and isolated. Status/list operations do
+not destructively migrate or rewrite legacy state.
+
+### PIRC-REQ-015 — Public privacy, provenance, and security
+
+The candidate contains no private session, state, identifier, destination, credential,
+author-machine path, or reversible alias map. Public review includes secret/path scans, human
+narrative review, Draft rights/privacy evidence, and exact-set provenance inventory. Example
+paths are clearly fictional.
+
+### PIRC-REQ-016 — Exact release boundary
+
+Only approved manifest paths may change. Focused and complete tests and repository validators
+must pass. Release evidence reports checks actually run. Background workers cannot approve,
+merge, publish, or bypass the final pull-request review.
 
 ## Approval gates
 
-| Gate | Owner decision | Required evidence | Pass condition |
-|---|---|---|---|
-| G0 — Package readiness | Is the plugin documented and verified for release? | Product docs, implementation map, tests, privacy policy, and release evidence | Public package is complete and validation passes |
-| G1 — Local trust | May this device capture future work? | Hook review, disabled default, and privacy acknowledgment | Capture remains off until the user explicitly enables it |
-| G2 — Capture boundary | Is stored evidence eligible and minimized? | Eligibility/redaction/size checks and bounded calibration inventory | Prohibited session content is excluded from normalized storage |
-| G3 — Extraction quality | Is a suggestion safe to show for review? | Exact-model receipt, schema validation, retry/failure behavior, and source discovery | Invalid output produces no candidate; zero results are accepted |
-| G4 — Instinct decision | Does this cluster represent a useful durable rule? | Candidate card with situation, feedback, proposed behavior, rationale, support, scope, conflicts, and matching-instinct state | Only the owner's selected action changes the cluster; no routing is shown or written at this gate |
-| G5 — Promotion | Should this rule change a destination? | Confidence, owner-selected destination class, resolved target path, insertion text, and duplicate preview | Only a second confirmed destination write occurs; the final file and managed section are recorded |
-| G6 — Operation and rollback | Can the user continue or stop safely? | Status, cleanup, failure visibility, and narrow uninstall behavior | No hidden mutation or unrecoverable owned-state loss |
-
-## Success measures
-
-Initial measurement is calibration-oriented; adopters should establish a baseline before
-setting numeric targets.
-
-| Outcome | Measure | Guardrail |
+| Gate | Human decision | Pass condition |
 |---|---|---|
-| Quality | Owner acceptance rate and later rule reversals | Never hide low-quality candidates just to inflate acceptance |
-| Breadth | Clusters with evidence from distinct skills or repositories | Cross-skill evidence never automatically creates global guidance |
-| Improvement | Promotions with a recorded destination, managed section, and later outcome review | A write without a preview and confirmation is a failure |
-| Safety | Unauthorized promotions, native-history mutation, or unredacted normalized evidence | Target is zero incidents |
-| Reliability | Visible terminal failures, retries, and cleanup outcomes | Failed extraction never becomes inferred guidance |
+| G0 — Package | Is this exact candidate ready for review? | Complete package, Draft evidence, exact diff, tests pass |
+| G1 — Local trust | May hooks be installed and trusted? | Skill and both hook commands inspected; unrelated settings preserved |
+| G2 — Privacy | May future sessions be captured? | Exact acknowledgement plus supported bare-mode credentials |
+| G3 — Evidence/extraction | Is the result safe to review? | Eligible minimized evidence; exact model; schema-valid zero-to-five output |
+| G4 — Instinct | Is this cluster a durable rule? | User explicitly accepts, rejects, edits, or matches; no routing at this gate |
+| G5 — Promotion | May this exact destination/result be executed? | Exact preview digest receives a separate confirmation; target remains unchanged |
+| G6 — Governed delivery/release | May a patch or package advance? | Normal repository and pull-request review; receipt never substitutes for it |
 
-## Rollout and rollback
+## Reliability, privacy, and rollback
 
-1. Validate the final package and review the local privacy policy.
-2. Install the plugin with capture disabled and inspect both hooks.
-3. Use a limited calibration cohort before relying on routine capture.
-4. Review a mix of zero, positive, duplicate, and failure cases.
-5. Promote only after a separate destination-level review.
-6. Periodically review active instincts for conflict, staleness, and downstream value.
+- State writes are atomic and worker ownership uses narrow locks.
+- Extraction failures become bounded `retryable` or visible terminal `failed` state.
+- Operational logs are transcript-free and errors are sanitized.
+- Native history remains untouched; normalized evidence follows decision-complete retention.
+- `off` stops new capture. Uninstall removes only owned hook entries and the personal-skill
+  symlink. State deletion and promoted-rule reversal are separate user/governance actions.
 
-To stop collection, turn learning off. To remove plugin integration, remove the plugin through
-Codex. Neither action deletes the local state directory; delete that state only through a
-separate, deliberate local data-management action.
+## Compatibility and safe degradation
+
+Claude CLI flags and hook schemas are external interfaces. Unsupported hosts remain disabled
+and report the exact missing capability. A Claude subscription login alone does not satisfy
+the bare-mode extractor authentication prerequisite. Portable mode is an explicit alternative,
+not a silent fallback for failed native setup. A missing native smoke check blocks a readiness
+claim but does not affect the existing Codex/portable workflow.
+
+## Acceptance summary
+
+The public submission must prove package closure; standalone install/rollback; consent and
+isolation; capture privacy and hook timing; exact background extraction; queue recovery;
+human review and retention; receipt-bound local and governed delivery; fictional digest
+integrity; Codex/portable regression; public safety; exact diff; and a stop before merge.
+Detailed cases are in `DOC-submission-test-cases.md`.

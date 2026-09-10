@@ -68,15 +68,17 @@ The categories are mutually exclusive by each skill's primary job.
 
 - `pmm-accepted-plan-importer` — import an approved plan into governed local state.
 
-## Installable Codex plugins (draft)
+## Installable agent plugins and bundles (draft)
 
-- `pmm-instinct-review` (`0.2.0` draft) — capture eligible completed Codex sessions locally,
-  or import explicit candidates into a separately selected portable review-only store usable
-  from Codex or Claude Code. It ranks voice-first clusters by support, breadth, newness, and
-  recency; creates only owner-approved instincts; and promotes Codex guidance only after a
-  second exact-destination gate. The package includes complete state templates and one fully
-  fictional lifecycle. Portable mode never reads native agent stores and cannot capture or
-  promote.
+- `pmm-instinct-review` (`0.3.0` draft) — capture eligible completed sessions locally through
+  native Codex or Claude Code hooks, run detached schema-bound extraction with the exact
+  configured native model, and rank voice-first clusters by support, breadth, newness, and
+  recency. Only human-confirmed candidates become instincts. Claude promotion workers execute
+  only a separate, immutable, digest-bound approval receipt; governed destinations produce a
+  review patch instead of being mutated. The same package retains the isolated portable
+  candidate-import and review adapter, which never reads native agent stores and cannot
+  capture or promote. It includes detailed runtime-specific setup, complete state templates,
+  and separate fictional Codex and Claude lifecycles.
 
 All 25 standalone packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
 and a synthetic example. Deterministic workflows also include scripts and tests. See the
@@ -100,7 +102,9 @@ external-authority layers separately. It does not claim that installing a skill 
 alone makes governance non-bypassable.
 
 Both installable plugins follow the Codex plugin manifest contract. `pmm-instinct-review`
-also declares session hooks; its bundled skill follows the same skill-package contract.
+also ships a Claude local-plugin manifest and a no-marketplace standalone installer. Codex and
+Claude declare separate session hooks, while the nested skill follows the same public
+skill-package contract.
 
 The competitive-intelligence foundation remains a standalone skill and does not add a third
 installable plugin to the current catalog. Its requirements describe the later thin wrapper.

@@ -5,8 +5,9 @@ marketing artifacts, synthesizing signals, and maintaining repository hygiene:
 
 - **25 standalone agent skills** — the approved v1 set across planning, execution,
   intelligence, drafting, signal operations, and repository hygiene.
-- **PMM Instinct Review plugin (draft)** — an installable, human-gated Codex improvement
-  loop for local capture, extraction, review, promotion, and cleanup.
+- **PMM Instinct Review plugin (`0.3.0` draft)** — a self-contained, human-gated
+  improvement loop with native local capture and background extraction for Codex and
+  Claude Code, plus explicit portable candidate review.
 - **Diffguard Lite** — a local Git-diff analyzer for Python and JavaScript complexity,
   file size, churn, and test health.
 - **Standards and templates** — public skill structure, evidence/privacy, approval-gate,
@@ -53,12 +54,18 @@ standards in `docs/`. Run `python3 scripts/governance/validate_skill_pack.py` to
 the selected inventory, required resources, local links, frontmatter, and public-safety
 guardrails.
 
-## PMM Instinct Review plugin (draft)
+## PMM Instinct Review plugin (`0.3.0` draft)
 
-The plugin is a release candidate pending pull-request approval. Installation does not
-enable chat capture. After installation, review and trust both hooks with `/hooks`, confirm
-your employer permits local transcript-derived storage and a second Codex model invocation,
-then explicitly enable learning through `$pmm-instinct-review`.
+The plugin is a release candidate pending the destination-machine native lifecycle smoke test,
+complete local verification, hosted checks, pull-request review, and repository release gates.
+It supports two independent native runtimes: the existing Codex plugin and a standalone Claude
+Code bundle. Fresh installation does not enable chat capture in either runtime. Before enabling
+capture, inspect the installed
+hooks, confirm that local transcript-derived storage and a second model invocation are allowed
+on the machine, and explicitly acknowledge the privacy boundary through
+`$pmm-instinct-review` in Codex or `/pmm-instinct-review` in Claude Code.
+
+Install for Codex through the public marketplace:
 
 ```bash
 codex plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
@@ -75,11 +82,29 @@ If `codex` is not on `PATH` on macOS, use either installed app binary:
 The equivalent Codex app binary path is
 `/Applications/Codex.app/Contents/Resources/codex`.
 
-Enabling creates user-owned state under `~/.codex/instinct-review/`. The plugin has no
-telemetry or hosted PMM service, and it never changes native Codex history. Removing the
-plugin leaves captured state in place. See the
-[operator guide](plugins/pmm-instinct-review/README.md) and [privacy policy](PRIVACY.md)
-before enabling it on a work device.
+For Claude Code, clone or copy this repository to the destination machine and run the
+standalone installer. Copy mode leaves a durable bundle under the user's Claude directory;
+it does not require a Claude marketplace:
+
+```bash
+python3 plugins/pmm-instinct-review/scripts/install_claude_instinct_review.py \
+  --install --mode copy
+python3 plugins/pmm-instinct-review/scripts/install_claude_instinct_review.py \
+  --check
+```
+
+The installer adds only the `pmm-instinct-review` personal skill and its owned
+`SessionStart` and `SessionEnd` handlers, preserving unrelated Claude settings. Native state
+is isolated by runtime: Codex uses `~/.codex/instinct-review/`, while Claude uses
+`~/.claude/pmm-instinct-review-data/`. Disabling or uninstalling preserves that user-owned
+state. The package has no telemetry or hosted PMM service and never changes native session
+history.
+
+Read the [operator guide](plugins/pmm-instinct-review/README.md), the
+[detailed Claude setup runbook](plugins/pmm-instinct-review/skills/pmm-instinct-review/references/RUN-claude-setup.md),
+and the [privacy policy](PRIVACY.md) before enabling it on a work device. A local-plugin
+Claude launch is also available for temporary evaluation; it is separate from the persistent
+standalone installation described above.
 
 ## Skill authoring
 
