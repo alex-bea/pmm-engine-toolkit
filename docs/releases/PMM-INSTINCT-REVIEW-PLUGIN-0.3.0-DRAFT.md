@@ -71,14 +71,14 @@ checks distinct from passes.
 | Focused Codex and portable regression suite | Pass: 57 tests |
 | Focused public Claude closure and behavior suite | Pass: 79 tests |
 | Mirrored private Claude regression suites | Pass: 84 tests; the seven public/private Claude runtime and launcher files are byte-identical |
-| Complete repository unit suite | Pass: 235 tests |
+| Complete repository unit suite | Pass: 243 tests |
 | Repository skill-pack validator | Pass: 25 standalone skills, two plugins, and declared dependencies validated |
 | Skill-package quick validation | Pass |
-| Strict governed-document audit | Pass: 55 governed documents, zero findings |
+| Strict governed-document audit | Pass: 61 governed documents, zero findings |
 | GitHub Actions structure, `actionlint`, and `zizmor` | Pass: three workflows validated; no unsuppressed findings |
-| Publicizer private-term scan | Pass for the complete plugin; exact-slice findings were limited to five pre-existing unchanged matches in three modified files and were diff-adjudicated |
+| Publicizer private-term scan | Pass for the complete plugin; exact-slice matches already present on the current base were diff-adjudicated, with none introduced by this candidate |
 | Tracked-tree Gitleaks scan | Pass: zero findings with Gitleaks `8.30.1` |
-| Generated IP inventory exact-set check | Pass: 427 rows for 427 artifacts |
+| Generated IP inventory exact-set check | Pass: 443 rows for 443 artifacts |
 | Approved-manifest comparison | Pass: 57 of 57 paths, comprising 36 additions and 21 modifications, with no extras or action mismatches |
 | Real Claude Code lifecycle smoke test | Not run; this host has no `claude` executable, so the destination-machine test remains required |
 | Hosted pull-request checks | Pass: CodeQL, dependency review, governance, and Python 3.10–3.14 tests |

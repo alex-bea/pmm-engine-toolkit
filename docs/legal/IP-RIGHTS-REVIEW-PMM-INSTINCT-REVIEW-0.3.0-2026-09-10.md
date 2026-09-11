@@ -37,7 +37,7 @@ identifiers and product names do not import third-party implementation code or p
 
 Project-authored artifacts are intended to be offered under the repository's Apache-2.0
 license. The repository license, notice, and third-party notices are unchanged by the exact
-57-path candidate. The generated inventory contains 427 rows for 427 repository artifacts with
+57-path candidate. The generated inventory contains 443 rows for 443 repository artifacts with
 no missing or extra path and records the candidate artifacts as project-authored source, test,
 documentation, template, or generated zero-finding security evidence.
 
@@ -51,7 +51,7 @@ fictionalization crosswalk is authorized for redistribution.
 
 - The approved manifest comparison passes exactly: 57 paths, comprising 36 additions and 21
   modifications, with no missing, extra, or action-mismatched path.
-- The 427-row IP inventory matches the 427-artifact filesystem set exactly.
+- The 443-row IP inventory matches the 443-artifact filesystem set exactly.
 - `LICENSE`, `NOTICE`, and `THIRD_PARTY_NOTICES.md` are unchanged.
 - Claude, Claude Code, Anthropic, Codex, and OpenAI references were reviewed as nominative
   interoperability or disclosure references; no third-party code or substantive prose was

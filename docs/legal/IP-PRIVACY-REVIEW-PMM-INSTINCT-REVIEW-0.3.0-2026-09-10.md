@@ -67,14 +67,14 @@ publish automatically.
 ## Required verification
 
 The frozen candidate passed the complete package publicizer scan, repository public-safety and
-skill-pack validators, a zero-finding full-tree Gitleaks scan, 235 public unit tests, the 57-test
+skill-pack validators, a zero-finding full-tree Gitleaks scan, 243 public unit tests, the 57-test
 Codex/portable regression suite, the 79-test public Claude suite, the 84-test mirrored private
-Claude suite, fictional cross-file tests, a 55-document strict audit, and GitHub Actions
+Claude suite, fictional cross-file tests, a 61-document strict audit, and GitHub Actions
 validation. The approved-manifest comparison is exact at 57 paths: 36 additions and 21
 modifications, with no missing, extra, or action-mismatched path. The generated IP inventory is
-exact at 427 rows for 427 artifacts. The exact-slice private-term scan produced five matches in
-pre-existing unchanged content in three modified files; diff review confirmed that
-candidate-added content introduced none. Agent-assisted privacy and narrative review found no remaining
+exact at 443 rows for 443 artifacts. The exact-slice private-term scan produced matches only in
+content already present on the current base; diff review confirmed that candidate-added content
+introduced none. Agent-assisted privacy and narrative review found no remaining
 actionable P0, P1, or P2 issue.
 
 The destination-machine Claude smoke test was not run because this host has no `claude`

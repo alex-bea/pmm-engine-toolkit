@@ -44,7 +44,7 @@ this Draft is evidence for review, not approval to merge or release.
 |---|---|---|
 | Full candidate-tree secret scan | Pass: zero findings | Generated Gitleaks report: [`gitleaks-tracked-tree-pmm-instinct-review-2026-09-10.json`](gitleaks-tracked-tree-pmm-instinct-review-2026-09-10.json) |
 | Complete plugin publicizer scan | Pass: zero findings | Complete self-contained `plugins/pmm-instinct-review/` package scanned with the external run-specific denylist |
-| Exact 57-path private-term review | Pass after adjudication | Five scanner matches appeared only in pre-existing unchanged content in three modified files; zero matches occurred in candidate-added content |
+| Exact 57-path private-term review | Pass after adjudication | Scanner matches appeared only in content already present on the current base; zero matches occurred in candidate-added content |
 | Absolute developer-path review | Pass: zero findings | Publicizer path rules plus exact-diff review |
 | Fictional URL and identifier review | Pass: zero findings | Northstar Reports Claude fixtures use synthetic identifiers and reserved `.invalid` values |
 | Agent-assisted narrative and security review | Pass: no actionable P0, P1, or P2 findings remain | Exact manifest diff, hook boundary, state confinement, promotion authority, installer, and fixture review |

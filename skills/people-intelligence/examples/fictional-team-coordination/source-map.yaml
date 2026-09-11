@@ -1,0 +1,15 @@
+scenario: "Fictional Harborlight Operations team coordination"
+subject:
+  display_label: "Avery Rivera"
+  professional_purpose: "Prepare a planning meeting update"
+  authority_note: "Fictional scenario with supplied collaboration notes"
+lookback_days: 14
+optional_sources:
+  - label: "Fictional Avery planning notes"
+    type: "notes"
+    enabled: true
+    access_reference: "https://workspace.harborlight.invalid/notes/avery-planning"
+    permitted_use: "Planning-meeting preparation only"
+retention:
+  owner: "Fictional planning operations"
+  deletion_request_path: "Fictional records coordinator"
