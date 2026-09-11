@@ -18,8 +18,9 @@ change_control: Pull request review
 This Draft covers the bounded public Codex model/routing parity candidate and its direct
 documentation, configuration, fictional example, tests, validator, release, legal, and security
 records. Exact inventory regeneration, dependency/license review, and independent final-diff
-review are complete. Hosted checks and project-owner Gate B review remain pending. This record
-is not approval to merge, tag, release, or publish.
+review are complete. Hosted checks passed on PR #17 for implementation commit `90d5177`;
+project-owner Gate B review remains pending. This record is not approval to merge, tag,
+release, or publish.
 
 ## Preliminary provenance assessment
 
@@ -59,7 +60,9 @@ substantive prose.
 - Dependency and license-delta review: pass; dependency manifests, locks, workflows, license,
   notice, and third-party notice are unchanged, and changed runtime imports remain standard
   library or package-local.
-- Hosted checks and project-owner final-diff review: pending.
+- Hosted checks: pass on PR #17 at `90d5177` for CodeQL, dependency review, governance, and
+  Python 3.10–3.14.
+- Project-owner final-diff review: pending.
 
 Any new dependency, changed provenance, or candidate edit requires these checks and this Draft
 record to be refreshed. A pending or unavailable check cannot support a redistribution or

@@ -18,8 +18,9 @@ change_control: Pull request review
 
 Local execution is complete against the final pre-pull-request candidate. Gitleaks 8.30.1 found
 zero findings and wrote the adjacent exact JSON result (`[]`). The exact changed-set publicizer
-scan and independent narrative reviews also passed. Hosted checks and project-owner Gate B
-review remain pending; this Draft does not authorize merge or publication.
+scan and independent narrative reviews also passed. Hosted checks passed on PR #17 for
+implementation commit `90d5177`; project-owner Gate B review remains pending. This Draft does
+not authorize merge or publication.
 
 ## Required method and scope
 

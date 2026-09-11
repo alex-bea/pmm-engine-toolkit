@@ -147,8 +147,9 @@ The PMM Instinct Review `0.3.1` candidate has separate Draft
 [secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-11.md) records. Their
 80-test Codex/portable suite, 79-test Claude suite, 266-test complete suite, exact 34-path
 manifest comparison, 448-artifact inventory regeneration, publicizer scan, and zero-finding
-Gitleaks report are complete. The native Codex lifecycle smoke was not run in this workspace;
-hosted pull-request checks and project-owner Gate B review remain pending. The candidate is not
+Gitleaks report are complete. PR #17 passed CodeQL, dependency review, governance, and Python
+3.10–3.14 checks for implementation commit `90d5177`. The native Codex lifecycle smoke was not
+run in this workspace, and project-owner Gate B review remains pending. The candidate is not
 merge- or release-ready.
 
 The earlier PMM Instinct Review `0.3.0` candidate retains separate Draft

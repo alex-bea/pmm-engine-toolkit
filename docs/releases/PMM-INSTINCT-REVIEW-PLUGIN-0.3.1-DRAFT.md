@@ -19,8 +19,9 @@ change_control: Pull request review
 Status: locally verified implementation candidate. The approved review package authorizes a
 narrow private-PMM-Engine-Codex parity slice. Focused tests, repository validation, security
 scans, and exact inventory regeneration are recorded below. The native Codex lifecycle smoke
-was not run; hosted checks and project-owner final review remain pending before merge or
-release. This Draft does not authorize either action.
+was not run. Hosted checks passed on PR #17 for implementation commit `90d5177`; project-owner
+final review remains pending before merge or release. This Draft does not authorize either
+action.
 
 ## Changed for Codex
 
@@ -85,7 +86,7 @@ model authority and routing outcomes.
 | Changed-set private-term, path, and narrative review | Pass: scanner clean; independent reviews found no remaining actionable issue |
 | Tracked-tree Gitleaks scan | Pass: Gitleaks 8.30.1, zero findings; adjacent exact JSON report is `[]` |
 | Native Codex smoke | Not run: no separately authorized isolated hook lifecycle and adopter-selected smoke model were used in this workspace |
-| Hosted pull-request checks | Pending |
+| Hosted pull-request checks | Pass on PR #17 at `90d5177`: CodeQL, dependency review, governance, and Python 3.10–3.14 |
 | Project-owner final review | Pending |
 
 An unavailable, skipped, stale, or failing required check blocks a release-readiness claim.

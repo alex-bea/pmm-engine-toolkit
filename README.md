@@ -71,10 +71,10 @@ guardrails.
 ## PMM Instinct Review plugin (`0.3.1` draft)
 
 > **Draft / evaluation only.** The `0.3.1` local Codex model/routing checks and security scans
-> are complete. The native Codex lifecycle smoke was not run; hosted pull-request checks and
-> project-owner Gate B review remain pending. Do not treat `0.3.1` as a production-ready
-> release. The completed `0.3.0` evidence remains historical and does not approve this
-> candidate.
+> are complete, and the hosted checks passed on PR #17 for implementation commit `90d5177`.
+> The native Codex lifecycle smoke was not run, and project-owner Gate B review remains
+> pending. Do not treat `0.3.1` as a production-ready release. The completed `0.3.0` evidence
+> remains historical and does not approve this candidate.
 
 The plugin supports two independent native runtimes: the existing Codex plugin and a standalone
 Claude Code bundle. Fresh installation does not enable chat capture in either runtime. Before

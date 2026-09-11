@@ -20,8 +20,8 @@ This Draft covers the proposed Codex persisted-model and RUN/REF routing parity 
 unchanged public Claude and portable boundaries, fictional configuration updates, and direct
 documentation, tests, validation, release, provenance, and security evidence. It supports
 candidate review only. Required local automated scans and independent final-diff review are
-complete; hosted checks and project-owner Gate B review remain pending. This record does not
-approve merge or publication.
+complete. Hosted checks passed on PR #17 for implementation commit `90d5177`; project-owner
+Gate B review remains pending. This record does not approve merge or publication.
 
 The fidelity reference is the private PMM Engine Codex implementation. The public result uses
 generic adopter-owned configuration. No private model choice, capability registry, route value,
@@ -80,7 +80,8 @@ references describe interoperability and provider processing only.
 | Focused and complete automated tests | Pass: 80 Codex/portable, 79 Claude, and 266 complete tests |
 | Independent privacy and narrative review | Pass: no remaining actionable finding |
 | Native Codex lifecycle smoke | Not run: no separately authorized isolated hook lifecycle and adopter-selected smoke model were used |
-| Hosted pull-request checks and owner review | Pending |
+| Hosted pull-request checks | Pass on PR #17 at `90d5177`: CodeQL, dependency review, governance, and Python 3.10–3.14 |
+| Project-owner review | Pending |
 
 Results must be entered only from the exact final candidate. An unavailable check is `not run`,
 not a pass, and keeps the release Draft.

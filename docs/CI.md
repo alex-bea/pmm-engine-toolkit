@@ -34,8 +34,9 @@ worker isolation, uninstall scope, and complete Claude/Codex/portable regression
 The `0.3.1` claim is parity with the private PMM Engine Codex model/routing outcomes. CI must
 not describe Codex as having Claude's immutable receipt-bound promotion transaction layer.
 Candidate-specific local results are recorded in the Draft release evidence from commands
-actually run. Hosted pull-request results remain pending until the candidate branch is pushed
-and the checks complete.
+actually run. On PR #17, implementation commit `90d5177` passed CodeQL, dependency review,
+governance, and tests on Python 3.10 through 3.14. Any later candidate commit must run the
+hosted checks again.
 
 The real Claude and Codex lifecycle smoke tests are environment-dependent and are not replaced
 by fictional fixtures or mocked process tests. Release evidence must record the corresponding
