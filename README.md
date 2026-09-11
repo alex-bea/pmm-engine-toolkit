@@ -29,7 +29,7 @@ on embedded company, customer, or individual data.
 Requirements: Git and Python 3.10 or newer.
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/alex-bea/pmm-engine-toolkit.git
 cd pmm-engine-toolkit
 python3 -m venv .venv
 .venv/bin/python -m pip install --require-hashes --only-binary=:all: -r requirements-build.lock
@@ -42,6 +42,20 @@ The `requirements*.txt` files are human-maintained source manifests. Their corre
 lock files provide the hash-verified installation used by CI and recommended for local
 setup. Build tooling is installed first so the one source-only runtime package can build
 without fetching undeclared build dependencies.
+
+These commands validate the complete Toolkit source tree, so they are the right starting
+point for contributors and people changing a package. To evaluate one standalone workflow,
+start with its catalog entry and package documentation instead.
+
+## Choose a starting point
+
+| If you want to… | Start here |
+| --- | --- |
+| Find a workflow for a PMM job | Browse the [skill catalog](docs/SKILL-CATALOG.md), then read the selected package's `SKILL.md` and any package README. |
+| Use one standalone skill | Copy its complete `skills/<name>/` directory into a compatible agent environment, keeping its subdirectories together. The [competitive-intelligence starter kit](skills/comp-intel/README.md) shows the pattern. |
+| Evaluate the PMM Instinct Review candidate | Read the evaluation notice and setup guidance in the next section before installing or enabling anything. |
+| Add repository-level governance | Start with the [Codex governance plugin](docs/CODEX-GOVERNANCE-PLUGIN.md). |
+| Contribute a change | Follow [CONTRIBUTING.md](CONTRIBUTING.md) and the [continuous-integration guide](docs/CI.md). |
 
 Run Diffguard Lite against a Git base ref:
 
@@ -56,14 +70,15 @@ guardrails.
 
 ## PMM Instinct Review plugin (`0.3.0` draft)
 
-The plugin is a release candidate pending the destination-machine native lifecycle smoke test,
-complete local verification, hosted checks, pull-request review, and repository release gates.
-It supports two independent native runtimes: the existing Codex plugin and a standalone Claude
-Code bundle. Fresh installation does not enable chat capture in either runtime. Before enabling
-capture, inspect the installed
-hooks, confirm that local transcript-derived storage and a second model invocation are allowed
-on the machine, and explicitly acknowledge the privacy boundary through
-`$pmm-instinct-review` in Codex or `/pmm-instinct-review` in Claude Code.
+> **Draft / evaluation only.** Local automated validation and hosted pull-request checks have
+> passed, but the destination-machine native Claude Code lifecycle smoke test has not yet been
+> recorded. Do not treat `0.3.0` as a production-ready release.
+
+The plugin supports two independent native runtimes: the existing Codex plugin and a standalone
+Claude Code bundle. Fresh installation does not enable chat capture in either runtime. Before
+enabling capture, inspect the relevant hooks, confirm that local transcript-derived storage and
+a second model invocation are allowed on the machine, and explicitly acknowledge the privacy
+boundary through `$pmm-instinct-review` in Codex or `/pmm-instinct-review` in Claude Code.
 
 Install for Codex through the public marketplace:
 
@@ -82,15 +97,26 @@ If `codex` is not on `PATH` on macOS, use either installed app binary:
 The equivalent Codex app binary path is
 `/Applications/Codex.app/Contents/Resources/codex`.
 
-For Claude Code, clone or copy this repository to the destination machine and run the
-standalone installer. Copy mode leaves a durable bundle under the user's Claude directory;
-it does not require a Claude marketplace:
+For Claude Code, clone or copy this repository to the destination machine and begin with the
+non-mutating installer preflight. Before any installation or enablement, confirm that the
+machine can use the required authenticated Claude CLI or supported provider credentials and
+that its local-storage and model-processing policies permit evaluation.
 
 ```bash
 python3 plugins/pmm-instinct-review/scripts/install_claude_instinct_review.py \
-  --install --mode copy
-python3 plugins/pmm-instinct-review/scripts/install_claude_instinct_review.py \
   --check
+```
+
+If the preflight is acceptable and you choose to evaluate the candidate, install one mode.
+Copy mode leaves a durable bundle under the user's Claude directory; neither mode requires a
+Claude marketplace:
+
+```bash
+python3 plugins/pmm-instinct-review/scripts/install_claude_instinct_review.py \
+  --install --mode symlink
+# Or create a pinned copy:
+python3 plugins/pmm-instinct-review/scripts/install_claude_instinct_review.py \
+  --install --mode copy
 ```
 
 The installer adds only the `pmm-instinct-review` personal skill and its owned
