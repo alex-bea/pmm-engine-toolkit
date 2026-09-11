@@ -1,5 +1,3 @@
 # Synthetic example
 
-Riley Chen, a fictional launch lead, stated in supplied notes that they prefer options with
-a recommendation before meetings. Label this `Reported`, cite the note date, and do not
-generalize it into a personality claim.
+The complete fictional source-to-output walkthrough is in [fictional-team-coordination](fictional-team-coordination/README.md). It contains fictional evidence, a fictional source map, a prior brief, a reference brief, and a completed stakeholder brief. It is a formatting and reasoning example only, not evidence about a real person or organization.

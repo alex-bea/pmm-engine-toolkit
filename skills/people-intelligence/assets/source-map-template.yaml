@@ -1,0 +1,17 @@
+# Store a populated copy outside this installed package.
+# Do not commit credentials, person identifiers, document IDs, folder IDs, or live access links.
+version: "1.0"
+subject:
+  display_label: ""
+  professional_purpose: ""
+  authority_note: ""
+lookback_days: 14
+optional_sources:
+  - label: ""
+    type: "notes"
+    enabled: false
+    access_reference: ""
+    permitted_use: ""
+retention:
+  owner: ""
+  deletion_request_path: ""
