@@ -73,15 +73,19 @@ The categories are mutually exclusive by each skill's primary job.
 
 ## Installable agent plugins and bundles (draft)
 
-- `pmm-instinct-review` (`0.3.0` draft) — capture eligible completed sessions locally through
+- `pmm-instinct-review` (`0.3.1` draft) — capture eligible completed sessions locally through
   native Codex or Claude Code hooks, run detached schema-bound extraction with the exact
   configured native model, and rank voice-first clusters by support, breadth, newness, and
-  recency. Only human-confirmed candidates become instincts. Claude promotion workers execute
+  recency. Codex requires its adopter-selected model to be persisted before enablement; new
+  jobs never infer it from session metadata. Adopter-owned exact RUN and ordered multi-REF
+  routes are confined to discovered user skill roots, and ambiguity requires an exact
+  `promote --target` choice. Only human-confirmed candidates become instincts. Claude promotion workers execute
   only a separate, immutable, digest-bound approval receipt; governed destinations produce a
   review patch instead of being mutated. The same package retains the isolated portable
   candidate-import and review adapter, which never reads native agent stores and cannot
   capture or promote. It includes detailed runtime-specific setup, complete state templates,
-  and separate fictional Codex and Claude lifecycles.
+  and separate fictional Codex and Claude lifecycles. Claude behavior is preserved from
+  `0.3.0`; this release does not claim Claude transaction parity for Codex.
 
 All 25 standalone packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
 and a synthetic example. Deterministic workflows also include scripts and tests. See the

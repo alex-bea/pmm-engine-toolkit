@@ -5,7 +5,7 @@ requires:
   - DOC-product-requirements.md
   - DOC-implementation-blueprint.md
 status: Draft
-version: "0.3.0"
+version: "0.3.1"
 owner: toolkit-maintainers
 consumers:
   - Claude Code adopters
@@ -14,7 +14,7 @@ consumers:
 change_control: Pull request review
 ---
 
-# PMM Instinct Review — Native Claude setup (`0.3.0` draft)
+# PMM Instinct Review — Native Claude setup (`0.3.1` package; `0.3.0` Claude behavior)
 
 This is the binding setup procedure for adopting native Claude Code session capture,
 background extraction, human review, and receipt-bound promotion from a self-contained PMM
@@ -65,7 +65,7 @@ Verify all of the following on the destination machine:
    `--permission-mode`, `--tools`, and `--disallowedTools`. Because `claude --help` does not
    list every supported flag, the successful Section 1.1 request—not help output—is the
    authoritative feature check.
-4. The hook/worker environment has one authentication path supported by this `0.3.0` bare
+4. The hook/worker environment has one authentication path supported by this preserved bare
    extractor: an inherited `ANTHROPIC_API_KEY`, or supported Amazon Bedrock, Google Vertex AI,
    or Microsoft Foundry provider credentials. An ordinary Claude subscription login/keychain
    alone is not used by `--bare`. This release also does not pass `--settings`, so an
@@ -568,7 +568,7 @@ A copy is pinned and the installer will not overwrite it:
 - **Claude CLI missing or unsupported:** leave capture disabled; install or update Claude Code.
 - **Bare-mode authentication missing:** leave capture disabled. Configure an inherited
   `ANTHROPIC_API_KEY` or supported Bedrock/Vertex/Foundry provider credentials. Subscription
-  OAuth/keychain and settings-only `apiKeyHelper` do not authenticate this `0.3.0` worker.
+  OAuth/keychain and settings-only `apiKeyHelper` do not authenticate this worker.
 - **Partial package or broken nested skill:** stop and restore a complete Toolkit package.
 - **Occupied install destination:** preserve it and ask the user to resolve the conflict.
 - **Invalid settings JSON or hook collection type:** stop without rewriting settings.

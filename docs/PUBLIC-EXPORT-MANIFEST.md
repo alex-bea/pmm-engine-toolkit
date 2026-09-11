@@ -53,7 +53,7 @@ contract, and a publisher guard. Runtime installation is opt-in and inactive by 
 External verifier and publisher implementations, credentials, enabled adopter policy,
 mutable run state, and protected audit records are not part of the public package.
 
-The `plugins/pmm-instinct-review/` `0.3.0` Draft release candidate additionally contains
+The `plugins/pmm-instinct-review/` `0.3.1` Draft release candidate contains
 separate Codex and Claude manifests, marketplace registration for Codex, runtime-specific
 plugin-relative hooks, a bundled skill, standard-library Python runtimes, and an isolated
 portable review adapter. The Claude surface includes a no-marketplace standalone installer,
@@ -67,6 +67,15 @@ review only, and never reads native agent stores or promotes instructions. The p
 dependency on a private registry or repository. The retired standalone
 `skills/pmm-instinct-review/` package is represented by the plugin's explicit candidate-file
 import command.
+
+The `0.3.1` parity slice adds no private registry or model default. Codex first enablement
+requires one adopter-selected persisted model, and new capture/backfill jobs use only it.
+Adopter-owned `run_routes` name one safe relative RUN; `voice_ref_routes` retains its string
+form and may contain an ordered list of safe relative REFs. Route resolution is confined to
+independently discovered user-owned skill roots. Multiple eligible targets produce no
+applicable preview until the owner supplies one exact `promote --target` choice. Native Claude
+and portable behavior remain unchanged; Codex does not inherit Claude's receipt-bound
+transaction layer.
 
 Mutable runtime data is never stored inside the installed package. Codex uses its existing
 user-owned state root, Claude uses a separate explicit state root, and portable mode requires
@@ -95,6 +104,9 @@ similarly named files under `examples/` are independently fictional contract fix
   mutable adopter state, machine configuration, or real Codex or Claude session example is
   exported. The published native Claude implementation is independently reviewed generic
   runtime code, not a copy of private evidence or configuration.
+- The public Codex model identifier and route values are supplied by each adopter. The
+  fictional model/RUN/REF values demonstrate only schema shape and are not defaults, private
+  aliases, or evidence about a current installation.
 - Competitive-intelligence adopters must map their own internal names, channels, company
   systems, permissions, existing intelligence data, reviewers, and output destinations. The
   package provides blank templates, source-verification and content-access gates, and a fully
@@ -129,7 +141,17 @@ remains design history. The public starter kit contains only project-authored ge
 structures and fictional examples. Live source corpora, adopter mappings, and private outputs
 remain outside the public boundary.
 
-The PMM Instinct Review `0.3.0` candidate has separate Draft
+The PMM Instinct Review `0.3.1` candidate has separate Draft
+[privacy](legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.3.1-2026-09-11.md),
+[rights](legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.3.1-2026-09-11.md), and
+[secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-11.md) records. Their
+80-test Codex/portable suite, 79-test Claude suite, 266-test complete suite, exact 34-path
+manifest comparison, 448-artifact inventory regeneration, publicizer scan, and zero-finding
+Gitleaks report are complete. The native Codex lifecycle smoke was not run in this workspace;
+hosted pull-request checks and project-owner Gate B review remain pending. The candidate is not
+merge- or release-ready.
+
+The earlier PMM Instinct Review `0.3.0` candidate retains separate Draft
 [privacy](legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md),
 [rights](legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md), and
 [secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-10.md) records. These
@@ -137,11 +159,12 @@ documents describe a locally frozen candidate for review. The complete automated
 strict document audit, exact 57-path manifest comparison, 443-artifact IP inventory, publicizer
 scan with unchanged-match adjudication, zero-finding Gitleaks scan, and hosted pull-request
 checks are complete. The real Claude lifecycle smoke test and project-owner Gate B review remain
-pending, so `0.3.0` is not merge- or release-ready.
+pending, so `0.3.0` was not independently merge- or release-ready. Its completed checks are
+historical evidence only and do not approve `0.3.1`.
 
 The earlier PMM Instinct Review `0.2.0` candidate retains its separate Draft
 [privacy](legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.2.0-2026-09-04.md),
 [rights](legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.2.0-2026-09-04.md), and
 [secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-04.md) evidence. Those
 documents remain historical evidence for that narrower Codex/portable candidate, not an
-approval of `0.3.0` or an approved release.
+approval of `0.3.0`, `0.3.1`, or an approved release.

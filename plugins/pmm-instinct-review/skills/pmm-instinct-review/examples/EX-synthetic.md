@@ -1,12 +1,14 @@
 # Fictional example: Northstar Reports
 
-This fully synthetic example demonstrates the public `0.3.0` contracts without copying,
+This fully synthetic example demonstrates the public `0.3.1` contracts without copying,
 renaming, or paraphrasing private evidence. Northstar Reports is fictional. Its sessions,
 paths, people, dates, wording, metrics, identifiers, and relationships were authored solely
 for this package.
 
-Start with the [example index](fictional-northstar-reports/README.md). Its original files
-demonstrate the preserved Codex `0.2.0` lifecycle. The additive
+Start with the [example index](fictional-northstar-reports/README.md). Its Codex
+`config.json` demonstrates an explicitly persisted fictional extractor model, one exact RUN
+route, and an ordered multi-REF route. These values are inert adopter-owned examples, not
+package defaults. The remaining original files demonstrate the preserved Codex lifecycle. The additive
 [Claude subtree](fictional-northstar-reports/claude/README.md) independently demonstrates:
 
 - disabled installation followed by explicit privacy acknowledgement;

@@ -6,7 +6,7 @@ requires:
   - RUN-workflow.md
   - RUN-claude-setup.md
 status: Draft
-version: "0.3.0"
+version: "0.3.1"
 owner: toolkit-maintainers
 consumers:
   - public plugin contributors
@@ -14,14 +14,15 @@ consumers:
 change_control: Pull request review
 ---
 
-# PMM Instinct Review — Implementation blueprint (`0.3.0` draft)
+# PMM Instinct Review — Implementation blueprint (`0.3.1` draft)
 
 ## Purpose
 
 This blueprint maps the public requirements to the package's implementation and verification
 surfaces. The RUN documents remain the binding operator procedures. Claude, Codex, and
 portable are separate adapters; satisfying one adapter by reading another adapter's state is
-an implementation failure.
+an implementation failure. The `0.3.1` change is private-Codex fidelity expressed through
+generic adopter-owned configuration, not private-Claude transaction parity.
 
 ## Guardrails
 
@@ -34,6 +35,9 @@ an implementation failure.
 7. Never let a worker create approval, retarget a receipt, merge, publish, or directly write a
    governed RUN, REF, or STD.
 8. Keep mutable state outside the installed package and refuse ambient cross-runtime fallback.
+9. Require one persisted Codex model before capture and never infer it from session metadata.
+10. Treat route configuration and `--target` as untrusted hints; validate, confine, recompute,
+    and fail closed before choosing a RUN or REF.
 
 ## Component map
 
@@ -48,7 +52,8 @@ an implementation failure.
 | Claude installer | `scripts/install_claude_instinct_review.py` | Nested personal skill, two owned settings hooks, backup, narrow uninstall | Symlink/copy/conflict/preservation tests |
 | Claude extractor | `assets/claude-extractor-prompt.md`, `claude-extractor-schema.json` | Untrusted-evidence instruction and exact output shape | Closure, schema, zero/positive/invalid tests |
 | Claude default config | `assets/claude-config-template.json` | Disabled state, bounds, retry and model contract | Runtime-default equality test |
-| Codex/portable core | `skills/pmm-instinct-review/scripts/` | Preserve existing capture/review/promotion and explicit portable import | Existing complete regression suite |
+| Codex/portable core | `skills/pmm-instinct-review/scripts/` | Persisted-model-only Codex jobs, confined exact RUN/multi-REF choices, preserved review/promotion, and explicit portable import | Model/routing matrix plus complete regression suite |
+| Codex adopter config | nested `assets/config-template.json` | Disabled null-model default plus empty `run_routes` and `voice_ref_routes` schemas | Defaults, parsing, compatibility, and confinement tests |
 | Contracts/examples | nested `assets/` and `examples/fictional-northstar-reports/` | Blank output/state contracts and inert fictional lifecycles | Link, schema, identifier, and digest tests |
 
 All Claude runtime imports resolve inside the package root. The installer supports the public
@@ -145,17 +150,55 @@ valid same-receipt outcome bound to the approved target/result makes repeat exec
 An interrupted exact local write is recognized by its approved resulting digest and completed
 without rewriting the target.
 
-## Codex and portable compatibility
+## Codex model and route parity
 
-The nested `scripts/instinct_review.py` and `pmm_instinct/` implementation remain the
-`0.2.0` behavior. Codex owns `~/.codex/instinct-review/`, uses its existing plugin hooks and
-queue states (`queued`, `running`, `succeeded`, `failed`), and retains its existing bounded
-backfill, review, and confirmed destination application. Portable mode still requires an
-explicit safe state root and imported candidate JSON, with capture/extraction/promotion
-unavailable.
+The nested `scripts/instinct_review.py` and `pmm_instinct/` implementation continues to own
+Codex state under `~/.codex/instinct-review/`, use the existing plugin hooks and queue states
+(`queued`, `running`, `succeeded`, `failed`), and retain bounded backfill, human review, and
+confirmed destination application.
 
-Claude modules are additive and do not import or modify those modules. Version assertion and
-example-directory expectations are the only necessary existing-test updates.
+### Persisted model flow
+
+The default config stays disabled and leaves `extractor_model` null so the package never
+publishes an adopter choice. First `on` either receives a non-empty `--model` or reuses a
+non-empty persisted value. It writes the normalized model before `enabled: true`, then runs
+preflight. New SessionEnd and backfill capture resolve the model only from config; event or
+native-history metadata cannot override or supply it. A legacy enabled/null-model store returns
+`skipped` / `unconfigured_model` before normalization or artifact creation. Status remains
+read-only and preflight reports `model_policy: false` until the operator repairs the config
+through `on --model <exact-model>`.
+
+Existing queued jobs with their own explicit non-empty model remain drainable. No read-only
+command or config load rewrites legacy state.
+
+### Route parsing and confinement
+
+`run_routes` maps one source skill to one relative `references/RUN-*.md` value.
+`voice_ref_routes` parses its legacy string or an ordered non-empty list of relative
+`references/REF-*.md` values and removes duplicates without changing first-occurrence order.
+Parsing rejects wrong types and empty list values.
+
+Resolution starts from independently discovered user-owned roots for the exact source-skill
+slug. Each candidate is canonicalized and must stay within that root, match the requested
+filename family, be an existing writable regular file, and remain outside the package/plugin
+cache. Absolute paths, `..`, cross-skill paths, directories, symlink escapes, missing paths,
+wrong families, and non-writable files are ineligible. A configured value never expands the
+search boundary.
+
+Without a configured RUN, existing dynamic discovery is a fallback only when it yields one
+eligible path. One eligible RUN/REF produces the ordinary applicable preview. Multiple paths
+produce only `applicable: false`, `reason: multiple-eligible-targets`, and exact absolute
+`eligible_targets`. The CLI exposes `--target` only as an exact member selector. Preview and
+apply recompute eligibility; they reject stale or arbitrary values and never pick the first
+candidate based on filesystem or configuration order.
+
+### Unchanged adapters
+
+Portable mode still requires an explicit safe state root and imported candidate JSON, with
+capture/extraction/promotion unavailable. Claude modules, state, hooks, extraction, review,
+receipts, and promotion are unchanged apart from shared package/version documentation. Codex
+does not gain Claude's immutable approval receipts, outcome ledger, or detached promotion
+executor in this release.
 
 ## Requirement traceability
 
@@ -174,9 +217,12 @@ example-directory expectations are the only necessary existing-test updates.
 | PIRC-REQ-011 | explicit resolver and installer modes | no ambient/cross-runtime fallback; update behavior |
 | PIRC-REQ-012 | both RUNs and output template | closure and native-machine setup receipt review |
 | PIRC-REQ-013 | fictional Claude subtree | schema, cross-ID, canonical digest, exact before/after diff |
-| PIRC-REQ-014 | existing nested runtime/tests | full Codex/portable regression |
+| PIRC-REQ-014 | compatibility loaders, existing nested and Claude runtimes/tests | legacy state plus full Claude/Codex/portable regression |
 | PIRC-REQ-015 | public policy/evidence/inventory | secret/path/provenance/narrative scans |
 | PIRC-REQ-016 | validator, tests, release evidence | exact manifest diff and stop-before-merge check |
+| PIRC-REQ-017 | Codex config, enablement, capture/backfill | fresh/reused/null model and event-metadata override tests |
+| PIRC-REQ-018 | config template and RUN/REF route parser/resolver | string/list compatibility, ordered dedupe, root/family/confinement matrix |
+| PIRC-REQ-019 | promotion preview/apply and CLI `--target` | single/ambiguous/stale/arbitrary target matrix; no first-candidate selection |
 
 ## Delivery sequence
 
@@ -192,9 +238,12 @@ example-directory expectations are the only necessary existing-test updates.
    exact, and retention waits for every decision.
 6. **Promote:** prove exact preview/receipt continuity, local atomic execution, governed patch
    behavior, drift refusal, and idempotence.
-7. **Compatibility/safety:** run the existing suite, complete fictional digest checks,
+7. **Codex parity:** prove model persistence precedes enablement, new jobs ignore event model
+   metadata, null-model legacy capture creates nothing, and RUN/REF ambiguity requires an exact
+   validated target.
+8. **Compatibility/safety:** run the existing suite, complete fictional digest checks,
    repository validators, and privacy/provenance review.
-8. **Pull request:** stage only approved paths, open one unmerged pull request, wait for checks,
+9. **Pull request:** stage only approved paths, open one unmerged pull request, wait for checks,
    and leave final release as a maintainer decision.
 
 ## Test blueprint
@@ -212,12 +261,14 @@ example-directory expectations are the only necessary existing-test updates.
 | Promotion | eligibility, destination pairs, exact digests, no receipt without confirmation, tamper/drift, local write, duplicate, governed patch, repeat execution |
 | Fixtures | exact file set, fictional-only data, linked IDs, canonical digests, before/after diff |
 | Regression | complete existing Codex/portable suite and read-only legacy-state stability |
+| Codex model authority | missing/blank/persisted model, persistence-before-enable, event mismatch, backfill, legacy null skip/no artifacts |
+| Codex routes | exact configured RUN, unique discovered fallback, string/list REF, dedupe order, confinement, multiple-choice payload, exact/stale target |
 | Governance | governed docs, links, package validator, secret/path scan, exact diff, Draft release evidence |
 
 ## Change checklist
 
 Before altering behavior, update a requirement, the relevant RUN step, implementation mapping,
 fixture/contract, and test together. Re-run the focused Claude suite, existing Codex/portable
-suite, full unit discovery, package/governance validators, link and privacy scans, and
+suite, Codex model/routing matrix, full unit discovery, package/governance validators, link and privacy scans, and
 `git diff --check`. Report any unavailable authenticated Claude smoke check rather than
 substituting a different runtime.

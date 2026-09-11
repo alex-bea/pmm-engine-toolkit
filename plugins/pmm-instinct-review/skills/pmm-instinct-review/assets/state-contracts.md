@@ -241,11 +241,66 @@ observations as false. A valid receipt-owned upgrade preserves and truthfully re
 runtime state. Missing, malformed, or digest-mismatched receipts block update and uninstall;
 ambiguous or modified PMM-looking hook handlers are preserved and also block mutation.
 
+## Codex configuration and model authority
+
+Codex `config.json` starts from the nested `assets/config-template.json`. It remains disabled
+with `extractor_model: null`, `run_routes: {}`, and `voice_ref_routes: {}`. Null is a safe
+disabled default, not permission to infer a model. The first successful `on` operation requires
+`--model` with a non-empty string unless a non-empty model is already persisted. Surrounding
+whitespace is removed and the exact remaining identifier is persisted before `enabled` becomes
+true. The Codex config supplies no default model.
+
+New SessionEnd and backfill jobs use only the persisted `extractor_model`. Native session or
+event metadata may be retained as source metadata, but it is never model authority and cannot
+replace the configured value. An older store may already say `enabled: true` while its model is
+null. In that state, a capture attempt returns `status: skipped` and
+`reason: unconfigured_model` before creating normalized evidence, an audit, or a queue record.
+Read-only status does not rewrite the store, and preflight reports `model_policy: false` with
+remediation to rerun `on --model <exact-model>` after reviewing the privacy boundary.
+Repairing that legacy state first writes `enabled: false` with the selected model; only a
+successful executable/schema/model preflight may restore `enabled: true`.
+
+Queue records created before `0.3.1` that already contain a non-empty exact model remain
+eligible for bounded retry and drain. The runtime does not rewrite legacy records merely to
+adopt the new configuration contract.
+
+## Codex RUN and REF route configuration
+
+`run_routes` is an object mapping a source-skill slug to one safe relative
+`references/RUN-*.md` path. `voice_ref_routes` remains backward compatible with a single safe
+relative string and may alternatively map a skill slug to a non-empty ordered list of safe
+relative `references/REF-*.md` paths. Duplicate list entries are removed without reordering the
+first occurrence. Empty maps are the public defaults; the adopter supplies all live values.
+
+Configuration is a hint, not destination authority. Every configured route must:
+
+- be relative and contain no `..` segment;
+- use the required `RUN-*.md` or `REF-*.md` filename family;
+- resolve inside the independently discovered user-owned root for that exact source skill;
+- resolve to an existing writable regular file; and
+- remain outside the bundled package and every plugin-cache path, including through symlinks.
+
+Invalid route values are reported and excluded without searching a wider filesystem boundary.
+Cross-skill paths, absolute paths, traversal, wrong file families, directories, missing or
+non-writable files, and symlink escapes never become eligible. If no `run_routes` entry exists,
+dynamic `RUN-*.md` discovery remains available only when the validated result is unambiguous.
+
+When exactly one eligible RUN or REF remains, an applicable promotion preview may use it. When
+several remain, the non-mutating result is exactly shaped around `applicable: false`,
+`reason: multiple-eligible-targets`, and `eligible_targets`, an ordered list of exact absolute strings.
+No applicable preview is persisted, and configuration or filesystem order never selects the
+first item. The owner must rerun `promote` with `--target` equal to one recomputed eligible path.
+Arbitrary, stale, or now-invalid selectors return `invalid-target-selection`; an invalid
+configured route returns `invalid-route-configuration`; and no eligible path returns
+`no-eligible-target`. Apply recomputes the same eligibility
+and still requires the matching destination-level preview and explicit confirmation.
+
 ## Codex and portable contracts
 
-Existing Codex contracts remain as shipped in `0.2.0`: normalized JSONL evidence, audit and
-suggestion Markdown, `queued|running|succeeded|failed` queue state, bucketed review,
-priority snapshots, complete instinct files, exact destination preview, and confirmed apply.
-Portable mode uses the same review contracts only after explicit candidate import and cannot
-capture, extract, or promote. Status/list commands load older state conservatively and do not
-rewrite it.
+Codex continues to use normalized JSONL evidence, audit and suggestion Markdown,
+`queued|running|succeeded|failed` queue state, bucketed review, priority snapshots, complete
+instinct files, exact destination preview, and confirmed apply. `0.3.1` changes only model
+authority and generic RUN/REF selection; it does not give Codex Claude's immutable promotion
+receipt/outcome architecture. Portable mode uses the same review contracts only after explicit
+candidate import and cannot capture, extract, or promote. Status/list commands load older state
+conservatively and do not rewrite it.

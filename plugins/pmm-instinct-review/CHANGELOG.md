@@ -1,5 +1,22 @@
 # PMM Instinct Review changelog
 
+## 0.3.1 — Draft
+
+- Closed two bounded public-Codex fidelity gaps against the private PMM Engine Codex path;
+  this is not a port of the private Claude transaction architecture.
+- First Codex enablement now requires a non-empty exact extractor model unless one is already
+  persisted. New capture and backfill jobs use only that persisted model, never SessionEnd
+  metadata. A legacy enabled store with no model skips capture as `unconfigured_model` without
+  creating normalized evidence, an audit, or a queue job.
+- Added adopter-owned `run_routes` for exact `references/RUN-*.md` selection and extended
+  `voice_ref_routes` to accept either the existing string form or an ordered list of
+  `references/REF-*.md` choices.
+- Added fail-closed target selection: routes remain confined to discovered writable user-owned
+  skill roots, ambiguous candidates return `multiple-eligible-targets`, and an owner must pass
+  an exact eligible `promote --target` value before a preview is applicable.
+- Preserved native Claude, portable, hook, normalization, extraction, review, retention, and
+  existing promotion semantics apart from shared package-version references.
+
 ## 0.3.0 — Draft
 
 - Added a self-contained native Claude Code runtime while preserving the `0.2.0` Codex and

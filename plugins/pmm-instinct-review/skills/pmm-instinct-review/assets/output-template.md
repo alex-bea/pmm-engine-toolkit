@@ -12,6 +12,7 @@ fictional example path into live state.
 - **Privacy acknowledged:** `true|false|not applicable`
 - **State root:** [exact adopter-owned path]
 - **Extractor model:** [exact configured model or not applicable]
+- **Model policy:** `true|false|not applicable`
 - **Extractor executable:** [resolved path, unavailable, or not applicable]
 - **Queue:** [state counts for the selected runtime]
 - **Backlog:** [zero-candidate, positive-cluster, and missing-suggestion counts]
@@ -20,6 +21,11 @@ fictional example path into live state.
 - **Approval-bound promotion available:** `true|false`
 - **Human approval required:** `true`
 - **Notes/blockers:** [only observed facts]
+
+For a legacy Codex store that is enabled but has no persisted model, report
+`model_policy: false` and the exact remediation `on --model <exact-model>`. A skipped capture reports
+`status: skipped` and `reason: unconfigured_model`; it must not claim that evidence, an audit,
+or a queue record was created.
 
 ## Claude standalone setup receipt
 
@@ -108,3 +114,34 @@ preview digest verifies. Editing any bound value requires a new preview and appr
 
 `awaiting_review` means the target was not changed. The generated patch must go through the
 destination repository's normal review and approval process.
+
+## Codex ambiguous RUN/REF selection
+
+- **Applicable:** `false`
+- **Reason:** `multiple-eligible-targets`
+- **Destination:** `run|ref`
+- **Eligible targets:** [ordered exact absolute paths validated for the source skill]
+- **Target changed:** `false`
+- **Applicable preview persisted:** `false`
+- **Next command:** repeat `promote` with the same instinct and destination plus
+  `--target <exact-eligible-path>`
+
+Do not render the first path as a recommendation. An eligible target is a bounded choice, not
+authorization to apply it.
+
+## Codex applicable promotion preview
+
+- **Applicable:** `true`
+- **Instinct ID:**
+- **Destination:** `project|global|both|run|ref|standard`
+- **Exact target path(s):**
+- **Rule:**
+- **Why it matters:**
+- **Managed section:** `## PMM Instinct Review — Promoted Guidance`
+- **Exact insertion:**
+- **Duplicate:** `true|false` for each target
+- **Separate confirmation required:** `true`
+
+RUN or REF preview with `--target` is applicable only when that exact absolute path remains in
+the recomputed eligible set. Apply still requires the same arguments, a matching saved preview,
+`--apply`, and `--confirm`.

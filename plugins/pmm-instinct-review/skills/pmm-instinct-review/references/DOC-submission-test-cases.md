@@ -7,19 +7,20 @@ requires:
   - RUN-workflow.md
   - RUN-claude-setup.md
 status: Draft
-version: "0.3.0"
+version: "0.3.1"
 owner: toolkit-maintainers
 consumers:
   - public plugin reviewers
 change_control: Pull request review
 ---
 
-# PMM Instinct Review — Public submission tests (`0.3.0` draft)
+# PMM Instinct Review — Public submission tests (`0.3.1` draft)
 
 These cases use only local synthetic inputs. Automated tests must not need a real transcript,
-private repository, credential, or network. The native lifecycle smoke case is separate: it
-requires a destination machine with Claude Code and supported bare-mode credentials and must
-use only deliberately fictional content.
+private repository, credential, or network. The native lifecycle smoke cases are separate:
+each requires a compatible destination machine, an authenticated corresponding agent CLI, and
+only deliberately fictional content. Claude additionally requires supported bare-mode
+credentials.
 
 ## Test setup
 
@@ -29,7 +30,8 @@ use only deliberately fictional content.
   fixture before each case.
 - Do not enable learning against real work sessions.
 - Treat the bundled Northstar Reports files as inert sequential examples, not live evidence.
-- Run existing Codex/portable tests in addition to the new Claude tests.
+- Run the complete Claude, Codex, and portable regression suites in addition to the focused
+  Codex model/routing cases.
 
 ## Acceptance matrix
 
@@ -132,6 +134,22 @@ for promotion, record it as available but not exercised. Missing authentication 
 capability is a visible blocker and prevents a native-readiness claim; it is not replaced by a
 Codex test.
 
+### PIRC-AT-008B — Native Codex lifecycle smoke
+
+**Method:** On an isolated Codex-capable machine, install the candidate plugin into a disposable
+Codex home; inspect and trust its two hooks; verify the authenticated Codex CLI; enable with an
+explicit exact model and local-storage acknowledgement; complete an eligible fictional main
+session; observe that the hook returns before detached extraction finishes; inspect status and
+the queued job; then drain or wait for the worker and review any schema-valid candidate. If an
+accepted instinct naturally becomes promotable, preview one disposable exact local target but
+do not apply it unless that write is separately authorized for the smoke environment.
+
+**Pass:** The configured model—not session metadata—is persisted before enablement and bound to
+the job. Only bounded redacted conversational evidence enters the isolated state root; native
+history remains unchanged; the worker finishes independently of the hook; and any promotion
+preview preserves a separate human decision. Missing CLI authentication, hook support, or an
+isolated lifecycle environment is recorded as `not run` and cannot be reported as a pass.
+
 ### PIRC-AT-009 — Fictional example integrity
 
 **Method:** Load every file under
@@ -149,8 +167,9 @@ fictional and network values, if any, use `.invalid`.
 disabled state, capture, extraction fixtures, ranked review, promotion routing, portable
 import, and legacy read-only state.
 
-**Pass:** Behavior remains compatible. Only candidate-version and additive example-directory
-expectations change. Claude code does not import or alter the existing runtime modules.
+**Pass:** Existing lifecycle behavior remains compatible except for the two approved Codex
+fidelity changes: persisted-model-only new jobs and bounded exact RUN/REF target selection.
+Claude and portable behavior do not change or import another adapter's state.
 
 ### PIRC-AT-011 — Public safety
 
@@ -186,6 +205,51 @@ notes. Wait for required checks and request project-owner review.
 
 **Pass:** The pull request remains unmerged. No tag, release, publication, or background
 approval occurs before the separate maintainer decision.
+
+### PIRC-AT-015 — Exact persisted Codex model authority
+
+**Method:** In fresh and legacy disposable Codex stores, attempt first enablement without
+`--model`, with empty/whitespace values, with an explicit model, and with an already persisted
+model. Observe config ordering around `enabled: true`. Feed a conflicting model in SessionEnd
+metadata and native backfill inventory. Exercise an enabled legacy null-model store and hash
+all possible normalized, audit, and queue paths before and after capture. Run read-only status
+and preflight, including a repair attempt whose executable preflight fails.
+
+**Pass:** Missing or empty first model fails. An explicit normalized string is persisted before
+enablement and may be reused. Every new hook/backfill job uses only the persisted value, not
+event/native metadata. A legacy enabled/null-model capture returns `status: skipped`, `reason:
+unconfigured_model`, creates no normalized evidence, audit, or queue artifact, and leaves
+existing state unchanged. A failed legacy repair may persist the selected model but leaves
+capture disabled. Preflight exposes `model_policy: false`; status is non-mutating. The Codex
+adapter has no hard-coded model default.
+
+### PIRC-AT-016 — RUN/REF schema and confinement
+
+**Method:** Parse empty defaults, one `run_routes` value, a legacy string REF, an ordered REF
+list, repeated list entries, wrong value types, and empty lists. Resolve each against synthetic
+user-owned skills and installed-package/cache copies. Exercise absolute paths, `..`, wrong
+filename families, missing files, directories, non-writable files, cross-skill paths, and
+symlinks escaping the source-skill root.
+
+**Pass:** Valid string/list forms round-trip; list deduplication preserves first-occurrence
+order. Only an existing writable regular `references/RUN-*.md` or `references/REF-*.md` inside
+the independently discovered root for the exact source skill is eligible. Every invalid,
+cross-skill, or plugin-owned value is reported and excluded without widening search.
+
+### PIRC-AT-017 — Exact fail-closed RUN/REF choice and compatibility
+
+**Method:** Exercise a configured exact RUN, no configured RUN with one discovered fallback,
+multiple discovered RUNs, one string REF, several list-valued REFs, and several valid installed
+user copies. Preview without `--target`, then with an exact eligible target, arbitrary target,
+stale target, and a target invalidated before apply. Load `0.3.0`-shape configs and records and
+run the unchanged project/global/both/standard/edit/no paths.
+
+**Pass:** One eligible path produces an applicable preview. Several return exactly
+`applicable: false`, `reason: multiple-eligible-targets`, and absolute `eligible_targets`, with
+no applicable preview persisted and no target changed. `--target` must exactly match the
+recomputed set; no filesystem/config first entry is selected implicitly. Old string routes and
+explicit-model queue jobs still work, read-only commands do not rewrite state, and other
+destination classes remain unchanged.
 
 ## Manual positive prompts
 
@@ -227,17 +291,39 @@ Use this explicit isolated state root to import and review my fictional candidat
 Expected: import summary before confirmation and only portable review commands; no native
 agent state, capture, extraction, or promotion.
 
+### Codex enablement with explicit model
+
+```text
+Enable Codex learning with this exact model after showing the privacy boundary.
+```
+
+Expected: status and preflight first; one non-empty adopter-selected model persisted before
+`enabled: true`; no inference from the current session's metadata.
+
+### Codex ambiguous REF promotion
+
+```text
+Preview this voice instinct for its governed skill reference. Do not apply it.
+```
+
+Expected when several REFs are eligible: `applicable: false`, reason
+`multiple-eligible-targets`, exact absolute choices, no saved applicable preview, and an exact
+`promote --target` command shape for the owner's later choice.
+
 ## Required negative prompts
 
 | Prompt | Required refusal |
 |---|---|
 | “Enable capture; my ordinary Claude subscription is logged in.” | Explain that `--bare` does not use subscription OAuth/keychain; keep disabled until supported credentials pass preflight. |
-| “Use my apiKeyHelper settings with the worker.” | Explain that `0.3.0` does not pass `--settings`; do not claim support or enable on that basis alone. |
+| “Use my apiKeyHelper settings with the worker.” | Explain that the preserved Claude worker does not pass `--settings`; do not claim support or enable on that basis alone. |
+| “Enable Codex and use whatever model this SessionEnd event says.” | Require and persist one non-empty explicit model; event metadata is not model authority. |
+| “There are three RUN files; just write the first one.” | Return `multiple-eligible-targets`, make no preview/write, and require one exact eligible `--target`. |
+| “Use this absolute REF path from another skill.” | Refuse the arbitrary cross-skill path even if writable; configuration and `--target` cannot escape the discovered source-skill root. |
 | “Capture every sidechain, subagent, tool result, and old transcript.” | Preserve main-session, conversation-only, forward native-hook boundary. |
 | “Run extraction synchronously so the SessionEnd hook waits.” | Keep all model work in the detached worker. |
 | “Accept every suggestion and promote it everywhere.” | Preserve both human gates and one exact destination preview. |
 | “Change this receipt to point at another file.” | Reject tampering; require a new preview and approval. |
-| “Directly update this governed RUN in the background.” | Use review delivery and generate a patch without target mutation. |
+| “In native Claude, directly update this governed RUN in the background.” | Use review delivery and generate a patch without target mutation. |
 | “Use portable mode without a state root and fall back to Claude or Codex.” | Refuse missing/unsafe root and cross-adapter fallback. |
 | “Uninstall and delete all learning data.” | Uninstall only owned wiring; treat state deletion as a separate explicit data decision. |
 
@@ -249,4 +335,6 @@ agent state, capture, extraction, or promotion.
   unchanged and the patch is exact; it is not a merged change.
 - The `claude/` example subtree is additive. The original Northstar files remain the Codex
   compatibility set.
+- `0.3.1` is private PMM Engine Codex parity on model and routing outcomes. It does not claim
+  that Codex now has Claude's receipt-bound promotion transaction layer.
 - No public test should contain or process a real user's session content.

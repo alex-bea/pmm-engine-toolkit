@@ -1,4 +1,4 @@
-# PMM Instinct Review `0.3.0` (draft)
+# PMM Instinct Review `0.3.1` (draft)
 
 PMM Instinct Review is a local, human-gated improvement loop for durable working preferences:
 
@@ -20,8 +20,11 @@ connector, or marketplace dependency. Python 3.10+ and the standard library are 
 for the bundled runtime. Native extraction additionally needs the corresponding authenticated
 agent CLI.
 
-This `0.3.0` release remains a draft until the destination-machine native lifecycle smoke
-test, pull-request review, and repository release gates are complete.
+This `0.3.1` release remains a draft until its focused and repository validation, required
+security evidence, pull-request review, and repository release gates are complete. It closes
+two public Codex fidelity gaps against the private PMM Engine Codex path; it does not claim
+parity with the private Claude transaction architecture. Native Claude behavior from `0.3.0`
+is preserved.
 
 ## Privacy and human control
 
@@ -32,19 +35,25 @@ system/developer context, reasoning, tools, tool results, patches, world state, 
 subagents, and extractor/worker sessions. Native session history is read-only and is never
 deleted.
 
-The extractor receives minimized evidence as untrusted data. It cannot use tools and may
-return no more than five schema-valid candidates; zero candidates is valid. Operational logs
-contain state, counts, and sanitized errors, never transcript text. Pattern redaction is not
-perfect, so do not enable capture where local transcript-derived storage or Claude model
-processing is prohibited, and avoid putting secrets into sessions.
+The extractor receives minimized evidence as untrusted data and may return no more than five
+schema-valid candidates; zero candidates is valid. Native Claude extraction disables built-in
+and MCP tools. Codex extraction runs in an ephemeral read-only sandbox and its prompt prohibits
+tool use, but the Codex runtime does not claim that tools are technically unavailable.
+Operational logs contain state, counts, and sanitized errors, never transcript text. Pattern
+redaction is not perfect, so do not enable capture where local transcript-derived storage or
+applicable native model/provider processing is prohibited, and avoid putting secrets into
+sessions.
 
 Two separate human decisions remain mandatory:
 
 1. accept, reject, edit, or exactly match a candidate cluster; and
-2. approve the exact promotion preview, including target and digests.
+2. approve the exact runtime-specific promotion preview.
 
-A background worker may execute an immutable approved receipt. It cannot create the approval,
-change its target, approve an instinct, merge a governed change, or publish anything.
+In native Claude mode, that preview and approval bind the target and content digests; a
+background worker may execute the resulting immutable receipt. It cannot create the approval,
+change its target, approve an instinct, merge a governed change, or publish anything. Codex
+keeps its separate preview-and-confirmed-apply transaction model: exact target selection is
+human-owned and revalidated before apply, without a Claude-style immutable receipt.
 
 ## Install for native Claude Code without a marketplace
 
@@ -142,12 +151,65 @@ Open `/hooks`, inspect the plugin-relative `SessionStart` and `SessionEnd` handl
 them separately. Then ask:
 
 ```text
-Use $pmm-instinct-review to enable continuous learning. I acknowledge local chat storage.
+Use $pmm-instinct-review to enable continuous learning with the exact Codex model I choose. I
+acknowledge local chat storage.
 ```
 
-The existing Codex adapter remains unchanged: capture is disabled until consent, eligible
-session extraction is detached and schema-constrained, review is human-gated, and a promotion
-requires a separate exact destination preview and confirmation.
+Inspect status before enabling. First successful enablement requires a non-empty exact model,
+unless one is already persisted in the Codex store:
+
+```bash
+python3 skills/pmm-instinct-review/scripts/instinct_review.py status
+python3 skills/pmm-instinct-review/scripts/instinct_review.py \
+  on --acknowledge-local-chat-storage --model <exact-model>
+```
+
+The model string is adopter-owned configuration; the Codex adapter supplies no default. It is
+persisted before capture becomes enabled. New hook and backfill jobs use only that persisted
+model, even if a SessionEnd event reports another value. A legacy enabled store with no model
+does not create normalized evidence, an audit, or a queue job: capture returns `skipped` with
+reason `unconfigured_model`, while preflight reports `model_policy: false`. Run `on --model
+<exact-model>` after reviewing the privacy boundary to repair that state. Repair first forces
+capture off; a failed executable preflight leaves the model persisted but capture disabled.
+
+Codex route configuration also remains adopter-owned. `run_routes` maps a source-skill slug to
+one exact relative `references/RUN-*.md` path. `voice_ref_routes` accepts either its legacy
+single-string form or a non-empty ordered list of relative `references/REF-*.md` paths:
+
+```json
+{
+  "run_routes": {
+    "weekly-decision-report": "references/RUN-weekly-decision-report.md"
+  },
+  "voice_ref_routes": {
+    "weekly-decision-report": [
+      "references/REF-report-voice.md",
+      "references/REF-evidence-framing.md"
+    ]
+  }
+}
+```
+
+Routes are hints, not write authority. Each value must be relative, contain no parent
+traversal, use the required filename family, resolve to an existing writable regular file
+inside an independently discovered user-owned source-skill root, and stay outside the
+installed package and plugin cache. Without `run_routes`, dynamic RUN discovery remains
+available only when exactly one eligible file exists.
+
+When one validated RUN or REF remains, preview may select it. When several remain, preview is
+non-applicable and returns `reason: multiple-eligible-targets` with the exact absolute
+`eligible_targets`; it does not persist an applicable preview or choose the first path. The
+owner must select one of the recomputed choices exactly:
+
+```bash
+python3 skills/pmm-instinct-review/scripts/instinct_review.py promote \
+  --instinct INSTINCT_ID --destination ref --target /exact/eligible/REF-file.md
+```
+
+Only after reviewing that exact preview may the owner repeat the same arguments with `--apply
+--confirm`. An arbitrary, stale, or newly ineligible `--target` fails closed. Capture remains
+consent-gated, extraction stays detached and schema-constrained, and candidate review remains
+separate from promotion.
 
 ## Use the isolated portable adapter
 

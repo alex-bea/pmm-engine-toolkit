@@ -9,5 +9,13 @@
   "extractor_model": "example-session-model",
   "extractor_reasoning_effort": "medium",
   "max_attempts": 3,
-  "voice_ref_routes": {}
+  "run_routes": {
+    "weekly-decision-report": "references/RUN-weekly-decision-report.md"
+  },
+  "voice_ref_routes": {
+    "weekly-decision-report": [
+      "references/REF-report-voice.md",
+      "references/REF-evidence-framing.md"
+    ]
+  }
 }

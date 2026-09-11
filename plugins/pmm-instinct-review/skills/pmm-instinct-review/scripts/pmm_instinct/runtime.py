@@ -27,6 +27,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "extractor_model": None,
     "extractor_reasoning_effort": "medium",
     "max_attempts": 3,
+    "run_routes": {},
     "voice_ref_routes": {},
 }
 ALLOWED_TYPES = ("correction", "confirmation", "voice", "scope", "workflow")
@@ -240,11 +241,66 @@ def load_config(paths: RuntimePaths, *, create: bool = False) -> dict[str, Any]:
     return config
 
 
+def _normalize_relative_route(value: Any, *, family: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{family.lower()} route must be a non-empty string")
+    normalized = value.strip()
+    relative = Path(normalized)
+    route_pattern = rf"references/{re.escape(family)}-[^/\\\x00-\x1f\x7f]+\.md"
+    if (
+        re.fullmatch(route_pattern, normalized) is None
+        or relative.is_absolute()
+        or ".." in relative.parts
+        or len(relative.parts) != 2
+        or relative.parts[0] != "references"
+    ):
+        raise ValueError(
+            f"{family.lower()} route must match references/{family}-*.md without traversal"
+        )
+    return relative.as_posix()
+
+
+def _normalize_route_map(value: Any, *, family: str, multiple: bool) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError(f"{family.lower()} routes must be an object")
+    normalized: dict[str, Any] = {}
+    for raw_slug, raw_routes in value.items():
+        if not isinstance(raw_slug, str) or not raw_slug.strip():
+            raise ValueError(f"{family.lower()} route skill names must be non-empty strings")
+        slug = raw_slug.strip()
+        if multiple and isinstance(raw_routes, list):
+            if not raw_routes:
+                raise ValueError(f"{family.lower()} route list for {slug} cannot be empty")
+            routes: list[str] = []
+            for raw_route in raw_routes:
+                route = _normalize_relative_route(raw_route, family=family)
+                if route not in routes:
+                    routes.append(route)
+            normalized[slug] = routes
+            continue
+        route = _normalize_relative_route(raw_routes, family=family)
+        normalized[slug] = route
+    return normalized
+
+
 def update_config(paths: RuntimePaths, **updates: Any) -> dict[str, Any]:
+    if "run_routes" in updates:
+        updates["run_routes"] = _normalize_route_map(
+            updates["run_routes"], family="RUN", multiple=False
+        )
+    if "voice_ref_routes" in updates:
+        updates["voice_ref_routes"] = _normalize_route_map(
+            updates["voice_ref_routes"], family="REF", multiple=True
+        )
     config = load_config(paths, create=True)
     config.update(updates)
     atomic_write_json(paths.config, config)
     return config
+
+
+def _configured_extractor_model(config: dict[str, Any]) -> str:
+    value = config.get("extractor_model")
+    return value.strip() if isinstance(value, str) else ""
 
 
 def redact_text(text: str) -> str:
@@ -475,6 +531,9 @@ def capture_session(
     config = load_config(paths, create=force)
     if not force and not config.get("enabled"):
         return {"status": "skipped", "reason": "disabled", "session_id": session_id}
+    effective_model = _configured_extractor_model(config)
+    if not effective_model:
+        return {"status": "skipped", "reason": "unconfigured_model", "session_id": session_id}
     if not config.get("privacy_acknowledged_at"):
         return {"status": "skipped", "reason": "privacy-not-acknowledged", "session_id": session_id}
     native = Path(transcript_path).expanduser()
@@ -495,7 +554,6 @@ def capture_session(
     audit_path = paths.sessions / f"{_audit_stamp(normalized)}-{safe_id}-audit.md"
     queue_path = paths.queue / f"{safe_id}.json"
     actual_cwd = cwd.strip() or normalized.cwd
-    effective_model = str(config.get("extractor_model") or model or normalized.model or "").strip()
     existing = _existing_audit(paths, resolved_id)
     if existing:
         existing_audit = load_audit(existing)
@@ -804,9 +862,10 @@ def run_extractor_job(
     runner: Any = subprocess.run,
 ) -> list[dict[str, str]]:
     config = load_config(paths)
-    model = str(record.get("extractor_model") or "").strip()
-    if not model:
-        raise RuntimeError("extractor model unavailable in SessionEnd event and configuration")
+    raw_model = record.get("extractor_model")
+    if not isinstance(raw_model, str) or not raw_model.strip():
+        raise RuntimeError("extractor model unavailable in queue record")
+    model = raw_model.strip()
     normalized_path = Path(str(record.get("normalized_transcript_path") or ""))
     turns = load_turns(normalized_path)
     audit_path = Path(str(record.get("audit_path") or ""))
@@ -948,6 +1007,8 @@ def retry_failed(paths: RuntimePaths, session_id: str | None = None) -> int:
     retried = 0
     for queue_path, record in read_queue(paths):
         if record.get("state") != "failed" or (session_id and str(record.get("session_id")) != session_id):
+            continue
+        if not isinstance(record.get("extractor_model"), str) or not str(record["extractor_model"]).strip():
             continue
         transition_queue(
             queue_path,
@@ -1761,30 +1822,155 @@ def _source_skill_locations(paths: RuntimePaths, instinct: Instinct) -> tuple[Pa
     return tuple(sorted(location for location in discovered if not _is_plugin_owned_path(paths, location)))
 
 
-def _run_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
+def _route_values_for_skill(
+    config: dict[str, Any],
+    *,
+    config_key: str,
+    skill: str,
+    family: str,
+    multiple: bool,
+) -> tuple[bool, tuple[str, ...], tuple[str, ...]]:
+    routes = config.get(config_key)
+    if not isinstance(routes, dict):
+        return True, (), (f"{config_key} must be an object",)
+    if skill not in routes:
+        return False, (), ()
+    raw_routes = routes[skill]
+    values = raw_routes if multiple and isinstance(raw_routes, list) else [raw_routes]
+    if multiple and isinstance(raw_routes, list) and not raw_routes:
+        return True, (), (f"{config_key}.{skill} cannot be an empty list",)
+    if not multiple and isinstance(raw_routes, list):
+        return True, (), (f"{config_key}.{skill} must be one RUN route string",)
+    normalized: list[str] = []
+    errors: list[str] = []
+    for raw_route in values:
+        try:
+            route = _normalize_relative_route(raw_route, family=family)
+        except ValueError as error:
+            errors.append(f"{config_key}.{skill}: {error}")
+            continue
+        if route not in normalized:
+            normalized.append(route)
+    return True, tuple(normalized), tuple(errors)
+
+
+def _configured_route_candidates(
+    paths: RuntimePaths,
+    instinct: Instinct,
+    *,
+    config_key: str,
+    family: str,
+    multiple: bool,
+) -> tuple[bool, tuple[Path, ...], tuple[str, ...]]:
+    if len(instinct.source_skills) != 1:
+        return False, (), ()
+    skill = instinct.source_skills[0]
+    configured, routes, parse_errors = _route_values_for_skill(
+        load_config(paths),
+        config_key=config_key,
+        skill=skill,
+        family=family,
+        multiple=multiple,
+    )
+    if not configured:
+        return False, (), ()
+    errors = list(parse_errors)
+    candidates: list[Path] = []
+    locations = _source_skill_locations(paths, instinct)
+    for route in routes:
+        matched = False
+        for location in locations:
+            root = location.resolve()
+            references_root = (root / "references").resolve()
+            declared = location / route
+            try:
+                candidate = declared.resolve()
+            except (OSError, RuntimeError, ValueError):
+                continue
+            if root not in (candidate, *candidate.parents):
+                continue
+            if (
+                candidate.parent != references_root
+                or not candidate.name.startswith(f"{family}-")
+                or candidate.suffix != ".md"
+            ):
+                continue
+            if _is_plugin_owned_path(paths, candidate) or not _writable_user_file(paths, candidate):
+                continue
+            if candidate not in candidates:
+                candidates.append(candidate)
+            matched = True
+        if not matched:
+            errors.append(
+                f"{config_key}.{skill}: {route} is not an existing writable {family} file "
+                "inside a discovered adopter-owned skill root"
+            )
+    return True, tuple(candidates), tuple(errors)
+
+
+def _discovered_run_candidates(paths: RuntimePaths, instinct: Instinct) -> tuple[Path, ...]:
     candidates: list[Path] = []
     for location in _source_skill_locations(paths, instinct):
-        candidates.extend(path for path in (location / "references").glob("RUN-*.md") if _writable_user_file(paths, path))
+        root = location.resolve()
+        references_root = (root / "references").resolve()
+        for declared in sorted((location / "references").glob("RUN-*.md")):
+            try:
+                candidate = declared.resolve()
+            except (OSError, RuntimeError, ValueError):
+                continue
+            if root not in (candidate, *candidate.parents):
+                continue
+            if (
+                candidate.parent != references_root
+                or not candidate.name.startswith("RUN-")
+                or candidate.suffix != ".md"
+            ):
+                continue
+            if not _writable_user_file(paths, candidate) or candidate in candidates:
+                continue
+            candidates.append(candidate)
+    return tuple(candidates)
+
+
+def _run_destinations(
+    paths: RuntimePaths,
+    instinct: Instinct,
+) -> tuple[tuple[Path, ...], tuple[str, ...]]:
+    configured, candidates, errors = _configured_route_candidates(
+        paths,
+        instinct,
+        config_key="run_routes",
+        family="RUN",
+        multiple=False,
+    )
+    if configured:
+        return candidates, errors
+    return _discovered_run_candidates(paths, instinct), ()
+
+
+def _voice_ref_destinations(
+    paths: RuntimePaths,
+    instinct: Instinct,
+) -> tuple[tuple[Path, ...], tuple[str, ...]]:
+    if instinct.instinct_type != "voice" or len(instinct.source_skills) != 1:
+        return (), ()
+    _, candidates, errors = _configured_route_candidates(
+        paths,
+        instinct,
+        config_key="voice_ref_routes",
+        family="REF",
+        multiple=True,
+    )
+    return candidates, errors
+
+
+def _run_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
+    candidates, _ = _run_destinations(paths, instinct)
     return candidates[0] if len(candidates) == 1 else None
 
 
 def _voice_ref_destination(paths: RuntimePaths, instinct: Instinct) -> Path | None:
-    if instinct.instinct_type != "voice" or len(instinct.source_skills) != 1:
-        return None
-    routes = load_config(paths).get("voice_ref_routes")
-    route = routes.get(instinct.source_skills[0]) if isinstance(routes, dict) else None
-    if not isinstance(route, str) or not route.strip():
-        return None
-    relative = Path(route)
-    if relative.is_absolute() or ".." in relative.parts:
-        return None
-    candidates: list[Path] = []
-    for location in _source_skill_locations(paths, instinct):
-        candidate = (location / relative).resolve()
-        if location.resolve() not in (candidate, *candidate.parents):
-            continue
-        if candidate.name.startswith("REF-") and _writable_user_file(paths, candidate):
-            candidates.append(candidate)
+    candidates, _ = _voice_ref_destinations(paths, instinct)
     return candidates[0] if len(candidates) == 1 else None
 
 
@@ -1823,9 +2009,11 @@ def _available_promotion_destinations(
     choices = ["global"]
     if _project_agents_path(instinct, project) is not None:
         choices.extend(["project", "both"])
-    if _run_destination(paths, instinct) is not None:
+    run_candidates, _ = _run_destinations(paths, instinct)
+    if run_candidates:
         choices.append("run")
-    if _voice_ref_destination(paths, instinct) is not None:
+    ref_candidates, _ = _voice_ref_destinations(paths, instinct)
+    if ref_candidates:
         choices.append("ref")
     if len(instinct.source_skills) >= 3:
         choices.append("standard")
@@ -1848,6 +2036,80 @@ def _preview_signature(preview: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(signed, sort_keys=True).encode("utf-8")).hexdigest()
 
 
+def _unavailable_route_preview(
+    *,
+    instinct_id: str,
+    destination: str,
+    rule: str,
+    why_it_matters: str,
+    reason: str,
+    candidates: tuple[Path, ...],
+    errors: tuple[str, ...],
+) -> dict[str, Any]:
+    preview: dict[str, Any] = {
+        "instinct_id": instinct_id,
+        "decision": destination,
+        "rule": rule,
+        "why_it_matters": why_it_matters,
+        "applicable": False,
+        "reason": reason,
+        "eligible_targets": [str(candidate) for candidate in candidates],
+        "applied": False,
+        "targets": [],
+    }
+    if errors:
+        preview["route_errors"] = list(errors)
+    return preview
+
+
+def _select_route_target(
+    *,
+    instinct_id: str,
+    destination: str,
+    rule: str,
+    why_it_matters: str,
+    candidates: tuple[Path, ...],
+    errors: tuple[str, ...],
+    target: str | Path | None,
+) -> tuple[Path | None, dict[str, Any] | None]:
+    if not candidates:
+        reason = "invalid-route-configuration" if errors else "no-eligible-target"
+        return None, _unavailable_route_preview(
+            instinct_id=instinct_id,
+            destination=destination,
+            rule=rule,
+            why_it_matters=why_it_matters,
+            reason=reason,
+            candidates=candidates,
+            errors=errors,
+        )
+    if target is None and len(candidates) > 1:
+        return None, _unavailable_route_preview(
+            instinct_id=instinct_id,
+            destination=destination,
+            rule=rule,
+            why_it_matters=why_it_matters,
+            reason="multiple-eligible-targets",
+            candidates=candidates,
+            errors=errors,
+        )
+    if target is None:
+        return candidates[0], None
+    selected = str(target)
+    exact = next((candidate for candidate in candidates if str(candidate) == selected), None)
+    if exact is None:
+        return None, _unavailable_route_preview(
+            instinct_id=instinct_id,
+            destination=destination,
+            rule=rule,
+            why_it_matters=why_it_matters,
+            reason="invalid-target-selection",
+            candidates=candidates,
+            errors=errors,
+        )
+    return exact, None
+
+
 def _build_promotion_preview(
     paths: RuntimePaths,
     instinct_id: str,
@@ -1855,6 +2117,7 @@ def _build_promotion_preview(
     destination: str | None = None,
     project: str | Path | None = None,
     standard: str | Path | None = None,
+    target: str | Path | None = None,
     edited_rule: str | None = None,
     edited_rationale: str | None = None,
 ) -> dict[str, Any]:
@@ -1875,6 +2138,8 @@ def _build_promotion_preview(
         if not edited_rule:
             raise ValueError("edit requires --edited-rule")
         destination = None
+    if target is not None and destination not in {"run", "skill", "ref"}:
+        raise ValueError("--target is accepted only for a RUN or REF destination")
     if destination is None:
         return {
             "instinct_id": instinct_id,
@@ -1886,6 +2151,7 @@ def _build_promotion_preview(
             "targets": [],
         }
     targets: list[Path] = []
+    route_errors: tuple[str, ...] = ()
     if destination in {"project", "both"}:
         project_path = _project_agents_path(instinct, project)
         if not project_path:
@@ -1894,26 +2160,47 @@ def _build_promotion_preview(
     if destination in {"global", "both"}:
         targets.append(paths.global_agents)
     if destination in {"run", "skill"}:
-        run_path = _run_destination(paths, instinct)
-        if not run_path:
-            raise ValueError("one exact writable registered skill RUN document could not be resolved")
-        targets.append(run_path)
         destination = "run"
+        run_candidates, route_errors = _run_destinations(paths, instinct)
+        run_path, unavailable = _select_route_target(
+            instinct_id=instinct_id,
+            destination=destination,
+            rule=rule,
+            why_it_matters=why_it_matters,
+            candidates=run_candidates,
+            errors=route_errors,
+            target=target,
+        )
+        if unavailable:
+            return unavailable
+        assert run_path is not None
+        targets.append(run_path)
     if destination == "ref":
-        ref_path = _voice_ref_destination(paths, instinct)
-        if not ref_path:
-            raise ValueError("one exact writable mapped voice REF document could not be resolved")
+        ref_candidates, route_errors = _voice_ref_destinations(paths, instinct)
+        ref_path, unavailable = _select_route_target(
+            instinct_id=instinct_id,
+            destination=destination,
+            rule=rule,
+            why_it_matters=why_it_matters,
+            candidates=ref_candidates,
+            errors=route_errors,
+            target=target,
+        )
+        if unavailable:
+            return unavailable
+        assert ref_path is not None
         targets.append(ref_path)
     if destination == "standard":
         targets.append(_standard_destination(paths, instinct, standard))
     if destination not in {"project", "global", "both", "run", "ref", "standard"}:
         raise ValueError("destination must be project, global, both, run, ref, standard, edit, or no")
     insertion = f"- {rule}"
-    return {
+    preview = {
         "instinct_id": instinct_id,
         "decision": destination,
         "rule": rule,
         "why_it_matters": why_it_matters,
+        "applicable": True,
         "insertion": insertion,
         "section": PROMOTED_GUIDANCE_HEADING,
         "targets": [
@@ -1921,6 +2208,9 @@ def _build_promotion_preview(
         ],
         "applied": False,
     }
+    if route_errors:
+        preview["route_errors"] = list(route_errors)
+    return preview
 
 
 def promotion_preview(
@@ -1930,6 +2220,7 @@ def promotion_preview(
     destination: str | None = None,
     project: str | Path | None = None,
     standard: str | Path | None = None,
+    target: str | Path | None = None,
     edited_rule: str | None = None,
     edited_rationale: str | None = None,
 ) -> dict[str, Any]:
@@ -1939,10 +2230,11 @@ def promotion_preview(
         destination=destination,
         project=project,
         standard=standard,
+        target=target,
         edited_rule=edited_rule,
         edited_rationale=edited_rationale,
     )
-    if preview["decision"] not in {"no", "select-destination"}:
+    if preview.get("applicable", True) and preview["decision"] not in {"no", "select-destination"}:
         atomic_write_json(
             _promotion_preview_path(paths, instinct_id),
             {"signature": _preview_signature(preview), "previewed_at": iso_now()},
@@ -2011,6 +2303,7 @@ def apply_promotion(
     destination: str | None = None,
     project: str | Path | None = None,
     standard: str | Path | None = None,
+    target: str | Path | None = None,
     edited_rule: str | None = None,
     edited_rationale: str | None = None,
     confirm: bool = False,
@@ -2023,6 +2316,7 @@ def apply_promotion(
         destination=destination,
         project=project,
         standard=standard,
+        target=target,
         edited_rule=edited_rule,
         edited_rationale=edited_rationale,
     )
@@ -2030,6 +2324,8 @@ def apply_promotion(
         return preview
     if preview.get("decision") == "select-destination":
         raise ValueError("select a promotion destination and preview it before applying")
+    if preview.get("applicable") is False:
+        raise ValueError(f"promotion target is not applicable: {preview.get('reason', 'unresolved')}")
     preview_record_path = _promotion_preview_path(paths, instinct_id)
     try:
         preview_record = json.loads(preview_record_path.read_text(encoding="utf-8"))
@@ -2207,6 +2503,7 @@ def import_candidates(
 
 def preflight(paths: RuntimePaths, *, codex_binary: str | None = None) -> dict[str, Any]:
     config = load_config(paths)
+    model = _configured_extractor_model(config)
     schema_path = skill_root() / "assets" / "extractor-schema.json"
     schema_valid = False
     try:
@@ -2215,27 +2512,41 @@ def preflight(paths: RuntimePaths, *, codex_binary: str | None = None) -> dict[s
         pass
     resolved_codex = resolve_codex_executable(config, codex_binary)
     checks = {
-        "python": sys.version_info >= (3, 11),
+        "python": sys.version_info >= (3, 10),
         "codex": bool(resolved_codex),
         "extractor_schema": schema_valid,
-        "model_policy": bool(config.get("extractor_model")) or config.get("extractor_model") is None,
+        "model_policy": bool(model),
     }
     return {
         "ok": all(checks.values()),
         "checks": checks,
         "codex_binary": resolved_codex,
-        "extractor_model": config.get("extractor_model") or "SessionEnd event (required)",
+        "extractor_model": model or None,
+        "model_configured": bool(model),
     }
 
 
 def runtime_status(paths: RuntimePaths) -> dict[str, Any]:
     config = load_config(paths)
+    model = _configured_extractor_model(config)
     instincts = load_instincts(paths)
     current_backlog = backlog(paths)
     return {
         "enabled": bool(config.get("enabled")),
         "privacy_acknowledged_at": config.get("privacy_acknowledged_at"),
-        "extractor_model": config.get("extractor_model"),
+        "extractor_model": model or None,
+        "model_configured": bool(model),
+        "capture_ready": bool(
+            config.get("enabled") and config.get("privacy_acknowledged_at") and model
+        ),
+        "capture_blocked_reason": (
+            "unconfigured_model" if config.get("enabled") and not model else None
+        ),
+        "model_remediation": (
+            "Run on --model <model> after reviewing the local chat storage boundary."
+            if not model
+            else None
+        ),
         "queue": queue_counts(paths),
         "backlog": {
             key: value
