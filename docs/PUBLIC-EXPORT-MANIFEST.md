@@ -2,8 +2,8 @@
 
 ## Approved v1 boundary
 
-This local fresh-history repository contains the 25 standalone skills and one draft Codex
-plugin listed in `SKILL-CATALOG.md`, Diffguard Lite, shared public standards, reusable
+This local fresh-history repository contains the 25 standalone skills and one draft
+dual-runtime agent plugin listed in `SKILL-CATALOG.md`, Diffguard Lite, shared public standards, reusable
 templates, synthetic examples, and tests.
 The root governance set covers contributions, conduct, project decisions, security,
 support, privacy, licensing, and independent setup.
@@ -53,16 +53,27 @@ contract, and a publisher guard. Runtime installation is opt-in and inactive by 
 External verifier and publisher implementations, credentials, enabled adopter policy,
 mutable run state, and protected audit records are not part of the public package.
 
-The `plugins/pmm-instinct-review/` `0.2.0` Draft release candidate additionally contains a
-Codex plugin manifest, marketplace registration, plugin-relative hooks, a bundled skill, a
-standard-library Python runtime, explicit Codex and isolated portable review adapters, an
-extractor prompt and schema, complete public state/output templates, governed product and
-operator documents, focused tests, and a full fictional lifecycle. Codex capture stays
-disabled until explicit consent. Portable mode requires an explicit adopter-owned root,
-supports candidate import and review only, and never reads native agent stores or promotes
-instructions. The package has no dependency on a private registry or repository. The retired
-standalone `skills/pmm-instinct-review/` package is represented by the plugin's explicit
-candidate-file import command.
+The `plugins/pmm-instinct-review/` `0.3.0` Draft release candidate additionally contains
+separate Codex and Claude manifests, marketplace registration for Codex, runtime-specific
+plugin-relative hooks, a bundled skill, standard-library Python runtimes, and an isolated
+portable review adapter. The Claude surface includes a no-marketplace standalone installer,
+bundle-root capture/review/worker commands, an extractor prompt and schema, a detailed setup
+runbook, and a complete fictional lifecycle. Native capture stays disabled until explicit
+consent. Claude extraction is detached, exact-model, schema-bound, retry-limited, and
+tool-disabled. Its background promotion worker acts only on a separate exact-digest human
+approval receipt; governed destinations produce review patches rather than direct writes.
+Portable mode still requires an explicit adopter-owned root, supports candidate import and
+review only, and never reads native agent stores or promotes instructions. The package has no
+dependency on a private registry or repository. The retired standalone
+`skills/pmm-instinct-review/` package is represented by the plugin's explicit candidate-file
+import command.
+
+Mutable runtime data is never stored inside the installed package. Codex uses its existing
+user-owned state root, Claude uses a separate explicit state root, and portable mode requires
+an adopter-selected isolated root. Installation receipts, normalized evidence, queue records,
+suggestions, review decisions, instincts, promotion previews and receipts, outcomes, logs, and
+governed changesets remain local adopter state and are not public export artifacts. The
+similarly named files under `examples/` are independently fictional contract fixtures.
 
 ## Generalization rules applied
 
@@ -80,8 +91,10 @@ candidate-file import command.
 - The cross-harness example is independently fictional and uses reserved `.invalid`
   domains; it is not an anonymized private run.
 - PMM Instinct Review examples use the fictional Northstar Reports scenario and `.invalid`
-  domains. No private-to-fictional crosswalk, private route table, Claude desktop capture
-  tooling, private hook, mutable adopter state, or real session example is exported.
+  domains. No private-to-fictional crosswalk, private route table, private hook or installer,
+  mutable adopter state, machine configuration, or real Codex or Claude session example is
+  exported. The published native Claude implementation is independently reviewed generic
+  runtime code, not a copy of private evidence or configuration.
 - Competitive-intelligence adopters must map their own internal names, channels, company
   systems, permissions, existing intelligence data, reviewers, and output destinations. The
   package provides blank templates, source-verification and content-access gates, and a fully
@@ -116,8 +129,19 @@ remains design history. The public starter kit contains only project-authored ge
 structures and fictional examples. Live source corpora, adopter mappings, and private outputs
 remain outside the public boundary.
 
-The PMM Instinct Review `0.2.0` candidate has separate Draft
+The PMM Instinct Review `0.3.0` candidate has separate Draft
+[privacy](legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md),
+[rights](legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md), and
+[secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-10.md) records. These
+documents describe a locally frozen candidate for review. The complete automated local suite,
+strict document audit, exact 57-path manifest comparison, 443-artifact IP inventory, publicizer
+scan with unchanged-match adjudication, zero-finding Gitleaks scan, and hosted pull-request
+checks are complete. The real Claude lifecycle smoke test and project-owner Gate B review remain
+pending, so `0.3.0` is not merge- or release-ready.
+
+The earlier PMM Instinct Review `0.2.0` candidate retains its separate Draft
 [privacy](legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.2.0-2026-09-04.md),
 [rights](legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.2.0-2026-09-04.md), and
 [secret-audit](security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-04.md) evidence. Those
-documents describe a candidate for review, not an approved release.
+documents remain historical evidence for that narrower Codex/portable candidate, not an
+approval of `0.3.0` or an approved release.

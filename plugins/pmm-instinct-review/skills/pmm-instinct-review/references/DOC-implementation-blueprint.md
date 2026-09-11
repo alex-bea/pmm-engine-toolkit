@@ -4,173 +4,220 @@ normative: false
 requires:
   - DOC-product-requirements.md
   - RUN-workflow.md
+  - RUN-claude-setup.md
 status: Draft
-version: "0.2.0"
+version: "0.3.0"
 owner: toolkit-maintainers
 consumers:
-  - public toolkit maintainers
+  - public plugin contributors
+  - public plugin reviewers
 change_control: Pull request review
 ---
 
-# PMM Instinct Review — Implementation Blueprint (`0.2.0` draft)
+# PMM Instinct Review — Implementation blueprint (`0.3.0` draft)
 
 ## Purpose
 
-This document maps the public plugin's product requirements to its implementation. It is for
-maintainers and work AIs changing the package. The executable user procedure remains in
-`RUN-workflow.md`.
+This blueprint maps the public requirements to the package's implementation and verification
+surfaces. The RUN documents remain the binding operator procedures. Claude, Codex, and
+portable are separate adapters; satisfying one adapter by reading another adapter's state is
+an implementation failure.
 
-## Design rules
+## Guardrails
 
-1. Keep model work bounded by a fixed input boundary and strict output schema.
-2. Keep all path resolution, queue handling, clustering, scoring, routing, and retention
-   deterministic and testable.
-3. Preserve the two human gates: candidate-to-instinct and instinct-to-promotion.
-4. Treat normalized session text as untrusted data. Never execute it as an instruction.
-5. Preserve native Codex history and mutate only files owned by the user's local runtime.
-6. Prefer a narrow skill or repository destination over general user-level instructions.
-7. Keep this package self-contained: standard-library Python, plugin-relative paths, local
-   configuration, and no private registry or repository dependency.
-8. Select adapters explicitly and keep portable review state isolated from native agent stores.
+1. Keep model work bounded: minimized evidence in, zero-to-five schema-valid candidates out.
+2. Keep deterministic behavior standard-library only and unit-testable without a model call.
+3. Preserve the candidate-to-instinct and exact instinct-to-promotion human gates.
+4. Treat transcripts, candidates, and model output as untrusted data.
+5. Run no model inside a lifecycle hook and expose every retry/failure state.
+6. Delete only decision-complete normalized evidence; native history is untouchable.
+7. Never let a worker create approval, retarget a receipt, merge, publish, or directly write a
+   governed RUN, REF, or STD.
+8. Keep mutable state outside the installed package and refuse ambient cross-runtime fallback.
 
 ## Component map
 
-| Component | Path | Responsibility |
-|---|---|---|
-| Plugin manifest | `.codex-plugin/plugin.json` | Declares the installable plugin and public metadata |
-| Marketplace record | `.agents/plugins/marketplace.json` | Makes the plugin available from the repository marketplace |
-| Hooks | `hooks/hooks.json` | Declares plugin-root-resolved SessionStart and SessionEnd commands |
-| Skill entrypoint | `skills/pmm-instinct-review/SKILL.md` | Routes user requests and carries the safety contract |
-| Operator CLI | `scripts/instinct_review.py` | Parses commands and enforces explicit confirmation flags |
-| Runtime adapters | `scripts/pmm_instinct/adapters.py` | Resolves Codex or explicit portable state and refuses unsupported portable commands |
-| Runtime core | `scripts/pmm_instinct/runtime.py` | Capture, normalization, queueing, extraction, clustering, review, routing, promotion, and cleanup |
-| Extractor assets | `assets/extractor-prompt.md`, `assets/extractor-schema.json` | Bounded candidate task and accepted output shape |
-| Public contracts | `assets/config-template.json`, `assets/state-contracts.md`, `assets/instinct-template.md`, `assets/output-template.md` | Reusable adopter-owned state and presentation contracts |
-| Fictional lifecycle | `examples/fictional-northstar-reports/` | Complete inert cross-file example for every public contract |
-| Operator runbook | `references/RUN-workflow.md` | Binding procedure for enablement, review, promotion, retention, and rollback |
-| Product docs | `references/DOC-*.md` | Product intent, implementation traceability, and submission test evidence |
-| Test suite | `tests/test_instinct_review_plugin.py` | Synthetic end-to-end and contract coverage |
+| Layer | Public files | Responsibility | Verification |
+|---|---|---|---|
+| Package manifests | `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json` | Declare separate Codex and optional Claude local-plugin surfaces | Manifest/version/skill-path checks |
+| Public skill | `skills/pmm-instinct-review/SKILL.md`, `agents/openai.yaml` | Trigger, runtime selection, reference routing, safety boundary | Frontmatter and package-link checks |
+| Procedures | `references/RUN-workflow.md`, `RUN-claude-setup.md` | Runtime operation and detailed no-marketplace adoption | Governed-document and manual workflow review |
+| Claude hook wiring | `hooks/claude-hooks.json`, `scripts/claude_instinct_hook.py` | Fast settings dispatch plus async optional-plugin SessionEnd | Supported command shape, async plugin contract, no model call, timing tests |
+| Claude deterministic core | `scripts/pmm_instinct_claude.py` | State resolution, normalization, queue, extraction validation, review, receipts, outcomes | Focused Claude unit tests |
+| Claude controls | `scripts/claude_instinct_capture.py`, `claude_instinct_worker.py`, `claude_instinct_review.py`, `claude_instinct_promote.py` | Explicit CLI for each lifecycle stage | CLI/error/confirmation tests |
+| Claude installer | `scripts/install_claude_instinct_review.py` | Nested personal skill, two owned settings hooks, backup, narrow uninstall | Symlink/copy/conflict/preservation tests |
+| Claude extractor | `assets/claude-extractor-prompt.md`, `claude-extractor-schema.json` | Untrusted-evidence instruction and exact output shape | Closure, schema, zero/positive/invalid tests |
+| Claude default config | `assets/claude-config-template.json` | Disabled state, bounds, retry and model contract | Runtime-default equality test |
+| Codex/portable core | `skills/pmm-instinct-review/scripts/` | Preserve existing capture/review/promotion and explicit portable import | Existing complete regression suite |
+| Contracts/examples | nested `assets/` and `examples/fictional-northstar-reports/` | Blank output/state contracts and inert fictional lifecycles | Link, schema, identifier, and digest tests |
 
-## Local state contract
+All Claude runtime imports resolve inside the package root. The installer supports the public
+nested skill layout; it must not expect a private root-level `SKILL.md`.
+
+## Native Claude state design
+
+Standalone state is `~/.claude/pmm-instinct-review-data/`; local-plugin state is
+`${CLAUDE_PLUGIN_DATA}/instinct-review/`. Explicit resolution produces:
 
 ```text
-~/.codex/instinct-review/
+<state-root>/
 ├── config.json
-├── sessions/
-│   ├── YYYY-MM-DD-HHMM-{session-id}-audit.md
-│   ├── {session-id}-normalized.jsonl
-│   ├── {session-id}-suggestions.md
-│   └── instinct-priority.json
-├── queue/{session-id}.json
-├── instincts/pmm-instinct-YYYY-MM-DD-NNN.md
-├── logs/{session-id}.log
-└── state/
+├── capture-inbox/{request-id}.json
+├── sessions/{audit.md,evidence.json,suggestions.md}
+├── queue/{job-id}.json
+├── instincts/{instinct-id}.md
+├── logs/{job-id}.log
+├── promotion-receipts/{receipt-digest}.json
+├── promotion-outcomes/{receipt-digest}.json
+├── promotion-changesets/{receipt-digest}.patch
+└── state/{locks,brief-markers,review-ledger,promotion-previews,installation-receipt}
 ```
 
-This directory is user-owned, outside the plugin cache, and survives plugin removal. Do not
-add another persistence location without updating the privacy policy, tests, and release
-evidence.
+Directories and private state files use owner-only permissions where supported. Atomic writes
+create a temporary sibling and replace the destination. Locks are created exclusively and are
+always narrow to extraction or promotion execution.
 
-Portable mode uses the same review-state layout directly under the explicit `--state-root`.
-It has no implicit default, does not read native Codex or Claude Code stores, and cannot run
-capture, hooks, extraction, backfill, retries, or promotion.
+### Configuration and authentication
 
-## Data contracts
+The default is disabled with no acknowledgement. First enablement records the acknowledgement
+and verifies a Claude executable. The extraction subprocess inherits credentials but never
+persists them.
 
-### Queue state
+Because the worker invokes `claude --bare`, ordinary Claude subscription OAuth/keychain state
+is not used. This release supports an inherited `ANTHROPIC_API_KEY` or supported Bedrock,
+Vertex AI, or Microsoft Foundry provider credentials. It does not pass `--settings`, so an
+`apiKeyHelper` configured only in Claude settings is not consumed. Setup must preflight this
+before capture is enabled.
 
-| State | Meaning | Permitted next state |
+### Evidence and idempotence
+
+The Claude normalizer reads JSONL defensively, accepts only user/assistant text blocks,
+excludes sidechains and non-conversation records, removes context-only wrappers, redacts known
+secret forms, and applies newest-first turn/character ceilings. Eligibility is checked after
+normalization.
+
+The transcript file's SHA-256 is stored with the evidence but never altered. The job ID binds
+`claude`, session ID, transcript digest, and schema version. A second delivery resolves the
+same queue path and returns without duplicating evidence.
+
+### Queue and worker
+
+| State | Meaning | Allowed progression |
 |---|---|---|
-| `queued` | Eligible capture awaits extraction | `running` |
-| `running` | The single worker owns the job | `succeeded` or `failed` |
-| `succeeded` | A valid suggestion file exists; zero candidates is valid | Review |
-| `failed` | Extraction did not complete or validate | Retryable queue state up to the configured limit, then manual retry |
+| `queued` | Captured and ready | `processing` |
+| `processing` | One worker holds a lease | `completed`, `retryable`, `failed` |
+| `retryable` | Attempt failed or stale lease recovered | `processing` |
+| `completed` | Valid suggestion file exists, including zero candidates | Human review |
+| `failed` | Attempt ceiling reached | Explicit retry to `queued` |
 
-Queue records use atomic writes. A worker lock prevents concurrent drains; it does not grant
-approval or broaden any write capability.
+The extraction command uses the exact configured model and includes `--bare`, `-p`, JSON
+output, the bundled JSON Schema, `--max-turns 1`, `--no-session-persistence`,
+`--permission-mode dontAsk`, and `--tools ""`. The empty tool set disables built-in tools;
+`--disallowedTools "mcp__*"` explicitly denies MCP tools. The only standard input is the
+minimized evidence message array. Output is accepted only from the structured-output envelope
+and then validated again by deterministic code.
 
-### Candidate output
+### Review and retention
 
-Accepted extractor output contains at most five objects with only these fields:
+The backlog parser creates three buckets and exact `type + normalized rule` clusters. Voice
+has the highest review-area weight, followed by workflow, scope, correction, and confirmation;
+support and skill/cwd breadth contribute deterministically. Listing does not mutate.
 
-```json
-{
-  "type": "correction|confirmation|voice|scope|workflow",
-  "rule": "one sentence",
-  "evidence": "short redacted excerpt",
-  "context": "bounded context",
-  "why_it_matters": "evidence-bound consequence, maximum 300 characters"
-}
-```
+The confirmed review command appends one schema-v2 decision event whose occurrences bind the
+session, transcript-derived job, suggestion result, and pre-processing audit digests. For
+`accept`/`edit` it also writes one complete instinct; exact `match` updates only a
+same-type/same-rule active instinct. `reject` creates no instinct. Once every cluster occurrence
+in an audit has an exact matching authorization, the runtime marks it processed and deletes
+only its evidence file. Legacy or malformed ledgers fail closed.
 
-The runtime validates type, fields, lengths, and source skill discovery before rendering a
-suggestion. Model-supplied confidence, unrestricted destinations, or executable content are
-not part of the contract.
+### Promotion receipts and execution
 
-### Instinct state
+The preview serializer reads the exact target and source guidance, then produces full resulting
+text under the managed heading. Its canonical digest covers every action field, including the
+source-guidance digest. Approval verifies the
+preview digest, rechecks the target digest, embeds the unchanged action in a receipt, and
+canonically digests that receipt.
 
-An owner-approved instinct contains a unique ID, type, confidence, support count, created and
-last-seen dates, source runtime, source skill(s), source repository/repositories, rationale,
-suggested destination, strong-correction/contradiction flags, promotion outcome, and target
-record. A rejected cluster creates no instinct. `match` updates only an active instinct with
-the same type and normalized rule.
+The executor verifies the receipt and target again. Local delivery atomically writes and
+verifies the exact result, then marks the instinct `promoted` or duplicate `covered`. Review
+delivery emits a unified diff and records `awaiting_review` without target mutation. Only a
+valid same-receipt outcome bound to the approved target/result makes repeat execution a no-op.
+An interrupted exact local write is recognized by its approved resulting digest and completed
+without rewriting the target.
 
-### Priority behavior
+## Codex and portable compatibility
 
-The core groups by candidate type plus normalized rule. It orders areas voice, workflow,
-scope, correction, and confirmation, then scores support, source-skill breadth, cwd/repository
-breadth, and newness. Recency is a deterministic tie-break. The explicit snapshot command
-persists all three buckets, summaries, areas, complete clusters, and stale-instinct counts.
+The nested `scripts/instinct_review.py` and `pmm_instinct/` implementation remain the
+`0.2.0` behavior. Codex owns `~/.codex/instinct-review/`, uses its existing plugin hooks and
+queue states (`queued`, `running`, `succeeded`, `failed`), and retains its existing bounded
+backfill, review, and confirmed destination application. Portable mode still requires an
+explicit safe state root and imported candidate JSON, with capture/extraction/promotion
+unavailable.
 
-## Requirement-to-test map
+Claude modules are additive and do not import or modify those modules. Version assertion and
+example-directory expectations are the only necessary existing-test updates.
 
-| Requirement | Covered in the public test suite |
+## Requirement traceability
+
+| Requirement | Primary implementation | Minimum test evidence |
+|---|---|---|
+| PIRC-REQ-001 | both manifests, package-root Claude runtime/assets, preserved nested runtime | isolated copied-package closure |
+| PIRC-REQ-002 | installer, nested skill, user settings hooks | symlink/copy, backup, conflict, narrow uninstall |
+| PIRC-REQ-003 | config defaults and capture control | status non-enabling, acknowledgement and auth failure |
+| PIRC-REQ-004 | hook script, worker summary, and hook manifest | no retained-store scan or subprocess model call in hook; forced detached launch |
+| PIRC-REQ-005 | normalizer/capture core | role/tool/sidechain/subagent/redaction/bounds matrix |
+| PIRC-REQ-006 | extractor assets and worker | exact flags/model/stdin; zero/positive/invalid/failure |
+| PIRC-REQ-007 | digest ID, atomic queue, lease/locks/retry | duplicate, stale lease, ceiling, manual retry |
+| PIRC-REQ-008 | review CLI, ledger, cleanup | list-only, decisions, exact match, multi-candidate retention |
+| PIRC-REQ-009 | preview, receipt, executor | missing confirmation, tamper, drift, apply, idempotence |
+| PIRC-REQ-010 | destination validator | allowed pairs and forbidden package/state/cache targets |
+| PIRC-REQ-011 | explicit resolver and installer modes | no ambient/cross-runtime fallback; update behavior |
+| PIRC-REQ-012 | both RUNs and output template | closure and native-machine setup receipt review |
+| PIRC-REQ-013 | fictional Claude subtree | schema, cross-ID, canonical digest, exact before/after diff |
+| PIRC-REQ-014 | existing nested runtime/tests | full Codex/portable regression |
+| PIRC-REQ-015 | public policy/evidence/inventory | secret/path/provenance/narrative scans |
+| PIRC-REQ-016 | validator, tests, release evidence | exact manifest diff and stop-before-merge check |
+
+## Delivery sequence
+
+1. **Contract:** update this blueprint, product requirements, both RUNs, state/output
+   contracts, and test cases together.
+2. **Package closure:** add the Claude manifest, hooks, assets, scripts, and nested-skill-aware
+   installer; prove an isolated copy has no outside dependency.
+3. **Install disabled:** exercise both installer modes in disposable Claude homes, preserve
+   unrelated settings, and verify capture is off.
+4. **Capture/extract:** exercise eligible and excluded fictional transcript cases, exact
+   bare-mode credentials, queue recovery, and schema boundaries.
+5. **Review:** prove listing is read-only, all mutations require confirmation, matching is
+   exact, and retention waits for every decision.
+6. **Promote:** prove exact preview/receipt continuity, local atomic execution, governed patch
+   behavior, drift refusal, and idempotence.
+7. **Compatibility/safety:** run the existing suite, complete fictional digest checks,
+   repository validators, and privacy/provenance review.
+8. **Pull request:** stage only approved paths, open one unmerged pull request, wait for checks,
+   and leave final release as a maintainer decision.
+
+## Test blueprint
+
+| Family | Required cases |
 |---|---|
-| Plugin package is complete and public-safe | Manifest, marketplace, hook, runtime-dependency, and path tests |
-| Capture is disabled and eligible-only | Default config, disabled capture, minimum turns, subagent, and idempotent capture tests |
-| Normalized evidence is minimized | Event preference, fallback dedupe, excluded records, wrapper removal, redaction, and size-limit tests |
-| Extraction is controlled | Configured-model, no-fallback, schema, valid worker, retry-limit, lock, and restart-recovery tests |
-| Review requires a decision | Rationale schema, candidate-card fields without routing, accept, reject, edit, match, zero-candidate, and multi-candidate cleanup tests |
-| Priority is complete and deterministic | Voice-first area, breadth/newness/recency, type-aware matching, snapshot, and stale-count tests |
-| Portable mode is isolated | Explicit-root, read-only status, command-refusal, same-import/review, and no-Codex-state tests |
-| Promotion is separately gated | Destination selection, persisted preview, matching second confirmation, duplicate coverage, terminal status, managed section, staged project/global/both, RUN/REF/standard routing tests |
-| Local state is recoverable | Cleanup retry, state durability, and independent plugin-path tests |
-| Backfill is bounded | Five-session inventory and explicit-apply test |
+| Closure | manifests, hooks, imports, assets, nested skill, installer in isolated package copy |
+| Installer | disabled default, symlink/copy, exact two hooks, backup, idempotence, conflicts, unrelated settings, narrow uninstall |
+| Claude auth/config | explicit root, no ambient fallback, acknowledgement, missing binary, missing bare-mode credentials, exact model |
+| Normalization/capture | malformed JSONL, user/assistant text, tools/wrappers excluded, sidechain/subagent/worker excluded, redaction, bounds, minimum messages, digest duplicate |
+| Hooks | no synchronous extraction, fast return, stale recovery, one-time brief, detached launch |
+| Extraction | exact CLI flags/environment/stdin/schema, empty built-ins plus `mcp__*` denial, zero/positive output, invalid envelope/schema, timeout/nonzero result, sanitized log |
+| Queue | atomic transitions, single lock, stale lease, attempt ceiling, manual retry |
+| Review | three buckets, voice-first stable order, no mutation on list, all decisions confirmed, exact match, evidence-only cleanup |
+| Promotion | eligibility, destination pairs, exact digests, no receipt without confirmation, tamper/drift, local write, duplicate, governed patch, repeat execution |
+| Fixtures | exact file set, fictional-only data, linked IDs, canonical digests, before/after diff |
+| Regression | complete existing Codex/portable suite and read-only legacy-state stability |
+| Governance | governed docs, links, package validator, secret/path scan, exact diff, Draft release evidence |
 
-## Change procedure
+## Change checklist
 
-1. Read the product requirements, this blueprint, `RUN-workflow.md`, the privacy policy, and
-   the relevant tests before editing behavior.
-2. Classify the change: packaging, capture, normalization, extractor schema, queue, review,
-   promotion routing, retention, or documentation.
-3. For any behavior, approval, privacy, or retention change, update the product requirements
-   and runbook in the same pull request.
-4. Add or revise a synthetic test before relying on a new deterministic behavior.
-5. Preserve plugin-relative paths and standard-library-only runtime behavior.
-6. Run the complete public validation suite, regenerate the IP inventory, run a fresh secrets
-   scan, and update the IP review whenever the published tree changes.
-7. Do not make user capture active as part of a test, install, or release process.
-8. Load synthetic `0.1.0` state through read-only status/list paths before relying on additive
-   `0.2.0` fields; do not add an in-place migration unless compatibility tests require it.
-
-## Release procedure
-
-1. Run the full test suite, public package validator, workflow validator, and static
-   whitespace check from a clean worktree.
-2. Confirm all examples and test data are fictional, and that no personal data, credentials,
-   internal identifiers, or private session artifacts enter the published tree.
-3. Regenerate `docs/legal/IP-INVENTORY.csv`; it must match the final file list exactly.
-4. Refresh the tracked-tree and reachable-history secrets-scan reports after the final
-   documentation and code changes.
-5. Update the IP-rights review and draft release notes with the final scope and known limits.
-6. Open a focused pull request, wait for required hosted checks and independent review, then
-   merge through the repository's branch-protection policy.
-7. Create a release/tag only after the merge and final release checklist pass.
-
-## Rollback procedure
-
-If a release discovers a privacy, safety, or correctness issue, remove marketplace guidance
-or release visibility through the repository's normal release controls, publish a fixed
-version, and explain the affected behavior in release notes. Local users can turn learning off
-immediately and remove the plugin; neither action should delete their local state without an
-explicit separate request.
+Before altering behavior, update a requirement, the relevant RUN step, implementation mapping,
+fixture/contract, and test together. Re-run the focused Claude suite, existing Codex/portable
+suite, full unit discovery, package/governance validators, link and privacy scans, and
+`git diff --check`. Report any unavailable authenticated Claude smoke check rather than
+substituting a different runtime.

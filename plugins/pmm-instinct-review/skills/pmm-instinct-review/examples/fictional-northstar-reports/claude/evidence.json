@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "runtime": "claude",
+  "session_id": "nsr-claude-003",
+  "transcript_sha256": "f336906c23e0049113dab5aaa79d041229c5d739777f241e13a7308129139dd3",
+  "captured_at": "2026-09-10T16:20:00+00:00",
+  "project_dir": "/fictional/northstar-reports",
+  "messages": [
+    {
+      "role": "user",
+      "text": "Draft a fictional weekly release summary for the Atlas export in Northstar Reports."
+    },
+    {
+      "role": "assistant",
+      "text": "I will organize the verified fictional launch facts into a concise summary."
+    },
+    {
+      "role": "user",
+      "text": "Start with the shipped change and reader impact, not the build chronology."
+    },
+    {
+      "role": "assistant",
+      "text": "The opening now states what shipped and why it matters before the supporting detail."
+    },
+    {
+      "role": "user",
+      "text": "Keep the tone plain and avoid unsupported superlatives."
+    },
+    {
+      "role": "assistant",
+      "text": "The revision uses neutral language and only the supplied fictional facts."
+    },
+    {
+      "role": "user",
+      "text": "Use three short evidence bullets after the opening."
+    },
+    {
+      "role": "assistant",
+      "text": "The three evidence bullets now follow the change-and-impact lead."
+    },
+    {
+      "role": "user",
+      "text": "Bearer [REDACTED TOKEN]"
+    },
+    {
+      "role": "assistant",
+      "text": "Understood: future release summaries should lead with change and impact before detail."
+    }
+  ],
+  "redactions": 1
+}

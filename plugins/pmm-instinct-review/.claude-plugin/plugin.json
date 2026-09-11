@@ -1,0 +1,16 @@
+{
+  "name": "pmm-instinct-review",
+  "displayName": "PMM Instinct Review",
+  "version": "0.3.0",
+  "description": "Self-contained, human-gated session learning with native Claude capture, background extraction, and receipt-bound promotion.",
+  "author": {
+    "name": "Alexander Bea",
+    "url": "https://github.com/alex-bea"
+  },
+  "homepage": "https://github.com/alex-bea/pmm-engine-toolkit/tree/main/plugins/pmm-instinct-review",
+  "repository": "https://github.com/alex-bea/pmm-engine-toolkit",
+  "license": "Apache-2.0",
+  "keywords": ["claude-code", "continuous-learning", "review", "productivity"],
+  "skills": ["./skills/pmm-instinct-review"],
+  "hooks": "./hooks/claude-hooks.json"
+}

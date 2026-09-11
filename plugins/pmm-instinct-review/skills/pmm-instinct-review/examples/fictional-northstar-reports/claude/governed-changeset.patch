@@ -1,0 +1,7 @@
+--- /fictional/northstar-reports/skills/release-summary/references/RUN-workflow.md
++++ /fictional/northstar-reports/skills/release-summary/references/RUN-workflow.md
+@@ -3,0 +4,4 @@
++
++## PMM Instinct Review — Promoted Guidance
++
++- Lead release summaries with the shipped change and user impact before supporting detail.

@@ -1,0 +1,36 @@
+{
+  "schema_version": 2,
+  "cluster_decisions": {
+    "voice-a4e8533d9f91": [
+      {
+        "decision": "accept",
+        "decided_at": "2026-09-10T16:30:00+00:00",
+        "occurrences": [
+          {
+            "job_id": "nsr-claude-001-756ae5db9983",
+            "session_id": "nsr-claude-001",
+            "transcript_sha256": "7dbb10f4a946cb4f69c47fae908faa79e7159bd96aa41c3903e598dc480e23fd",
+            "result_sha256": "d53e0c40c6633a4ecbbd19ae3f5a4a089566caac251a5713bd39bbacacceebae",
+            "audit_sha256": "d89e7f1782971c1719c67cfb8b7202e362da16c34c9d998976c33cc85872d200"
+          },
+          {
+            "job_id": "nsr-claude-002-e915ad2587a2",
+            "session_id": "nsr-claude-002",
+            "transcript_sha256": "8d4c554eb738f6369a36178c2e107404efb7630c6b082132efc0bb6d4f38ebbb",
+            "result_sha256": "c125ef881fe4f50e23b0e738961b4dbb1838f4677316679973560c3fdc047c7e",
+            "audit_sha256": "950098f29ccf19867bbc9477c36a8e3e8f10f8a70f37ced0ab192b8f193822f4"
+          },
+          {
+            "job_id": "nsr-claude-003-1bc3012bf455",
+            "session_id": "nsr-claude-003",
+            "transcript_sha256": "f336906c23e0049113dab5aaa79d041229c5d739777f241e13a7308129139dd3",
+            "result_sha256": "62cbb4672c4b974914ad134e666a3927716e9d5a471637c1cb2e0bb99b416b79",
+            "audit_sha256": "f9d5111b83475b27207185d2bd5d8af9ba5d8f6252c3ec260e76c9f9d136bf0e"
+          }
+        ],
+        "instinct_path": "/fictional-user/.claude/pmm-instinct-review-data/instincts/pmm-instinct-2026-09-10-001.md"
+      }
+    ]
+  },
+  "zero_resolutions": []
+}

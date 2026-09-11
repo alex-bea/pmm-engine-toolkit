@@ -1,0 +1,26 @@
+{
+  "enabled": true,
+  "privacy_acknowledged": true,
+  "state_root": "/fictional-user/.claude/pmm-instinct-review-data",
+  "extractor_model": "sonnet",
+  "claude_binary": "/fictional/bin/claude",
+  "queue": {
+    "queued": 0,
+    "processing": 0,
+    "retryable": 0,
+    "completed": 1,
+    "failed": 0
+  },
+  "promotion": {
+    "approved": 1,
+    "pending_execution": 0,
+    "promoted": 1,
+    "covered": 0,
+    "awaiting_review": 0,
+    "failed": 0,
+    "invalid": 0
+  },
+  "extraction_available": true,
+  "promotion_automation_available": true,
+  "human_approval_required": true
+}

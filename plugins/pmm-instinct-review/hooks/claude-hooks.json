@@ -1,0 +1,32 @@
+{
+  "description": "Disabled-by-default native Claude capture for PMM Instinct Review.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/claude_instinct_hook.py", "session-start"],
+            "timeout": 5,
+            "statusMessage": "Checking the private instinct queue"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/claude_instinct_hook.py", "session-end"],
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

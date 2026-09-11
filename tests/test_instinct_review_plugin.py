@@ -141,10 +141,13 @@ class PluginContractTests(unittest.TestCase):
         manifest = json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "pmm-instinct-review")
-        self.assertEqual(manifest["version"], "0.2.0")
+        self.assertEqual(manifest["version"], "0.3.0")
         entries = [entry for entry in marketplace["plugins"] if entry["name"] == "pmm-instinct-review"]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["source"]["path"], "./plugins/pmm-instinct-review")
+        catalog = (ROOT / "docs" / "SKILL-CATALOG.md").read_text(encoding="utf-8")
+        self.assertIn("`pmm-instinct-review` (`0.3.0` draft)", catalog)
+        self.assertIn("native Codex or Claude Code hooks", catalog)
 
     def test_hooks_use_plugin_root_and_both_events(self):
         hooks = json.loads((PLUGIN / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
@@ -191,7 +194,8 @@ class PluginContractTests(unittest.TestCase):
             "AGENTS-after.md",
         }
         self.assertTrue(expected_assets <= {path.name for path in assets.iterdir()})
-        self.assertEqual(expected_examples, {path.name for path in example.iterdir()})
+        self.assertEqual(expected_examples, {path.name for path in example.iterdir() if path.is_file()})
+        self.assertTrue((example / "claude").is_dir())
         for path in example.iterdir():
             if path.suffix == ".json":
                 json.loads(path.read_text(encoding="utf-8"))

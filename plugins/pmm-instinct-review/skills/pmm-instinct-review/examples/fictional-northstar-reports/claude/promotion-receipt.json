@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "preview_digest": "d6a4d71ee14b8e6e1c3f803fc0d902c1baa11a64122549a76185570c9695d282",
+  "approved_at": "2026-09-10T16:37:00+00:00",
+  "approved_action": {
+    "schema_version": 1,
+    "instinct_id": "pmm-instinct-2026-09-10-001",
+    "source_guidance_sha256": "2c156dbecb18e3771066da38b71d6be9f96d9b18854a3b49046c732d73f6e856",
+    "destination_class": "project",
+    "delivery": "local",
+    "target_path": "/fictional/northstar-reports/CLAUDE.md",
+    "target_sha256": "ca33778bfedda98944ad7f877183af0128981181763208b19c01aff072ef314f",
+    "rule": "Lead release summaries with the shipped change and user impact before supporting detail.",
+    "why_it_matters": "Reviewers can understand the release value before reading supporting implementation detail.",
+    "section": "## PMM Instinct Review — Promoted Guidance",
+    "insertion": "- Lead release summaries with the shipped change and user impact before supporting detail.",
+    "resulting_text": "# Northstar Reports instructions\n\n- Use only approved fictional launch facts.\n\n## PMM Instinct Review — Promoted Guidance\n\n- Lead release summaries with the shipped change and user impact before supporting detail.\n",
+    "resulting_sha256": "1257bbef10aeffdd0734b1504f70fc4dac86de99974a8595b058ef6ddcf170f7",
+    "duplicate": false,
+    "previewed_at": "2026-09-10T16:35:00+00:00"
+  },
+  "receipt_digest": "0b7a0bf8541354eb18d8dbc646244dc8e41fe9244ad14581c41a760cafbd1720"
+}

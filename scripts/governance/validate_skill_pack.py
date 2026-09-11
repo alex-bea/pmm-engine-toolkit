@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import csv
 import json
 import re
@@ -64,12 +65,18 @@ REQUIRED_SHARED = {
     "requirements-build.txt",
     "requirements.lock",
     "scripts/governance/configure_github_security.py",
+    "docs/releases/PMM-INSTINCT-REVIEW-PLUGIN-0.3.0-DRAFT.md",
+    "docs/legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md",
+    "docs/legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md",
+    "docs/security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-10.md",
+    "docs/security/gitleaks-tracked-tree-pmm-instinct-review-2026-09-10.json",
 }
 AUDIT_REPORTS = {
     "docs/security/gitleaks-history-2026-08-18.json",
     "docs/security/gitleaks-tracked-tree-2026-08-18.json",
     "docs/security/gitleaks-all-refs-2026-08-25.json",
     "docs/security/gitleaks-tracked-tree-2026-08-25.json",
+    "docs/security/gitleaks-tracked-tree-pmm-instinct-review-2026-09-10.json",
 }
 IP_INVENTORY = "docs/legal/IP-INVENTORY.csv"
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
@@ -464,11 +471,13 @@ def main() -> int:
     validate_governance_plugin(errors)
 
     manifest_path = PLUGIN / ".codex-plugin" / "plugin.json"
+    claude_manifest_path = PLUGIN / ".claude-plugin" / "plugin.json"
     hooks_path = PLUGIN / "hooks" / "hooks.json"
+    claude_hooks_path = PLUGIN / "hooks" / "claude-hooks.json"
     plugin_skill = PLUGIN / "skills" / PLUGIN_NAME
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.2.0":
+        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.3.0":
             errors.append("instinct-review plugin manifest name/version mismatch")
         if manifest.get("skills") != "./skills/":
             errors.append("instinct-review plugin must declare bundled skills")
@@ -498,6 +507,52 @@ def main() -> int:
         errors.append(f"invalid instinct-review plugin hooks: {exc}")
 
     try:
+        claude_manifest = json.loads(claude_manifest_path.read_text(encoding="utf-8"))
+        if claude_manifest.get("name") != PLUGIN_NAME or claude_manifest.get("version") != "0.3.0":
+            errors.append("instinct-review Claude manifest name/version mismatch")
+        if claude_manifest.get("skills") != ["./skills/pmm-instinct-review"]:
+            errors.append("instinct-review Claude manifest must declare the nested public skill")
+        if claude_manifest.get("hooks") != "./hooks/claude-hooks.json":
+            errors.append("instinct-review Claude manifest must declare its separate hook file")
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"invalid instinct-review Claude manifest: {exc}")
+
+    try:
+        claude_hooks = json.loads(claude_hooks_path.read_text(encoding="utf-8")).get("hooks", {})
+        if set(claude_hooks) != {"SessionStart", "SessionEnd"}:
+            errors.append("instinct-review Claude hooks must declare SessionStart and SessionEnd")
+        claude_handlers = [
+            hook
+            for groups in claude_hooks.values()
+            for group in groups
+            for hook in group.get("hooks", [])
+        ]
+        claude_commands = [json.dumps(handler, sort_keys=True) for handler in claude_handlers]
+        if not claude_handlers or any("${CLAUDE_PLUGIN_ROOT}" not in command for command in claude_commands):
+            errors.append("instinct-review Claude hooks must resolve through ${CLAUDE_PLUGIN_ROOT}")
+        if any("${PLUGIN_ROOT}" in command for command in claude_commands):
+            errors.append("instinct-review Claude hooks must not use the Codex plugin-root variable")
+        if any("claude_instinct_hook.py" not in command for command in claude_commands):
+            errors.append("instinct-review Claude hooks must call the bundle-local lifecycle handler")
+        expected_events = {"SessionStart": "session-start", "SessionEnd": "session-end"}
+        for event, action in expected_events.items():
+            event_handlers = [
+                hook
+                for group in claude_hooks.get(event, [])
+                for hook in group.get("hooks", [])
+            ]
+            expected_args = [
+                "${CLAUDE_PLUGIN_ROOT}/scripts/claude_instinct_hook.py",
+                action,
+            ]
+            if len(event_handlers) != 1 or event_handlers[0].get("command") != "python3":
+                errors.append(f"instinct-review Claude {event} must declare one Python handler")
+            elif event_handlers[0].get("args") != expected_args:
+                errors.append(f"instinct-review Claude {event} handler arguments mismatch")
+    except (OSError, json.JSONDecodeError, AttributeError, TypeError) as exc:
+        errors.append(f"invalid instinct-review Claude hooks: {exc}")
+
+    try:
         meta = frontmatter(plugin_skill / "SKILL.md")
         if set(meta["_keys"]) != {"name", "description"} or meta.get("name") != PLUGIN_NAME:
             errors.append("bundled instinct-review skill frontmatter mismatch")
@@ -506,6 +561,7 @@ def main() -> int:
     instinct_required = (
         "agents/openai.yaml",
         "references/RUN-workflow.md",
+        "references/RUN-claude-setup.md",
         "references/DOC-product-requirements.md",
         "references/DOC-implementation-blueprint.md",
         "references/DOC-submission-test-cases.md",
@@ -524,6 +580,21 @@ def main() -> int:
     for rel in instinct_required:
         if not (plugin_skill / rel).is_file():
             errors.append(f"bundled instinct-review skill missing {rel}")
+    claude_root_required = (
+        "assets/claude-config-template.json",
+        "assets/claude-extractor-prompt.md",
+        "assets/claude-extractor-schema.json",
+        "scripts/pmm_instinct_claude.py",
+        "scripts/claude_instinct_capture.py",
+        "scripts/claude_instinct_hook.py",
+        "scripts/claude_instinct_worker.py",
+        "scripts/claude_instinct_review.py",
+        "scripts/claude_instinct_promote.py",
+        "scripts/install_claude_instinct_review.py",
+    )
+    for rel in claude_root_required:
+        if not (PLUGIN / rel).is_file():
+            errors.append(f"instinct-review Claude bundle missing {rel}")
     fictional_root = plugin_skill / "examples" / "fictional-northstar-reports"
     expected_fictional = {
         "README.md", "config.json", "normalized.jsonl", "audit.md", "queue.json",
@@ -542,6 +613,25 @@ def main() -> int:
             f"missing={sorted(expected_fictional-actual_fictional)} "
             f"extra={sorted(actual_fictional-expected_fictional)}"
         )
+    claude_fictional_root = fictional_root / "claude"
+    expected_claude_fictional = {
+        "README.md", "config.json", "evidence.json", "audit.md", "queue.json",
+        "suggestions.md", "installation-receipt.json", "review-decisions.json",
+        "instinct.md", "promotion-preview.json", "promotion-receipt.json",
+        "promotion-outcome.json", "governed-changeset.patch", "CLAUDE-before.md",
+        "CLAUDE-after.md", "status.json",
+    }
+    actual_claude_fictional = (
+        {path.name for path in claude_fictional_root.iterdir() if path.is_file()}
+        if claude_fictional_root.is_dir()
+        else set()
+    )
+    if actual_claude_fictional != expected_claude_fictional:
+        errors.append(
+            "instinct-review fictional Claude lifecycle mismatch: "
+            f"missing={sorted(expected_claude_fictional-actual_claude_fictional)} "
+            f"extra={sorted(actual_claude_fictional-expected_claude_fictional)}"
+        )
     for rel in (
         "assets/config-template.json",
         "assets/extractor-schema.json",
@@ -556,8 +646,23 @@ def main() -> int:
             json.loads((plugin_skill / rel).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             errors.append(f"instinct-review invalid JSON in {rel}: {exc}")
+    for rel in ("assets/claude-config-template.json", "assets/claude-extractor-schema.json"):
+        try:
+            json.loads((PLUGIN / rel).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"instinct-review invalid JSON in {rel}: {exc}")
+    for name in (
+        "config.json", "evidence.json", "queue.json", "installation-receipt.json",
+        "review-decisions.json", "promotion-preview.json", "promotion-receipt.json",
+        "promotion-outcome.json", "status.json",
+    ):
+        try:
+            json.loads((claude_fictional_root / name).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"instinct-review invalid JSON in fictional Claude {name}: {exc}")
     governed_instinct_docs = {
         "references/RUN-workflow.md": ("RUN", True),
+        "references/RUN-claude-setup.md": ("RUN", True),
         "references/DOC-product-requirements.md": ("DOC", False),
         "references/DOC-implementation-blueprint.md": ("DOC", False),
         "references/DOC-submission-test-cases.md": ("DOC", False),
@@ -569,14 +674,27 @@ def main() -> int:
                 errors.append(f"instinct-review {rel}: doc_type must be {doc_type}")
             if metadata.get("normative") is not normative:
                 errors.append(f"instinct-review {rel}: normative mismatch")
-            if metadata.get("status") != "Draft" or metadata.get("version") != "0.2.0":
-                errors.append(f"instinct-review {rel}: status/version must be Draft/0.2.0")
+            if metadata.get("status") != "Draft" or metadata.get("version") != "0.3.0":
+                errors.append(f"instinct-review {rel}: status/version must be Draft/0.3.0")
         except (OSError, ValueError) as exc:
             errors.append(f"instinct-review governed document {rel}: {exc}")
     plugin_python = "\n".join(path.read_text(encoding="utf-8") for path in plugin_skill.rglob("*.py"))
     for forbidden in ("import yaml", "from yaml", "capability-registry", ".venv", ".claude", "/Users/"):
         if forbidden in plugin_python:
             errors.append(f"instinct-review runtime contains forbidden dependency/path: {forbidden}")
+    claude_python_paths = sorted((PLUGIN / "scripts").glob("*.py"))
+    claude_python = "\n".join(path.read_text(encoding="utf-8") for path in claude_python_paths)
+    for forbidden in (
+        "import yaml", "from yaml", "capability-registry", ".venv", "/Users/",
+        "pmm engine", "scripts/utilities", "global/skills",
+    ):
+        if forbidden in claude_python:
+            errors.append(f"instinct-review Claude runtime contains forbidden dependency/path: {forbidden}")
+    for path in claude_python_paths:
+        try:
+            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except (OSError, SyntaxError) as exc:
+            errors.append(f"instinct-review invalid Claude Python in {path.name}: {exc}")
 
     for path in ROOT.rglob("*"):
         if (not path.is_file() or ".git" in path.parts or ".venv" in path.parts
