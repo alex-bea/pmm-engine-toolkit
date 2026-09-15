@@ -1,7 +1,7 @@
 {
   "name": "pmm-instinct-review",
-  "version": "0.3.0",
-  "description": "Capture eligible Codex or Claude sessions, extract durable candidates in the background, and promote only human-approved guidance.",
+  "version": "0.3.1",
+  "description": "Capture eligible Codex or Claude sessions, extract durable candidates with an explicit configured model, and promote only human-approved guidance to exact validated targets.",
   "author": {
     "name": "Alexander Bea",
     "url": "https://github.com/alex-bea"
@@ -14,7 +14,7 @@
   "interface": {
     "displayName": "PMM Instinct Review",
     "shortDescription": "Human-gated session learning for Codex and Claude",
-    "longDescription": "Capture eligible Codex sessions or use the self-contained native Claude runtime for disabled-by-default hooks, detached extraction, and receipt-bound promotion. No candidate or promotion is approved automatically.",
+    "longDescription": "Capture eligible Codex sessions only after an exact extractor model is configured, resolve adopter-owned RUN and REF routes without guessing, or use the unchanged self-contained native Claude runtime. No candidate or promotion is approved automatically.",
     "developerName": "Alexander Bea",
     "category": "Productivity",
     "capabilities": ["Read", "Write"],
@@ -23,7 +23,9 @@
     "termsOfServiceURL": "https://github.com/alex-bea/pmm-engine-toolkit/blob/main/LICENSE",
     "defaultPrompt": [
       "Use $pmm-instinct-review to show continuous learning status.",
+      "Use $pmm-instinct-review to enable Codex capture with the exact extractor model I choose.",
       "Use $pmm-instinct-review to review pending Codex suggestions.",
+      "Use $pmm-instinct-review to show validated RUN or REF promotion targets without choosing for me.",
       "Use $pmm-instinct-review to show native Claude capture and extraction status.",
       "Use $pmm-instinct-review to review an explicit candidate bundle in portable mode.",
       "Use $pmm-instinct-review to preview promotion candidates."

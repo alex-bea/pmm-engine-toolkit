@@ -5,7 +5,7 @@ requires:
   - DOC-product-requirements.md
   - DOC-implementation-blueprint.md
 status: Draft
-version: "0.3.0"
+version: "0.3.1"
 owner: toolkit-maintainers
 consumers:
   - Claude Code operators
@@ -15,7 +15,7 @@ consumers:
 change_control: Pull request review
 ---
 
-# PMM Instinct Review workflow (`0.3.0` draft)
+# PMM Instinct Review workflow (`0.3.1` draft)
 
 This is the binding cross-runtime operating procedure. For installation or adoption on a
 Claude Code machine, stop here and follow `RUN-claude-setup.md` first.
@@ -69,6 +69,9 @@ Read-only status and priority listing must not create, migrate, or rewrite state
 exact runtime, state root, capture support/state, queue/backlog/promotion counts, model and
 executable availability, and any failed prerequisite.
 
+For Codex, report the exact persisted `extractor_model` or `not configured` and the preflight
+`model_policy` result. Do not use current-session metadata to fill a missing configured model.
+
 ## 3. Enable or disable native capture
 
 Installation is not consent. Before enabling either native runtime, explain what bounded
@@ -92,8 +95,15 @@ For Codex:
 
 ```bash
 python3 <skill-dir>/scripts/instinct_review.py \
-  on --acknowledge-local-chat-storage
+  on --acknowledge-local-chat-storage --model <exact-model>
 ```
+
+First successful Codex enablement requires a non-empty `--model` unless a non-empty exact
+model is already persisted. Normalize only surrounding whitespace, persist the remaining
+string before setting `enabled: true`, and do not supply a Codex default. A later `on
+--model <exact-model>` may repair a legacy enabled/null-model store after the privacy boundary
+is reviewed again. That repair first forces `enabled: false`; if executable/schema/model
+preflight fails, the selected model remains persisted for retry but capture stays disabled.
 
 Disable without deleting state:
 
@@ -112,6 +122,12 @@ Capture only when the selected runtime is enabled and acknowledged, the hook ide
 existing transcript and main session, the post-normalization transcript has at least five user
 messages, and the same digest-keyed job does not already exist. Exclude all subagents,
 sidechains, extractors, and workers.
+
+Codex has an earlier prerequisite: a non-empty persisted `extractor_model`. Resolve it from
+config before normalization. SessionEnd/native-history model fields are metadata only and may
+not supply or override it. If a legacy store is enabled with a null model, return `status:
+skipped` and `reason: unconfigured_model` without writing normalized evidence, an audit, or a
+queue job. Preflight must continue to report `model_policy: false` until repaired.
 
 Normalization must:
 
@@ -132,15 +148,19 @@ remain separate.
 
 ## 5. Hook and background-worker behavior
 
-`SessionEnd` may check consent and eligibility, atomically spool native session metadata,
-launch a fully detached worker, and return. It may not scan the transcript or invoke a model.
-The worker streams normalization/redaction before it writes audit/evidence/queue state.
+For native Claude, `SessionEnd` may check consent and eligibility, atomically spool native
+session metadata, launch a fully detached worker, and return. It may not scan the transcript or
+invoke a model. The Claude worker streams normalization/redaction before it writes
+audit/evidence/queue state. Claude `SessionStart` performs fixed state-layout validation,
+force-launches that worker, and may show one bounded queue/review brief from the worker's last
+validated summary. It does not enumerate retained artifacts. The worker recovers stale jobs,
+reconciles already authorized review cleanup, runs pending extraction or approved promotion
+receipts, and refreshes the summary.
 
-`SessionStart` performs fixed state-layout validation, force-launches the detached worker, and
-may show one bounded queue/review brief from the worker's last validated summary. It does not
-enumerate retained artifacts. The detached worker recovers stale jobs, reconciles already
-authorized review cleanup, runs pending extraction or approved promotion receipts, and refreshes
-the summary. Neither component may approve, review, or publish.
+Codex `SessionEnd` performs its existing bounded transcript normalization/redaction and atomic
+evidence/audit/queue writes before launching a detached extraction worker. The model call does
+not run in the hook. Codex `SessionStart` starts queue recovery and may emit one bounded local
+backlog notice. No hook or worker may approve, review, or publish.
 
 Claude queue states are `queued`, `processing`, `retryable`, `completed`, and `failed`.
 Codex queue states remain `queued`, `running`, `succeeded`, and `failed`. A stale ownership
@@ -167,7 +187,9 @@ turn, JSON output and the bundled schema, no session persistence, non-interactiv
 mode, an empty built-in tool set, and explicit `--disallowedTools "mcp__*"`. It
 sends only the bounded redacted message array on standard input.
 
-Codex retains its existing ephemeral, read-only, exact-model, schema-bound extraction.
+Codex retains its existing ephemeral, read-only, exact-model, schema-bound extraction. Every
+new job records and invokes the exact model already persisted in config; capture and backfill
+must not fall back to native-session metadata.
 
 Both extractors accept at most five candidates of type `correction`, `confirmation`, `voice`,
 `scope`, or `workflow`. Each candidate contains one atomic rule, bounded redacted evidence,
@@ -179,7 +201,7 @@ the runtime queue.
 
 ## 7. Codex bounded calibration
 
-Claude `0.3.0` has no historical backfill. For Codex only, inventory no more than the five
+Claude has no historical backfill. For Codex only, inventory no more than the five
 newest eligible closed main sessions at least 30 minutes old:
 
 ```bash
@@ -188,7 +210,8 @@ python3 <skill-dir>/scripts/instinct_review.py \
 ```
 
 Show the inventory before a separately confirmed `--apply`. Never expand to full history
-without a new user decision.
+without a new user decision. Applied backfill requires the same persisted-model policy as hook
+capture; a native transcript's model field cannot satisfy it.
 
 ## 8. Build and present the review backlog
 
@@ -299,16 +322,75 @@ approved action makes repeat execution idempotent; malformed or unrelated outcom
 If an exact local target write survives an interruption before outcome persistence, the next
 run verifies the approved resulting digest and completes the outcome without rewriting.
 
-## 12. Existing Codex promotion
+## 12. Codex promotion with exact RUN/REF selection
 
-Codex retains its existing two-stage promotion path through the skill-local operator. First
-select `project`, `global`, `both`, `run`, `ref`, or `standard`; then show exact resolved paths,
+Codex retains its two-stage promotion path through the skill-local operator. First select
+`project`, `global`, `both`, `run`, `ref`, or `standard`; then show exact resolved paths,
 managed-section insertion, and duplicate state. Apply only with a matching second confirmation.
+Routing remains absent from the earlier candidate-to-instinct gate.
 
-A named skill may target its registered RUN; a voice rule may target only an explicitly mapped
-REF; a pattern spanning at least three skills may target an owner-selected STD. Repository and
-global behavior use their respective `AGENTS.md`. Never guess a missing route or write a
-plugin-cache skill.
+The adopter may configure route hints in the Codex store:
+
+```json
+{
+  "run_routes": {
+    "weekly-decision-report": "references/RUN-weekly-decision-report.md"
+  },
+  "voice_ref_routes": {
+    "weekly-decision-report": [
+      "references/REF-report-voice.md",
+      "references/REF-evidence-framing.md"
+    ]
+  }
+}
+```
+
+`run_routes` accepts one relative `references/RUN-*.md` path for a source-skill slug.
+`voice_ref_routes` accepts its existing single-string form or a non-empty ordered list of
+relative `references/REF-*.md` paths; duplicate list entries collapse in declared order. Empty
+maps are the package defaults. Do not copy a route from the example or infer one from private
+state.
+
+Treat every configured value as untrusted. Resolve it only inside independently discovered
+user-owned roots for the exact source skill. Require a relative path without `..`, the correct
+RUN/REF filename family, an existing writable regular file, and a canonical path outside the
+installed package and plugin cache. Reject absolute, traversal, cross-skill, wrong-family,
+missing, directory, non-writable, and symlink-escape values without widening discovery.
+
+For `run`, use the configured eligible RUN when present. With no configured route, dynamic
+discovery is allowed only when exactly one eligible RUN remains. For `ref`, use only the
+eligible paths from that voice skill's explicit string/list mapping; never guess an unmapped
+REF.
+
+If exactly one path remains, show the ordinary applicable preview. If several remain, show the
+non-mutating result:
+
+```text
+applicable: false
+reason: multiple-eligible-targets
+eligible_targets:
+  - /exact/validated/path/one.md
+  - /exact/validated/path/two.md
+```
+
+Do not persist an applicable preview, recommend the first path, or change any target. Ask the
+owner to choose one exact listed path, then rerun preview with the same destination and
+`--target`:
+
+```bash
+python3 <skill-dir>/scripts/instinct_review.py promote \
+  --instinct INSTINCT_ID --destination ref \
+  --target /exact/validated/path/one.md
+```
+
+The selector is not an arbitrary-file escape hatch. Recompute eligibility and require an exact
+match. A stale or ineligible selector fails closed. Show the resolved target and insertion;
+then, only after the owner confirms that exact preview, repeat the same arguments with `--apply
+--confirm`. Apply recomputes eligibility and requires the matching preview.
+
+A pattern spanning at least three skills may still target an owner-selected STD. Repository
+and global behavior still use their respective `AGENTS.md`. Codex does not receive Claude's
+immutable receipt/outcome or detached promotion transaction layer in `0.3.1`.
 
 ## 13. Rollback and error handling
 
@@ -323,3 +405,8 @@ Fail closed and name the exact unavailable stage when configuration, state root,
 model, bare-mode credentials, hook interface, schema, queue lock, review confirmation,
 destination, digest continuity, or write verification fails. Portable mode is available only
 when explicitly chosen; it is not a silent downgrade. A skipped stage is not success.
+
+For Codex specifically, distinguish `unconfigured_model`, `invalid-route-configuration`,
+`no-eligible-target`, `invalid-target-selection`, and `multiple-eligible-targets`. Print only the bounded remediation or exact
+eligible choices needed for the next human decision; do not create artifacts, an applicable
+preview, or a target write while the prerequisite is unresolved.

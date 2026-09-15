@@ -65,19 +65,27 @@ Use `scripts/instinct_review.py` in this skill directory for existing Codex or p
 operation:
 
 - Status or queue health: `status`.
-- Codex enable/disable: `on --acknowledge-local-chat-storage` or `off` only after the matching
-  user request.
+- Codex enable/disable: inspect status first, then use
+  `on --acknowledge-local-chat-storage --model <exact-model>` or `off` only after the matching
+  user request. First enablement requires a non-empty persisted model unless one is already
+  configured. A legacy enabled/null-model store skips new capture as `unconfigured_model`;
+  do not treat SessionEnd metadata as model authority.
 - Codex calibration: `backfill --limit 5 --older-than-minutes 30 --dry-run` before `--apply`.
 - Recovery: `retry`, `worker --drain`, or `cleanup`.
 - Review: `list-priority`; optional explicitly requested `snapshot-priority`; then confirmed
   `review --cluster ... --decision ... --confirm` or `resolve-zero --confirm`.
-- Codex promotion: first select and preview `project|global|both|run|ref|standard`; use
-  `--apply --confirm` only after the matching destination-level preview.
+- Codex promotion: first select and preview `project|global|both|run|ref|standard`. Exact RUN
+  routes come from adopter-owned `run_routes`; voice REF routes may be one string or an ordered
+  list. If preview returns `multiple-eligible-targets`, show those validated paths and rerun
+  with `--target <exact-eligible-path>`. Use `--apply --confirm` only after the matching
+  destination-level preview.
 - Portable mode: add `--adapter portable --state-root <explicit-path>`, explicitly import a
   candidate JSON file, then use only status, priority, review, zero-resolution, and cleanup.
 
 Keep routing out of candidate-to-instinct cards. An approved instinct may contain a
 conservative suggestion, but no destination is authorized until the later promotion gate.
+Never choose the first RUN or REF candidate implicitly, accept an arbitrary `--target`, or
+allow configured paths to escape the independently discovered writable user-owned skill root.
 
 Uninstalling either native integration preserves its adopter-owned state. State deletion is a
 separate, explicit local data-management action.

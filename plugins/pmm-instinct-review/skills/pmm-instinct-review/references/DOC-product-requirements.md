@@ -3,7 +3,7 @@ doc_type: DOC
 normative: false
 requires: []
 status: Draft
-version: "0.3.0"
+version: "0.3.1"
 owner: toolkit-maintainers
 consumers:
   - Claude Code adopters
@@ -12,14 +12,16 @@ consumers:
 change_control: Pull request review
 ---
 
-# PMM Instinct Review — Product requirements (`0.3.0` draft)
+# PMM Instinct Review — Product requirements (`0.3.1` draft)
 
 ## Purpose
 
 PMM Instinct Review is a local improvement loop that turns repeated, evidence-backed working
 preferences into durable instructions without allowing a model, hook, or schedule to approve
-its own guidance. `0.3.0` adds self-contained native Claude Code capture, extraction, review,
-and receipt execution to the existing Codex and portable package.
+its own guidance. `0.3.1` closes two bounded fidelity gaps between the public Codex adapter and
+the private PMM Engine Codex path: exact persisted model authority and exact generic RUN/REF
+routing. It preserves the self-contained native Claude Code and portable behavior shipped in
+`0.3.0`; it does not port the private Claude transaction architecture into Codex.
 
 The binding operator procedures are `RUN-workflow.md` and, for native Claude adoption,
 `RUN-claude-setup.md`. This document defines outcomes and guardrails; it does not authorize a
@@ -31,10 +33,13 @@ release or the promotion of any particular rule.
 |---|---|---|
 | Claude Code adopter | Install from a Toolkit checkout without a marketplace | Discoverable personal skill, two owned hooks, disabled default, complete local runtime |
 | Claude Code user | Learn from eligible completed sessions | Fast minimized capture and detached exact-model extraction in a Claude-owned store |
-| Codex user | Continue the existing native workflow | No change to Codex commands, state, hooks, or approval boundaries |
+| New Codex adopter | Enable only after extraction is configured | One non-empty exact model is persisted before capture becomes enabled |
+| Codex instruction owner | Route an approved instinct among several RUNs or REFs | Adopter-owned safe routes and an exact fail-closed second-gate target choice |
+| Existing Codex adopter | Upgrade without destructive migration | Existing explicit-model jobs continue; a legacy null-model store skips new capture with clear remediation |
 | Portable user | Review an explicit candidate bundle | Isolated review-only workflow without native-store access |
 | Reviewer | Decide whether a pattern is durable | Evidence card and an explicit `accept`, `reject`, `edit`, or exact `match` decision |
-| Instruction owner | Promote an eligible instinct | Exact destination preview, separate approval, immutable receipt, bounded execution |
+| Claude instruction owner | Promote an eligible instinct | Exact destination preview, separate approval, immutable receipt, bounded execution |
+| Codex instruction owner | Promote an eligible instinct | Exact eligible target preview, separate confirmed apply, and target revalidation |
 | Toolkit maintainer | Review a public candidate | Complete tests, fictional examples, provenance/privacy evidence, and an exact diff |
 
 ## Runtime ownership
@@ -56,8 +61,12 @@ must remain outside the installed package.
 3. Keep native lifecycle hooks fast; run all model work in a detached recoverable worker.
 4. Minimize and redact evidence before persistence or model processing.
 5. Preserve separate human gates for candidate review and exact promotion approval.
-6. Allow background execution only after an immutable digest-bound approval receipt exists.
-7. Preserve public `0.2.0` Codex and portable behavior without destructive migration.
+6. In native Claude mode, allow background promotion execution only after an immutable
+   digest-bound approval receipt exists.
+7. Require explicit persisted Codex model authority before new capture and backfill jobs.
+8. Represent adopter-owned exact RUN and ordered multi-REF routes without importing a private
+   registry or choosing an ambiguous target.
+9. Preserve `0.3.0` native Claude and portable behavior without destructive migration.
 
 ## Non-goals
 
@@ -69,6 +78,10 @@ must remain outside the installed package.
 - Requiring a marketplace, connector, database, vector store, or telemetry service.
 - Directly writing governed `RUN-*.md`, `REF-*.md`, or `STD-*.md` files from a worker.
 - Deleting native history or adopter-owned state during disable or uninstall.
+- Publishing a Codex model default, private capability registry, private route value, repository
+  alias, or current skill inventory.
+- Giving Codex Claude's digest-bound promotion receipts, detached promotion executor, or
+  governed patch transaction layer; those are outside private Codex parity.
 
 ## Functional requirements
 
@@ -143,9 +156,9 @@ Claude provides read-only priority listing, explicit zero-candidate resolution, 
 Normalized evidence is deleted only after every candidate in its audit has a human decision;
 audits, suggestions, decisions, instincts, and sanitized state remain.
 
-### PIRC-REQ-009 — Receipt-bound promotion automation
+### PIRC-REQ-009 — Native Claude receipt-bound promotion automation
 
-Promotion first produces an exact preview binding instinct, destination class, delivery mode,
+Native Claude promotion first produces an exact preview binding instinct, destination class, delivery mode,
 target path, current target digest, rule, rationale, insertion, full resulting text, and
 resulting digest. A separate confirmed command creates an immutable receipt. Only then may a
 worker apply the exact local result or create an exact governed review patch. Execution is
@@ -153,7 +166,7 @@ idempotent, reuses an existing approval for the same preview, binds outcomes to 
 target/result, recovers an exact write interrupted before outcome persistence, and refuses
 target drift or receipt tampering.
 
-### PIRC-REQ-010 — Narrow destinations and delivery modes
+### PIRC-REQ-010 — Narrow native Claude destinations and delivery modes
 
 - `global`: local-only to `~/.claude/CLAUDE.md`;
 - `project`: local-only to an exact `CLAUDE.md`;
@@ -184,11 +197,13 @@ minimized evidence, queue, suggestion, decision, instinct, promotion preview/rec
 governed patch behavior, and before/after Claude instructions. Every value is fictional;
 network values use `.invalid`, and linked digests are internally consistent.
 
-### PIRC-REQ-014 — `0.2.0` compatibility
+### PIRC-REQ-014 — `0.3.0` compatibility
 
-Existing Codex and portable commands, hooks, state contracts, examples, and tests remain valid.
-The Claude runtime is additive, standard-library only, and isolated. Status/list operations do
-not destructively migrate or rewrite legacy state.
+Existing Codex commands, hooks, queue and review records, portable behavior, and native Claude
+runtime remain valid. Existing string-valued `voice_ref_routes` continue to work. Queue jobs
+that already bind a non-empty exact model may drain without a config rewrite. Status/list
+operations do not destructively migrate or rewrite legacy state, and no adapter reads another
+adapter's store.
 
 ### PIRC-REQ-015 — Public privacy, provenance, and security
 
@@ -203,16 +218,51 @@ Only approved manifest paths may change. Focused and complete tests and reposito
 must pass. Release evidence reports checks actually run. Background workers cannot approve,
 merge, publish, or bypass the final pull-request review.
 
+### PIRC-REQ-017 — Persisted Codex model authority
+
+The first successful Codex `on` operation requires a non-empty `--model` unless a non-empty
+model is already persisted. The runtime trims surrounding whitespace, rejects an empty value,
+persists the exact chosen string before enabling capture, and exposes missing configuration as
+`model_policy: false` in preflight. New hook and backfill jobs use only the persisted model;
+SessionEnd and native-history model metadata are never fallback authority. A legacy
+enabled/null-model capture returns `skipped` with reason `unconfigured_model` before creating
+normalized evidence, an audit, or a queue record. Repair forces that legacy store disabled
+until preflight succeeds. The Codex adapter contains no model default.
+
+### PIRC-REQ-018 — Adopter-owned exact RUN and multi-REF routes
+
+Codex config provides empty `run_routes` and `voice_ref_routes` maps. A RUN entry maps one
+source-skill slug to one relative `references/RUN-*.md` path. A voice entry accepts either the
+legacy string form or a non-empty ordered list of relative `references/REF-*.md` paths, with
+duplicate entries removed while preserving first occurrence. Live values remain adopter-owned;
+the package exports no private registry or route value.
+
+Every route is untrusted input. It must be relative, contain no parent traversal, use the
+required filename family, resolve to an existing writable regular file within an independently
+discovered user-owned root for that exact source skill, and remain outside installed-package
+and plugin-cache paths, including through symlinks. Invalid entries are reported and excluded
+without widening discovery.
+
+### PIRC-REQ-019 — Fail-closed exact Codex target selection
+
+One validated RUN or REF may produce an applicable preview. Several validated paths return
+`applicable: false`, `reason: multiple-eligible-targets`, and exact absolute
+`eligible_targets`; the runtime persists no applicable preview and never chooses the first
+path. The owner must supply `promote --target` exactly matching the recomputed eligible set.
+Stale, arbitrary, cross-skill, or newly invalid targets fail closed. When `run_routes` has no
+entry, dynamic RUN discovery remains available only when unambiguous. Apply recomputes the
+route and retains the existing separate preview/confirmation gate.
+
 ## Approval gates
 
 | Gate | Human decision | Pass condition |
 |---|---|---|
 | G0 — Package | Is this exact candidate ready for review? | Complete package, Draft evidence, exact diff, tests pass |
 | G1 — Local trust | May hooks be installed and trusted? | Skill and both hook commands inspected; unrelated settings preserved |
-| G2 — Privacy | May future sessions be captured? | Exact acknowledgement plus supported bare-mode credentials |
+| G2 — Privacy | May future sessions be captured? | Exact acknowledgement; Codex has a persisted model; Claude has supported bare-mode credentials |
 | G3 — Evidence/extraction | Is the result safe to review? | Eligible minimized evidence; exact model; schema-valid zero-to-five output |
 | G4 — Instinct | Is this cluster a durable rule? | User explicitly accepts, rejects, edits, or matches; no routing at this gate |
-| G5 — Promotion | May this exact destination/result be executed? | Exact preview digest receives a separate confirmation; target remains unchanged |
+| G5 — Promotion | May this exact destination/result be executed? | Ambiguity is resolved by an exact eligible target and the preview receives separate confirmation; Claude verifies target-content continuity, while Codex recomputes eligibility and requires the matching selected-path preview |
 | G6 — Governed delivery/release | May a patch or package advance? | Normal repository and pull-request review; receipt never substitutes for it |
 
 ## Reliability, privacy, and rollback
@@ -230,12 +280,15 @@ Claude CLI flags and hook schemas are external interfaces. Unsupported hosts rem
 and report the exact missing capability. A Claude subscription login alone does not satisfy
 the bare-mode extractor authentication prerequisite. Portable mode is an explicit alternative,
 not a silent fallback for failed native setup. A missing native smoke check blocks a readiness
-claim but does not affect the existing Codex/portable workflow.
+claim but does not affect the existing Codex/portable workflow. A legacy Codex store with no
+persisted model keeps its state but skips new capture as `unconfigured_model`; an ambiguous
+RUN/REF route returns exact eligible choices without a preview or write.
 
 ## Acceptance summary
 
 The public submission must prove package closure; standalone install/rollback; consent and
 isolation; capture privacy and hook timing; exact background extraction; queue recovery;
-human review and retention; receipt-bound local and governed delivery; fictional digest
-integrity; Codex/portable regression; public safety; exact diff; and a stop before merge.
+human review and retention; receipt-bound local and governed delivery; persisted-model-only
+new Codex jobs; safe exact RUN and multi-REF routing; fail-closed target choice; fictional
+digest integrity; Codex/portable regression; public safety; exact diff; and a stop before merge.
 Detailed cases are in `DOC-submission-test-cases.md`.

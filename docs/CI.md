@@ -21,18 +21,28 @@ scheduled restrictions, stale-digest denial, external-verifier failures, and pub
 isolation. Document audits remain opt-in and advisory; no document-specific workflow is
 installed into adopting repositories.
 
-For PMM Instinct Review `0.3.0`, governance separately validates the Codex and Claude
+For PMM Instinct Review `0.3.1`, governance separately validates the Codex and Claude
 manifests, runtime-specific hook variables, bundle-root Claude scripts and extractor assets,
 the detailed Claude setup runbook, and the complete fictional Claude lifecycle. Focused tests
-cover standalone installation without a marketplace, disabled-by-default capture, evidence
+cover Codex persisted-model enablement, legacy null-model no-artifact skips, hook/backfill model
+binding, safe RUN/REF route parsing and confinement, fail-closed target choice, standalone
+Claude installation without a marketplace, disabled-by-default capture, evidence
 minimization and redaction, bounded extraction and retries, explicit review decisions,
 digest-bound promotion receipts, target-drift rejection, governed patch delivery, background
-worker isolation, uninstall scope, and the unchanged Codex/portable regression suite.
+worker isolation, uninstall scope, and complete Claude/Codex/portable regressions.
 
-The real Claude lifecycle smoke test is environment-dependent and is not replaced by
-fictional fixtures or mocked process tests. Release evidence must record it as not run when a
-compatible `claude` executable is unavailable; an unavailable check cannot be reported as a
-pass.
+The `0.3.1` claim is parity with the private PMM Engine Codex model/routing outcomes. CI must
+not describe Codex as having Claude's immutable receipt-bound promotion transaction layer.
+Candidate-specific local results are recorded in the Draft release evidence from commands
+actually run. On PR #17, implementation commit `90d5177` passed CodeQL, dependency review,
+governance, and tests on Python 3.10 through 3.14. Any later candidate commit must run the
+hosted checks again.
+
+The real Claude and Codex lifecycle smoke tests are environment-dependent and are not replaced
+by fictional fixtures or mocked process tests. Release evidence must record the corresponding
+case as `not run` when a compatible authenticated CLI or isolated lifecycle environment is
+unavailable; an unavailable check cannot be reported as a pass. The bounded procedures and
+pass criteria are PIRC-AT-008 and PIRC-AT-008B in the submission test cases.
 
 ## Security properties
 

@@ -1,7 +1,7 @@
 {
   "name": "pmm-instinct-review",
   "displayName": "PMM Instinct Review",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Self-contained, human-gated session learning with native Claude capture, background extraction, and receipt-bound promotion.",
   "author": {
     "name": "Alexander Bea",

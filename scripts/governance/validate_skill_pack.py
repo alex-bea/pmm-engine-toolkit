@@ -70,6 +70,11 @@ REQUIRED_SHARED = {
     "docs/legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.3.0-2026-09-10.md",
     "docs/security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-10.md",
     "docs/security/gitleaks-tracked-tree-pmm-instinct-review-2026-09-10.json",
+    "docs/releases/PMM-INSTINCT-REVIEW-PLUGIN-0.3.1-DRAFT.md",
+    "docs/legal/IP-PRIVACY-REVIEW-PMM-INSTINCT-REVIEW-0.3.1-2026-09-11.md",
+    "docs/legal/IP-RIGHTS-REVIEW-PMM-INSTINCT-REVIEW-0.3.1-2026-09-11.md",
+    "docs/security/SECRET-AUDIT-PMM-INSTINCT-REVIEW-2026-09-11.md",
+    "docs/security/gitleaks-tracked-tree-pmm-instinct-review-2026-09-11.json",
 }
 AUDIT_REPORTS = {
     "docs/security/gitleaks-history-2026-08-18.json",
@@ -77,6 +82,7 @@ AUDIT_REPORTS = {
     "docs/security/gitleaks-all-refs-2026-08-25.json",
     "docs/security/gitleaks-tracked-tree-2026-08-25.json",
     "docs/security/gitleaks-tracked-tree-pmm-instinct-review-2026-09-10.json",
+    "docs/security/gitleaks-tracked-tree-pmm-instinct-review-2026-09-11.json",
 }
 IP_INVENTORY = "docs/legal/IP-INVENTORY.csv"
 PATH_RE = re.compile(r"`((?:references|assets|scripts|examples|docs)/[^`\s]+)")
@@ -477,7 +483,7 @@ def main() -> int:
     plugin_skill = PLUGIN / "skills" / PLUGIN_NAME
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.3.0":
+        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != "0.3.1":
             errors.append("instinct-review plugin manifest name/version mismatch")
         if manifest.get("skills") != "./skills/":
             errors.append("instinct-review plugin must declare bundled skills")
@@ -508,7 +514,7 @@ def main() -> int:
 
     try:
         claude_manifest = json.loads(claude_manifest_path.read_text(encoding="utf-8"))
-        if claude_manifest.get("name") != PLUGIN_NAME or claude_manifest.get("version") != "0.3.0":
+        if claude_manifest.get("name") != PLUGIN_NAME or claude_manifest.get("version") != "0.3.1":
             errors.append("instinct-review Claude manifest name/version mismatch")
         if claude_manifest.get("skills") != ["./skills/pmm-instinct-review"]:
             errors.append("instinct-review Claude manifest must declare the nested public skill")
@@ -646,6 +652,34 @@ def main() -> int:
             json.loads((plugin_skill / rel).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             errors.append(f"instinct-review invalid JSON in {rel}: {exc}")
+    try:
+        config_template = json.loads((plugin_skill / "assets/config-template.json").read_text(encoding="utf-8"))
+        if config_template.get("extractor_model") is not None:
+            errors.append("instinct-review public config must not declare a default extractor model")
+        if config_template.get("run_routes") != {} or config_template.get("voice_ref_routes") != {}:
+            errors.append("instinct-review public route defaults must be empty adopter-owned maps")
+        fictional_config = json.loads(
+            (fictional_root / "config.json").read_text(encoding="utf-8")
+        )
+        run_routes = fictional_config.get("run_routes")
+        voice_routes = fictional_config.get("voice_ref_routes")
+        if (
+            not isinstance(fictional_config.get("extractor_model"), str)
+            or not fictional_config["extractor_model"].strip()
+            or not isinstance(run_routes, dict)
+            or not run_routes
+            or not all(
+                isinstance(value, str)
+                and value.startswith("references/RUN-")
+                and value.endswith(".md")
+                for value in run_routes.values()
+            )
+            or not isinstance(voice_routes, dict)
+            or not any(isinstance(value, list) and len(value) > 1 for value in voice_routes.values())
+        ):
+            errors.append("instinct-review fictional config must show an explicit model, exact RUN, and multi-REF route")
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"instinct-review config contract is invalid: {exc}")
     for rel in ("assets/claude-config-template.json", "assets/claude-extractor-schema.json"):
         try:
             json.loads((PLUGIN / rel).read_text(encoding="utf-8"))
@@ -674,10 +708,33 @@ def main() -> int:
                 errors.append(f"instinct-review {rel}: doc_type must be {doc_type}")
             if metadata.get("normative") is not normative:
                 errors.append(f"instinct-review {rel}: normative mismatch")
-            if metadata.get("status") != "Draft" or metadata.get("version") != "0.3.0":
-                errors.append(f"instinct-review {rel}: status/version must be Draft/0.3.0")
+            if metadata.get("status") != "Draft" or metadata.get("version") != "0.3.1":
+                errors.append(f"instinct-review {rel}: status/version must be Draft/0.3.1")
         except (OSError, ValueError) as exc:
             errors.append(f"instinct-review governed document {rel}: {exc}")
+    contract_text = "\n".join(
+        (plugin_skill / rel).read_text(encoding="utf-8")
+        for rel in (
+            "SKILL.md",
+            "assets/state-contracts.md",
+            "assets/output-template.md",
+            "references/RUN-workflow.md",
+            "references/DOC-product-requirements.md",
+            "references/DOC-implementation-blueprint.md",
+            "references/DOC-submission-test-cases.md",
+        )
+    )
+    for required_contract in (
+        "run_routes",
+        "voice_ref_routes",
+        "multiple-eligible-targets",
+        "eligible_targets",
+        "unconfigured_model",
+        "model_policy: false",
+        "--target",
+    ):
+        if required_contract not in contract_text:
+            errors.append(f"instinct-review 0.3.1 contract missing {required_contract!r}")
     plugin_python = "\n".join(path.read_text(encoding="utf-8") for path in plugin_skill.rglob("*.py"))
     for forbidden in ("import yaml", "from yaml", "capability-registry", ".venv", ".claude", "/Users/"):
         if forbidden in plugin_python:

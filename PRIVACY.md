@@ -23,15 +23,30 @@ after success, ineligibility, its retry ceiling, or contract-invalid input has b
 a sanitized log. It excludes system and developer instructions, reasoning, tool calls and
 results, patches, world state, and compaction payloads.
 
-Extraction performs a second, ephemeral invocation of the configured native model with tools
-disabled and no session persistence requested. Codex extraction is processed by the applicable
-OpenAI service. Claude extraction uses the configured Anthropic model through the Anthropic
-API or a supported cloud provider such as Amazon Bedrock, Google Vertex AI, or Microsoft
-Foundry. Those providers may process the normalized input under the user's account agreement
-and settings. The Claude worker's isolated `--bare` invocation does not reuse an ordinary
-subscription login or keychain. The plugin has no telemetry and sends nothing to a hosted PMM
-service. Users must confirm employer policy and provider configuration before enabling this
-workflow on a work device.
+Codex additionally stores the adopter-selected exact extractor-model identifier and optional
+relative `run_routes` / `voice_ref_routes` values in its local config. These values are used as
+configuration, not transmitted as telemetry. New Codex capture and backfill jobs obtain model
+authority only from the persisted config; a model name present in session metadata cannot
+supply or override it. A legacy enabled store with no configured model skips capture before
+creating normalized evidence, an audit, or a queue record.
+
+Route values may reveal adopter-owned skill and document names to local users or processes that
+can read the state root. Resolution exposes only validated eligible absolute paths needed for
+an explicit human choice. Configuration cannot authorize absolute paths, parent traversal,
+cross-skill destinations, plugin/cache files, or symlink escapes. The runtime does not read or
+send target document contents merely to enumerate an ambiguous RUN/REF choice.
+
+Extraction performs a second, ephemeral invocation of the configured native model with no
+session persistence requested. Native Claude extraction disables built-in and MCP tools.
+Codex extraction runs in a read-only sandbox and its prompt prohibits tool use, but the Codex
+runtime does not claim that tools are technically unavailable. Codex extraction is processed
+by the applicable OpenAI service. Claude extraction uses the configured Anthropic model
+through the Anthropic API or a supported cloud provider such as Amazon Bedrock, Google Vertex
+AI, or Microsoft Foundry. Those providers may process the normalized input under the user's
+account agreement and settings. The Claude worker's isolated `--bare` invocation does not
+reuse an ordinary subscription login or keychain. The plugin has no telemetry and sends
+nothing to a hosted PMM service. Users must confirm employer policy and provider configuration
+before enabling this workflow on a work device.
 
 After every candidate cluster in an audit has a recorded human decision, or after separate
 confirmation resolves a zero-candidate audit, the runtime deletes only the normalized copy.

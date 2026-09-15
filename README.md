@@ -5,7 +5,7 @@ marketing artifacts, synthesizing signals, and maintaining repository hygiene:
 
 - **25 standalone agent skills** — the approved v1 set across planning, execution,
   intelligence, drafting, signal operations, and repository hygiene.
-- **PMM Instinct Review plugin (`0.3.0` draft)** — a self-contained, human-gated
+- **PMM Instinct Review plugin (`0.3.1` draft)** — a self-contained, human-gated
   improvement loop with native local capture and background extraction for Codex and
   Claude Code, plus explicit portable candidate review.
 - **Diffguard Lite** — a local Git-diff analyzer for Python and JavaScript complexity,
@@ -68,17 +68,21 @@ standards in `docs/`. Run `python3 scripts/governance/validate_skill_pack.py` to
 the selected inventory, required resources, local links, frontmatter, and public-safety
 guardrails.
 
-## PMM Instinct Review plugin (`0.3.0` draft)
+## PMM Instinct Review plugin (`0.3.1` draft)
 
-> **Draft / evaluation only.** Local automated validation and hosted pull-request checks have
-> passed, but the destination-machine native Claude Code lifecycle smoke test has not yet been
-> recorded. Do not treat `0.3.0` as a production-ready release.
+> **Draft / evaluation only.** The `0.3.1` local Codex model/routing checks and security scans
+> are complete, and the hosted checks passed on PR #17 for implementation commit `90d5177`.
+> The native Codex lifecycle smoke was not run, and project-owner Gate B review remains
+> pending. Do not treat `0.3.1` as a production-ready release. The completed `0.3.0` evidence
+> remains historical and does not approve this candidate.
 
 The plugin supports two independent native runtimes: the existing Codex plugin and a standalone
 Claude Code bundle. Fresh installation does not enable chat capture in either runtime. Before
 enabling capture, inspect the relevant hooks, confirm that local transcript-derived storage and
 a second model invocation are allowed on the machine, and explicitly acknowledge the privacy
 boundary through `$pmm-instinct-review` in Codex or `/pmm-instinct-review` in Claude Code.
+Codex also requires one non-empty adopter-selected extractor model to be persisted before
+capture becomes enabled; event metadata is not a model fallback.
 
 Install for Codex through the public marketplace:
 
@@ -86,6 +90,19 @@ Install for Codex through the public marketplace:
 codex plugin marketplace add alex-bea/pmm-engine-toolkit --ref main
 codex plugin add pmm-instinct-review@pmm-engine-toolkit
 ```
+
+After installation, inspect status and enable Codex capture only with an exact model (or reuse
+one already persisted in the user-owned store):
+
+```bash
+python3 plugins/pmm-instinct-review/skills/pmm-instinct-review/scripts/instinct_review.py status
+python3 plugins/pmm-instinct-review/skills/pmm-instinct-review/scripts/instinct_review.py \
+  on --acknowledge-local-chat-storage --model <exact-model>
+```
+
+Adopters may configure safe relative `run_routes` and string-or-list `voice_ref_routes` in
+their own Codex state. If several validated RUN or REF files remain, the preview returns exact
+`eligible_targets` and requires `promote --target`; it never chooses the first file.
 
 If `codex` is not on `PATH` on macOS, use either installed app binary:
 

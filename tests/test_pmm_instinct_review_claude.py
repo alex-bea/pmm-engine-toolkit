@@ -113,8 +113,8 @@ class PublicClaudeRuntimeTest(unittest.TestCase):
     def test_public_manifests_and_native_hook_contract(self):
         claude_manifest = json.loads((BUNDLE / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         codex_manifest = json.loads((BUNDLE / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
-        self.assertEqual(claude_manifest["version"], "0.3.0")
-        self.assertEqual(codex_manifest["version"], "0.3.0")
+        self.assertEqual(claude_manifest["version"], "0.3.1")
+        self.assertEqual(codex_manifest["version"], "0.3.1")
         self.assertEqual(claude_manifest["skills"], ["./skills/pmm-instinct-review"])
         self.assertEqual(claude_manifest["hooks"], "./hooks/claude-hooks.json")
         hook_contract = json.loads((BUNDLE / "hooks" / "claude-hooks.json").read_text(encoding="utf-8"))

@@ -107,7 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     enable = commands.add_parser("on", help="Enable capture after the privacy acknowledgment.")
     enable.add_argument("--acknowledge-local-chat-storage", action="store_true")
-    enable.add_argument("--model", help="Override the SessionEnd model for every extraction.")
+    enable.add_argument("--model", help="Persist the exact model used for every new extraction job.")
     enable.add_argument("--codex-binary", help="Persist an explicit Codex executable path.")
     commands.add_parser("off", help="Disable new capture while preserving state.")
 
@@ -146,6 +146,10 @@ def build_parser() -> argparse.ArgumentParser:
     promote.add_argument("--destination", choices=("project", "global", "both", "run", "ref", "standard", "skill", "edit", "no"))
     promote.add_argument("--project")
     promote.add_argument("--standard")
+    promote.add_argument(
+        "--target",
+        help="Exact canonical absolute RUN/REF path from an ambiguous eligible-target list.",
+    )
     promote.add_argument("--edited-rule")
     promote.add_argument("--edited-rationale")
     promote.add_argument("--apply", action="store_true")
@@ -189,9 +193,26 @@ def main() -> int:
             config = load_config(paths, create=True)
             if not config.get("privacy_acknowledged_at") and not args.acknowledge_local_chat_storage:
                 raise PermissionError("first enablement requires --acknowledge-local-chat-storage")
+            persisted_model = (
+                config["extractor_model"].strip()
+                if isinstance(config.get("extractor_model"), str)
+                else ""
+            )
             proposed = {}
             if args.model is not None:
-                proposed["extractor_model"] = args.model.strip() or None
+                model = args.model.strip()
+                if not model:
+                    raise ValueError("--model must be a non-empty exact model identifier")
+                proposed["extractor_model"] = model
+            else:
+                if not persisted_model:
+                    raise ValueError("enablement requires --model <model> when no model is already configured")
+                if persisted_model != config["extractor_model"]:
+                    proposed["extractor_model"] = persisted_model
+            if config.get("enabled") and not persisted_model:
+                # A legacy enabled/null-model store must not become capturable until the
+                # repaired model and executable both pass preflight.
+                proposed["enabled"] = False
             if args.codex_binary is not None:
                 proposed["codex_binary"] = args.codex_binary
             if proposed:
@@ -252,6 +273,7 @@ def main() -> int:
                 "destination": args.destination,
                 "project": args.project,
                 "standard": args.standard,
+                "target": args.target,
                 "edited_rule": args.edited_rule,
                 "edited_rationale": args.edited_rationale,
             }

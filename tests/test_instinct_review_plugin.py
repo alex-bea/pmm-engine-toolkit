@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import sys
@@ -15,6 +16,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from pmm_instinct import runtime
 from pmm_instinct.adapters import resolve_adapter
+import instinct_review as instinct_cli
 
 
 def write_transcript(
@@ -53,7 +55,7 @@ def write_transcript(
     path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
 
 
-def enabled_paths(root: Path, *, model=None):
+def enabled_paths(root: Path, *, model="gpt-adopter-test"):
     paths = runtime.resolve_paths(root)
     runtime.update_config(
         paths,
@@ -136,17 +138,67 @@ def write_candidate_audit(
     return audit
 
 
+def invoke_cli(*arguments: object) -> tuple[int, str, str]:
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    argv = [str(SCRIPTS / "instinct_review.py"), *(str(argument) for argument in arguments)]
+    with mock.patch.object(sys, "argv", argv), mock.patch.object(sys, "stdout", stdout), mock.patch.object(
+        sys, "stderr", stderr
+    ):
+        code = instinct_cli.main()
+    return code, stdout.getvalue(), stderr.getvalue()
+
+
+def write_skill(paths, slug: str, references: dict[str, str]) -> Path:
+    skill = paths.codex_home / "skills" / slug
+    (skill / "references").mkdir(parents=True)
+    (skill / "SKILL.md").write_text(
+        f"---\nname: {slug}\ndescription: Fictional test skill.\n---\n",
+        encoding="utf-8",
+    )
+    for relative, content in references.items():
+        destination = skill / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(content, encoding="utf-8")
+    return skill
+
+
+def accepted_instinct_id(
+    paths,
+    root: Path,
+    *,
+    source_skill: str,
+    candidate_type: str = "workflow",
+    rule: str = "Use the approved fictional workflow.",
+) -> str:
+    repository = root / "supporting-repository"
+    (repository / ".git").mkdir(parents=True, exist_ok=True)
+    for index in range(3):
+        write_candidate_audit(
+            paths,
+            session_id=f"{source_skill}-{candidate_type}-{index}",
+            day=f"2026-09-{index + 1:02d}",
+            candidate_type=candidate_type,
+            rule=rule,
+            source_skill=source_skill,
+            cwd=str(repository),
+        )
+    selected = runtime.clusters(paths)[0]
+    receipt = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
+    return Path(receipt["instinct_path"]).stem
+
+
 class PluginContractTests(unittest.TestCase):
     def test_manifest_and_marketplace_registration(self):
         manifest = json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
         marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["name"], "pmm-instinct-review")
-        self.assertEqual(manifest["version"], "0.3.0")
+        self.assertEqual(manifest["version"], "0.3.1")
         entries = [entry for entry in marketplace["plugins"] if entry["name"] == "pmm-instinct-review"]
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0]["source"]["path"], "./plugins/pmm-instinct-review")
         catalog = (ROOT / "docs" / "SKILL-CATALOG.md").read_text(encoding="utf-8")
-        self.assertIn("`pmm-instinct-review` (`0.3.0` draft)", catalog)
+        self.assertIn("`pmm-instinct-review` (`0.3.1` draft)", catalog)
         self.assertIn("native Codex or Claude Code hooks", catalog)
 
     def test_hooks_use_plugin_root_and_both_events(self):
@@ -375,6 +427,169 @@ class CaptureAndQueueTests(unittest.TestCase):
             config = runtime.load_config(runtime.resolve_paths(tmp))
         self.assertFalse(config["enabled"])
         self.assertIsNone(config["extractor_model"])
+        self.assertEqual(config["run_routes"], {})
+        self.assertEqual(config["voice_ref_routes"], {})
+
+    def test_first_enablement_requires_and_persists_one_trimmed_model_before_preflight(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            codex_home = root / "codex"
+            observed = {}
+
+            def inspect_preflight(paths, **_kwargs):
+                config = runtime.load_config(paths)
+                observed.update(model=config["extractor_model"], enabled=config["enabled"])
+                return {
+                    "ok": True,
+                    "checks": {"python": True, "codex": True, "extractor_schema": True, "model_policy": True},
+                    "codex_binary": sys.executable,
+                    "extractor_model": config["extractor_model"],
+                }
+
+            with mock.patch.object(instinct_cli, "preflight", side_effect=inspect_preflight):
+                code, stdout, stderr = invoke_cli(
+                    "--codex-home",
+                    codex_home,
+                    "on",
+                    "--acknowledge-local-chat-storage",
+                    "--model",
+                    "  gpt-adopter-selected  ",
+                    "--codex-binary",
+                    sys.executable,
+                )
+            config = runtime.load_config(runtime.resolve_paths(codex_home))
+
+        self.assertEqual((code, stderr), (0, ""))
+        self.assertIn('"enabled": true', stdout)
+        self.assertEqual(observed, {"model": "gpt-adopter-selected", "enabled": False})
+        self.assertTrue(config["enabled"])
+        self.assertEqual(config["extractor_model"], "gpt-adopter-selected")
+
+    def test_first_enablement_without_model_and_explicit_whitespace_model_fail_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            executable = root / "codex-bin"
+            executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            executable.chmod(0o700)
+            for suffix, model_arguments in (("missing", ()), ("blank", ("--model", "   "))):
+                with self.subTest(case=suffix):
+                    codex_home = root / suffix
+                    code, _stdout, stderr = invoke_cli(
+                        "--codex-home",
+                        codex_home,
+                        "on",
+                        "--acknowledge-local-chat-storage",
+                        "--codex-binary",
+                        executable,
+                        *model_arguments,
+                    )
+                    config = runtime.load_config(runtime.resolve_paths(codex_home))
+                    self.assertEqual(code, 1)
+                    self.assertIn("model", stderr.lower())
+                    self.assertFalse(config["enabled"])
+                    self.assertIsNone(config["extractor_model"])
+
+    def test_existing_persisted_model_can_be_reused_on_later_enablement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            executable = root / "codex-bin"
+            executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            executable.chmod(0o700)
+            codex_home = root / "codex"
+            paths = runtime.resolve_paths(codex_home)
+            runtime.update_config(
+                paths,
+                enabled=False,
+                privacy_acknowledged_at="2026-09-11T00:00:00+00:00",
+                extractor_model="gpt-persisted",
+                codex_binary=str(executable),
+            )
+            code, _stdout, stderr = invoke_cli("--codex-home", codex_home, "on")
+            config = runtime.load_config(paths)
+
+        self.assertEqual((code, stderr), (0, ""))
+        self.assertTrue(config["enabled"])
+        self.assertEqual(config["extractor_model"], "gpt-persisted")
+
+    def test_legacy_enabled_null_model_repair_stays_disabled_when_preflight_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            codex_home = Path(tmp) / "codex"
+            paths = runtime.resolve_paths(codex_home)
+            runtime.ensure_store(paths)
+            legacy = dict(runtime.DEFAULT_CONFIG)
+            legacy.update(
+                enabled=True,
+                privacy_acknowledged_at="2026-09-11T00:00:00+00:00",
+                extractor_model=None,
+            )
+            runtime.atomic_write_json(paths.config, legacy)
+
+            def failed_preflight(observed_paths, **_kwargs):
+                observed = runtime.load_config(observed_paths)
+                self.assertFalse(observed["enabled"])
+                self.assertEqual(observed["extractor_model"], "gpt-repaired")
+                return {
+                    "ok": False,
+                    "checks": {
+                        "python": True,
+                        "codex": False,
+                        "extractor_schema": True,
+                        "model_policy": True,
+                    },
+                    "codex_binary": None,
+                    "extractor_model": "gpt-repaired",
+                }
+
+            with mock.patch.object(instinct_cli, "preflight", side_effect=failed_preflight):
+                code, _stdout, stderr = invoke_cli(
+                    "--codex-home",
+                    codex_home,
+                    "on",
+                    "--model",
+                    "gpt-repaired",
+                )
+            config = runtime.load_config(paths)
+
+        self.assertEqual(code, 1)
+        self.assertIn("preflight failed", stderr)
+        self.assertFalse(config["enabled"])
+        self.assertEqual(config["extractor_model"], "gpt-repaired")
+
+    def test_null_model_preflight_and_status_fail_without_rewriting_legacy_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = runtime.resolve_paths(Path(tmp) / "codex")
+            runtime.ensure_store(paths)
+            legacy = dict(runtime.DEFAULT_CONFIG)
+            legacy.pop("run_routes")
+            legacy.update(
+                enabled=True,
+                privacy_acknowledged_at="2026-09-11T00:00:00+00:00",
+                extractor_model=None,
+            )
+            runtime.atomic_write_json(paths.config, legacy)
+            before = paths.config.read_bytes()
+            receipt = runtime.preflight(paths, codex_binary=sys.executable)
+            status = runtime.runtime_status(paths)
+            after = paths.config.read_bytes()
+
+        self.assertFalse(receipt["ok"])
+        self.assertFalse(receipt["checks"]["model_policy"])
+        self.assertFalse(status["preflight"]["ok"])
+        self.assertIn("on --model <model>", json.dumps(status))
+        self.assertEqual(after, before)
+
+    def test_preflight_supports_documented_python_310_floor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = enabled_paths(Path(tmp) / "codex", model="gpt-configured")
+            with mock.patch.object(runtime.sys, "version_info", (3, 10, 0)):
+                supported = runtime.preflight(paths, codex_binary=sys.executable)
+            with mock.patch.object(runtime.sys, "version_info", (3, 9, 18)):
+                unsupported = runtime.preflight(paths, codex_binary=sys.executable)
+
+        self.assertTrue(supported["checks"]["python"])
+        self.assertTrue(supported["ok"])
+        self.assertFalse(unsupported["checks"]["python"])
+        self.assertFalse(unsupported["ok"])
 
     def test_disabled_capture_creates_no_store(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -404,7 +619,7 @@ class CaptureAndQueueTests(unittest.TestCase):
             result = runtime.capture_session(paths, session_id="session-1", transcript_path=transcript)
         self.assertEqual(result["reason"], "not-main-thread")
 
-    def test_capture_is_idempotent_and_persists_session_model(self):
+    def test_capture_is_idempotent_and_uses_persisted_model_not_transcript_model(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             paths = enabled_paths(root / "codex")
@@ -415,7 +630,7 @@ class CaptureAndQueueTests(unittest.TestCase):
             queue = json.loads(Path(first["queue_path"]).read_text(encoding="utf-8"))
         self.assertEqual(first["status"], "queued")
         self.assertEqual(second["status"], "exists")
-        self.assertEqual(queue["extractor_model"], "gpt-session")
+        self.assertEqual(queue["extractor_model"], "gpt-adopter-test")
 
     def test_duplicate_session_end_repairs_a_partial_capture(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -430,26 +645,117 @@ class CaptureAndQueueTests(unittest.TestCase):
         self.assertEqual(repaired["reason"], "recovered-partial-capture")
         self.assertTrue(record["recovered"])
 
-    def test_configured_model_overrides_session_model(self):
+    def test_hook_job_uses_configured_model_over_event_and_transcript_models(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             paths = enabled_paths(root / "codex", model="gpt-configured")
             transcript = root / "session.jsonl"
-            write_transcript(transcript, model="gpt-session")
-            result = runtime.capture_session(paths, session_id="session-1", transcript_path=transcript)
-            queue = json.loads(Path(result["queue_path"]).read_text(encoding="utf-8"))
+            write_transcript(transcript, model="gpt-transcript")
+            payload = {
+                "session_id": "session-1",
+                "transcript_path": str(transcript),
+                "cwd": str(root),
+                "model": "gpt-event",
+            }
+            with mock.patch.object(instinct_cli, "_read_hook_payload", return_value=payload), mock.patch.object(
+                instinct_cli, "start_detached_worker"
+            ) as start_worker:
+                self.assertEqual(instinct_cli._session_end(paths), 0)
+            queue = runtime.read_queue(paths)[0][1]
         self.assertEqual(queue["extractor_model"], "gpt-configured")
+        start_worker.assert_called_once()
 
-    def test_missing_model_fails_without_fallback(self):
+    def test_legacy_enabled_null_model_skips_capture_without_writing_even_with_metadata_models(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            paths = enabled_paths(root / "codex")
+            paths = runtime.resolve_paths(root / "codex")
+            runtime.ensure_store(paths)
+            config = dict(runtime.DEFAULT_CONFIG)
+            config.update(
+                enabled=True,
+                privacy_acknowledged_at="2026-09-11T00:00:00+00:00",
+                extractor_model=None,
+            )
+            runtime.atomic_write_json(paths.config, config)
             transcript = root / "session.jsonl"
-            write_transcript(transcript, model="")
-            result = runtime.capture_session(paths, session_id="session-1", transcript_path=transcript)
-            record = json.loads(Path(result["queue_path"]).read_text(encoding="utf-8"))
-            with self.assertRaisesRegex(RuntimeError, "model unavailable"):
-                runtime.run_extractor_job(paths, record)
+            write_transcript(transcript, model="gpt-transcript")
+            before_config = paths.config.read_bytes()
+            before_transcript = transcript.read_bytes()
+            result = runtime.capture_session(
+                paths,
+                session_id="session-1",
+                transcript_path=transcript,
+                model="gpt-event",
+            )
+            session_files = list(paths.sessions.iterdir())
+            queue_files = list(paths.queue.iterdir())
+            after_config = paths.config.read_bytes()
+            after_transcript = transcript.read_bytes()
+
+        self.assertEqual(result["status"], "skipped")
+        self.assertEqual(result["reason"], "unconfigured_model")
+        self.assertEqual(result["session_id"], "session-1")
+        self.assertEqual(session_files, [])
+        self.assertEqual(queue_files, [])
+        self.assertEqual(after_config, before_config)
+        self.assertEqual(after_transcript, before_transcript)
+
+    def test_existing_explicit_model_queue_drains_after_config_becomes_legacy_null(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex", model="gpt-queued")
+            transcript = root / "session.jsonl"
+            write_transcript(transcript, model="gpt-transcript")
+            captured = runtime.capture_session(paths, session_id="session-1", transcript_path=transcript)
+            config = json.loads(paths.config.read_text(encoding="utf-8"))
+            config["extractor_model"] = None
+            runtime.atomic_write_json(paths.config, config)
+            commands = []
+
+            def runner(command, **_kwargs):
+                commands.append(command)
+                output = Path(command[command.index("--output-last-message") + 1])
+                output.write_text('{"candidates": []}\n', encoding="utf-8")
+                return type("Result", (), {"returncode": 0})()
+
+            receipt = runtime.drain_queue(paths, codex_binary=sys.executable, runner=runner)
+            record = json.loads(Path(captured["queue_path"]).read_text(encoding="utf-8"))
+
+        self.assertEqual(receipt["succeeded"], 1)
+        self.assertEqual(record["state"], "succeeded")
+        self.assertEqual(commands[0][commands[0].index("--model") + 1], "gpt-queued")
+
+    def test_malformed_queue_model_types_fail_closed_before_extractor_invocation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = enabled_paths(Path(tmp) / "codex", model="gpt-configured")
+            for malformed in (True, 42, ["gpt-not-a-string"], {"model": "gpt-not-a-string"}):
+                with self.subTest(malformed=malformed), self.assertRaisesRegex(
+                    RuntimeError, "model unavailable"
+                ):
+                    runtime.run_extractor_job(
+                        paths,
+                        {"extractor_model": malformed},
+                        runner=mock.Mock(side_effect=AssertionError("extractor must not run")),
+                    )
+
+    def test_legacy_empty_model_queue_fails_and_retry_does_not_claim_model_repair(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex", model="gpt-current")
+            transcript = root / "session.jsonl"
+            write_transcript(transcript)
+            captured = runtime.capture_session(paths, session_id="session-1", transcript_path=transcript)
+            queue_path = Path(captured["queue_path"])
+            record = json.loads(queue_path.read_text(encoding="utf-8"))
+            record["extractor_model"] = ""
+            runtime.atomic_write_json(queue_path, record)
+            receipt = runtime.drain_queue(paths, codex_binary=sys.executable)
+            self.assertEqual(runtime.retry_failed(paths, "session-1"), 0)
+            retried = json.loads(queue_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(receipt["failed"], 1)
+        self.assertEqual(retried["state"], "failed")
+        self.assertEqual(retried["extractor_model"], "")
 
     def test_explicit_codex_resolution_requires_executable(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1046,9 +1352,10 @@ class ReviewAndPromotionTests(unittest.TestCase):
             accepted = runtime.review_cluster(paths, selected.cluster_id, "accept", confirm=True)
             instinct_id = Path(accepted["instinct_path"]).stem
             selection = runtime.promotion_preview(paths, instinct_id)
-            with self.assertRaisesRegex(ValueError, "mapped voice REF"):
-                runtime.promotion_preview(paths, instinct_id, destination="ref")
+            unavailable = runtime.promotion_preview(paths, instinct_id, destination="ref")
         self.assertNotIn("ref", selection["available_destinations"])
+        self.assertFalse(unavailable["applicable"])
+        self.assertEqual(unavailable["reason"], "no-eligible-target")
 
     def test_standard_promotion_needs_three_source_skills_and_a_supporting_repository(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -1078,19 +1385,545 @@ class ReviewAndPromotionTests(unittest.TestCase):
         self.assertTrue(standard_contains_guidance)
 
 
-class BackfillTests(unittest.TestCase):
-    def test_backfill_dry_inventory_and_apply(self):
+class CodexParityRoutingTests(unittest.TestCase):
+    def test_legacy_config_gets_empty_run_routes_in_memory_without_status_rewrite(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = runtime.resolve_paths(Path(tmp) / "codex")
+            runtime.ensure_store(paths)
+            legacy = dict(runtime.DEFAULT_CONFIG)
+            legacy.pop("run_routes")
+            legacy["voice_ref_routes"] = {"voice-skill": "references/REF-voice.md"}
+            runtime.atomic_write_json(paths.config, legacy)
+            before = paths.config.read_bytes()
+            loaded = runtime.load_config(paths)
+            status = runtime.runtime_status(paths)
+            after = paths.config.read_bytes()
+
+        self.assertEqual(loaded["run_routes"], {})
+        self.assertEqual(loaded["voice_ref_routes"]["voice-skill"], "references/REF-voice.md")
+        self.assertEqual(status["extractor_model"], legacy["extractor_model"])
+        self.assertEqual(after, before)
+
+    def test_valid_route_shapes_deduplicate_voice_targets_preserving_order(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             paths = enabled_paths(root / "codex")
+            voice_skill = write_skill(
+                paths,
+                "voice-skill",
+                {
+                    "references/REF-first.md": "# First voice reference\n",
+                    "references/REF-second.md": "# Second voice reference\n",
+                },
+            )
+            configured = runtime.update_config(
+                paths,
+                run_routes={"workflow-skill": "references/RUN-active.md"},
+                voice_ref_routes={
+                    "voice-skill": [
+                        "references/REF-second.md",
+                        "references/REF-first.md",
+                        "references/REF-second.md",
+                    ]
+                },
+            )
+            reloaded = runtime.load_config(paths)
+            instinct_id = accepted_instinct_id(
+                paths,
+                root,
+                source_skill="voice-skill",
+                candidate_type="voice",
+                rule="Use the selected fictional voice reference.",
+            )
+            choice = runtime.promotion_preview(paths, instinct_id, destination="ref")
+
+        self.assertEqual(configured, reloaded)
+        self.assertEqual(
+            reloaded["voice_ref_routes"]["voice-skill"],
+            ["references/REF-second.md", "references/REF-first.md"],
+        )
+        self.assertFalse(choice["applicable"])
+        self.assertEqual(choice["reason"], "multiple-eligible-targets")
+        self.assertEqual(
+            choice["eligible_targets"],
+            [
+                str((voice_skill / "references" / "REF-second.md").resolve()),
+                str((voice_skill / "references" / "REF-first.md").resolve()),
+            ],
+        )
+
+    def test_explicit_route_updates_reject_bad_shapes_without_rewriting_config(self):
+        bad_updates = (
+            {"run_routes": []},
+            {"run_routes": {"workflow-skill": "/absolute/RUN-active.md"}},
+            {"run_routes": {"workflow-skill": "../references/RUN-active.md"}},
+            {"run_routes": {"workflow-skill": "references/nested/RUN-active.md"}},
+            {"run_routes": {"workflow-skill": "references/REF-wrong.md"}},
+            {"run_routes": {"workflow-skill": "references/RUN-\x00.md"}},
+            {"voice_ref_routes": []},
+            {"voice_ref_routes": {"voice-skill": []}},
+            {"voice_ref_routes": {"voice-skill": [""]}},
+            {"voice_ref_routes": {"voice-skill": "references/RUN-wrong.md"}},
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = enabled_paths(Path(tmp) / "codex")
+            before = paths.config.read_bytes()
+            for update in bad_updates:
+                with self.subTest(update=update), self.assertRaisesRegex(ValueError, "route"):
+                    runtime.update_config(paths, **update)
+                self.assertEqual(paths.config.read_bytes(), before)
+
+    def test_configured_run_route_selects_active_run_when_discovery_is_ambiguous(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(
+                paths,
+                "workflow-skill",
+                {
+                    "references/RUN-active.md": "# Active workflow\n",
+                    "references/RUN-archived.md": "# Archived workflow\n",
+                },
+            )
+            runtime.update_config(paths, run_routes={"workflow-skill": "references/RUN-active.md"})
+            instinct_id = accepted_instinct_id(paths, root, source_skill="workflow-skill")
+            preview = runtime.promotion_preview(paths, instinct_id, destination="run")
+
+        self.assertEqual(preview["decision"], "run")
+        self.assertEqual(preview["targets"], [{"path": str((skill / "references" / "RUN-active.md").resolve()), "duplicate": False}])
+
+    def test_unconfigured_unique_run_fallback_remains_available(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(paths, "workflow-skill", {"references/RUN-only.md": "# Only workflow\n"})
+            config = json.loads(paths.config.read_text(encoding="utf-8"))
+            config.pop("run_routes")
+            runtime.atomic_write_json(paths.config, config)
+            before = paths.config.read_bytes()
+            instinct_id = accepted_instinct_id(paths, root, source_skill="workflow-skill")
+            preview = runtime.promotion_preview(paths, instinct_id, destination="run")
+            after = paths.config.read_bytes()
+
+        self.assertEqual(Path(preview["targets"][0]["path"]), (skill / "references" / "RUN-only.md").resolve())
+        self.assertEqual(after, before)
+
+    def test_ambiguous_run_requires_exact_emitted_canonical_target_and_rechecks_at_apply(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(
+                paths,
+                "workflow-skill",
+                {
+                    "references/RUN-alpha.md": "# Alpha\n",
+                    "references/RUN-beta.md": "# Beta\n",
+                },
+            )
+            alpha = (skill / "references" / "RUN-alpha.md").resolve()
+            beta = (skill / "references" / "RUN-beta.md").resolve()
+            instinct_id = accepted_instinct_id(paths, root, source_skill="workflow-skill")
+            choice = runtime.promotion_preview(paths, instinct_id, destination="run")
+            preview_record = paths.state / f"promotion-preview-{runtime.safe_session_id(instinct_id)}.json"
+
+            self.assertFalse(choice["applicable"])
+            self.assertEqual(choice["reason"], "multiple-eligible-targets")
+            self.assertEqual(choice["eligible_targets"], [str(alpha), str(beta)])
+            self.assertEqual(choice["targets"], [])
+            self.assertFalse(preview_record.exists())
+
+            exact = runtime.promotion_preview(paths, instinct_id, destination="run", target=str(beta))
+            self.assertEqual(exact["targets"][0]["path"], str(beta))
+            self.assertTrue(preview_record.is_file())
+
+            aliases = [
+                "references/RUN-beta.md",
+                str(beta.parent / ".." / "references" / beta.name),
+            ]
+            alias = root / "RUN-beta-alias.md"
+            alias.symlink_to(beta)
+            aliases.append(str(alias))
+            for candidate in aliases:
+                with self.subTest(candidate=candidate):
+                    rejected = runtime.promotion_preview(paths, instinct_id, destination="run", target=candidate)
+                    self.assertFalse(rejected["applicable"])
+                    self.assertEqual(rejected["reason"], "invalid-target-selection")
+                    self.assertEqual(rejected["eligible_targets"], [str(alpha), str(beta)])
+
+            beta.unlink()
+            with self.assertRaisesRegex(ValueError, "invalid-target-selection"):
+                runtime.apply_promotion(
+                    paths,
+                    instinct_id,
+                    destination="run",
+                    target=str(beta),
+                    confirm=True,
+                )
+
+    def test_ordered_voice_ref_choices_deduplicate_and_accept_one_exact_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(
+                paths,
+                "voice-skill",
+                {
+                    "references/REF-a.md": "# Voice A\n",
+                    "references/REF-b.md": "# Voice B\n",
+                },
+            )
+            ref_a = (skill / "references" / "REF-a.md").resolve()
+            ref_b = (skill / "references" / "REF-b.md").resolve()
+            runtime.update_config(
+                paths,
+                voice_ref_routes={
+                    "voice-skill": [
+                        "references/REF-b.md",
+                        "references/REF-a.md",
+                        "references/REF-b.md",
+                    ]
+                },
+            )
+            instinct_id = accepted_instinct_id(
+                paths,
+                root,
+                source_skill="voice-skill",
+                candidate_type="voice",
+                rule="Use the selected fictional framing.",
+            )
+            choice = runtime.promotion_preview(paths, instinct_id, destination="ref")
+            selected = runtime.promotion_preview(paths, instinct_id, destination="ref", target=str(ref_a))
+
+        self.assertFalse(choice["applicable"])
+        self.assertEqual(choice["reason"], "multiple-eligible-targets")
+        self.assertEqual(choice["eligible_targets"], [str(ref_b), str(ref_a)])
+        self.assertEqual(selected["targets"][0]["path"], str(ref_a))
+
+    def test_ambiguous_run_apply_changes_only_the_exact_selected_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(
+                paths,
+                "workflow-skill",
+                {
+                    "references/RUN-alpha.md": "# Alpha\n",
+                    "references/RUN-beta.md": "# Beta\n",
+                },
+            )
+            alpha = (skill / "references" / "RUN-alpha.md").resolve()
+            beta = (skill / "references" / "RUN-beta.md").resolve()
+            instinct_id = accepted_instinct_id(
+                paths,
+                root,
+                source_skill="workflow-skill",
+                rule="Apply guidance only to the selected fictional workflow.",
+            )
+            runtime.promotion_preview(paths, instinct_id, destination="run", target=str(beta))
+            applied = runtime.apply_promotion(
+                paths,
+                instinct_id,
+                destination="run",
+                target=str(beta),
+                confirm=True,
+            )
+            alpha_text = alpha.read_text(encoding="utf-8")
+            beta_text = beta.read_text(encoding="utf-8")
+
+        self.assertEqual(applied["changed"], [str(beta)])
+        self.assertNotIn(runtime.PROMOTED_GUIDANCE_HEADING, alpha_text)
+        self.assertIn(runtime.PROMOTED_GUIDANCE_HEADING, beta_text)
+
+    def test_configured_route_across_two_discovered_roots_requires_exact_target(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            user_skill = write_skill(
+                paths,
+                "shared-skill",
+                {"references/RUN-active.md": "# User-owned active workflow\n"},
+            )
+            repository = root / "supporting-repository"
+            repository_skill = repository / "skills" / "shared-skill"
+            (repository_skill / "references").mkdir(parents=True)
+            (repository_skill / "SKILL.md").write_text(
+                "---\nname: shared-skill\ndescription: Repository-local fictional skill.\n---\n",
+                encoding="utf-8",
+            )
+            (repository_skill / "references" / "RUN-active.md").write_text(
+                "# Repository-owned active workflow\n",
+                encoding="utf-8",
+            )
+            runtime.update_config(
+                paths,
+                run_routes={"shared-skill": "references/RUN-active.md"},
+            )
+            instinct_id = accepted_instinct_id(paths, root, source_skill="shared-skill")
+            choice = runtime.promotion_preview(paths, instinct_id, destination="run")
+            expected = {
+                str((user_skill / "references" / "RUN-active.md").resolve()),
+                str((repository_skill / "references" / "RUN-active.md").resolve()),
+            }
+            selected_target = str((repository_skill / "references" / "RUN-active.md").resolve())
+            selected = runtime.promotion_preview(
+                paths,
+                instinct_id,
+                destination="run",
+                target=selected_target,
+            )
+
+        self.assertFalse(choice["applicable"])
+        self.assertEqual(choice["reason"], "multiple-eligible-targets")
+        self.assertEqual(set(choice["eligible_targets"]), expected)
+        self.assertEqual(selected["targets"][0]["path"], selected_target)
+
+    def test_malformed_route_shapes_remain_readable_but_fail_closed_at_resolution(self):
+        cases = {
+            "run-map-wrong-type": ("workflow", {"run_routes": []}),
+            "run-value-wrong-type": ("workflow", {"run_routes": {"route-skill": 7}}),
+            "run-control-character": (
+                "workflow",
+                {"run_routes": {"route-skill": "references/RUN-\x00.md"}},
+            ),
+            "voice-map-wrong-type": ("voice", {"voice_ref_routes": []}),
+            "voice-empty-list": ("voice", {"voice_ref_routes": {"route-skill": []}}),
+            "voice-empty-entry": ("voice", {"voice_ref_routes": {"route-skill": [""]}}),
+        }
+        for case, (candidate_type, updates) in cases.items():
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                paths = enabled_paths(root / "codex")
+                write_skill(
+                    paths,
+                    "route-skill",
+                    {
+                        "references/RUN-fallback.md": "# Fallback\n",
+                        "references/REF-fallback.md": "# Fallback voice\n",
+                    },
+                )
+                config = json.loads(paths.config.read_text(encoding="utf-8"))
+                config.update(updates)
+                runtime.atomic_write_json(paths.config, config)
+                before = paths.config.read_bytes()
+                self.assertEqual(runtime.load_config(paths)[next(iter(updates))], next(iter(updates.values())))
+                instinct_id = accepted_instinct_id(
+                    paths,
+                    root,
+                    source_skill="route-skill",
+                    candidate_type=candidate_type,
+                    rule=f"Use the safe {case} behavior.",
+                )
+                result = runtime.promotion_preview(
+                    paths,
+                    instinct_id,
+                    destination="ref" if candidate_type == "voice" else "run",
+                )
+                self.assertFalse(result["applicable"])
+                self.assertEqual(result["reason"], "invalid-route-configuration")
+                self.assertTrue(result["route_errors"])
+                self.assertEqual(result["eligible_targets"], [])
+                self.assertEqual(paths.config.read_bytes(), before)
+
+    def test_run_route_path_family_and_confinement_matrix_fails_closed_without_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(
+                paths,
+                "route-skill",
+                {
+                    "references/RUN-fallback.md": "# Safe fallback that must not mask bad config\n",
+                    "references/REF-wrong-family.md": "# Wrong family\n",
+                    "references/nested/RUN-nested.md": "# Nested\n",
+                    "references/RUN-read-only.md": "# Read only\n",
+                },
+            )
+            (skill / "references" / "RUN-directory.md").mkdir()
+            external = root / "external" / "RUN-external.md"
+            external.parent.mkdir()
+            external.write_text("# External\n", encoding="utf-8")
+            (skill / "references" / "RUN-symlink.md").symlink_to(external)
+            other = write_skill(paths, "other-skill", {"references/RUN-other.md": "# Other skill\n"})
+            (skill / "references" / "RUN-cross-skill.md").symlink_to(other / "references" / "RUN-other.md")
+            plugin_run = PLUGIN / "skills" / "pmm-instinct-review" / "references" / "RUN-workflow.md"
+            (skill / "references" / "RUN-plugin.md").symlink_to(plugin_run)
+            read_only = skill / "references" / "RUN-read-only.md"
+            instinct_id = accepted_instinct_id(paths, root, source_skill="route-skill")
+
+            cases = {
+                "absolute": str((skill / "references" / "RUN-fallback.md").resolve()),
+                "traversal": "../other-skill/references/RUN-other.md",
+                "nested": "references/nested/RUN-nested.md",
+                "wrong-family": "references/REF-wrong-family.md",
+                "missing": "references/RUN-missing.md",
+                "directory": "references/RUN-directory.md",
+                "symlink-escape": "references/RUN-symlink.md",
+                "cross-skill": "references/RUN-cross-skill.md",
+                "plugin-owned": "references/RUN-plugin.md",
+                "non-writable": "references/RUN-read-only.md",
+            }
+            real_access = runtime.os.access
+
+            def access(candidate, mode):
+                if Path(candidate).resolve() == read_only.resolve():
+                    return False
+                return real_access(candidate, mode)
+
+            for case, route in cases.items():
+                with self.subTest(case=case), mock.patch.object(runtime.os, "access", side_effect=access):
+                    config = runtime.load_config(paths)
+                    config["run_routes"] = {"route-skill": route}
+                    runtime.atomic_write_json(paths.config, config)
+                    result = runtime.promotion_preview(paths, instinct_id, destination="run")
+                    self.assertFalse(result["applicable"])
+                    self.assertEqual(result["reason"], "invalid-route-configuration")
+                    self.assertTrue(result["route_errors"])
+                    self.assertEqual(result["eligible_targets"], [])
+
+    def test_legacy_string_voice_route_and_unaffected_destination_classes_remain_compatible(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex")
+            skill = write_skill(
+                paths,
+                "voice-skill",
+                {
+                    "references/RUN-only.md": "# Workflow\n",
+                    "references/REF-legacy.md": "# Voice\n",
+                },
+            )
+            runtime.update_config(
+                paths,
+                run_routes={"voice-skill": "references/RUN-only.md"},
+                voice_ref_routes={"voice-skill": "references/REF-legacy.md"},
+            )
+            instinct_id = accepted_instinct_id(
+                paths,
+                root,
+                source_skill="voice-skill",
+                candidate_type="voice",
+                rule="Use the compatible fictional voice route.",
+            )
+            ref_preview = runtime.promotion_preview(paths, instinct_id, destination="ref")
+            skill_preview = runtime.promotion_preview(paths, instinct_id, destination="skill")
+            global_preview = runtime.promotion_preview(paths, instinct_id, destination="global")
+            project_preview = runtime.promotion_preview(paths, instinct_id, destination="project")
+            both_preview = runtime.promotion_preview(paths, instinct_id, destination="both")
+            no_preview = runtime.promotion_preview(paths, instinct_id, destination="no")
+            edit_preview = runtime.promotion_preview(
+                paths,
+                instinct_id,
+                destination="edit",
+                edited_rule="Use the edited compatible fictional voice route.",
+            )
+
+        self.assertEqual(Path(ref_preview["targets"][0]["path"]), (skill / "references" / "REF-legacy.md").resolve())
+        self.assertEqual(Path(skill_preview["targets"][0]["path"]), (skill / "references" / "RUN-only.md").resolve())
+        self.assertEqual(global_preview["decision"], "global")
+        self.assertEqual(project_preview["decision"], "project")
+        self.assertEqual(both_preview["decision"], "both")
+        self.assertEqual(len(both_preview["targets"]), 2)
+        self.assertEqual(no_preview["decision"], "no")
+        self.assertEqual(edit_preview["decision"], "select-destination")
+
+    def test_cli_forwards_exact_target_to_preview_and_apply(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            codex_home = Path(tmp) / "codex"
+            target = str((Path(tmp) / "skills" / "demo" / "references" / "RUN-active.md").resolve())
+            with mock.patch.object(
+                instinct_cli,
+                "promotion_preview",
+                return_value={"decision": "run", "targets": [{"path": target, "duplicate": False}]},
+            ) as preview:
+                code, _stdout, stderr = invoke_cli(
+                    "--codex-home",
+                    codex_home,
+                    "promote",
+                    "--instinct",
+                    "pmm-instinct-2026-09-11-001",
+                    "--destination",
+                    "run",
+                    "--target",
+                    target,
+                )
+            self.assertEqual((code, stderr), (0, ""))
+            self.assertEqual(preview.call_args.kwargs["target"], target)
+
+            with mock.patch.object(
+                instinct_cli,
+                "apply_promotion",
+                return_value={"decision": "run", "targets": [{"path": target}], "applied": True},
+            ) as apply:
+                code, _stdout, stderr = invoke_cli(
+                    "--codex-home",
+                    codex_home,
+                    "promote",
+                    "--instinct",
+                    "pmm-instinct-2026-09-11-001",
+                    "--destination",
+                    "run",
+                    "--target",
+                    target,
+                    "--apply",
+                    "--confirm",
+                )
+            self.assertEqual((code, stderr), (0, ""))
+            self.assertEqual(apply.call_args.kwargs["target"], target)
+
+
+class BackfillTests(unittest.TestCase):
+    def test_legacy_null_model_backfill_skips_without_writing_or_using_inventory_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = runtime.resolve_paths(root / "codex")
+            runtime.ensure_store(paths)
+            config = dict(runtime.DEFAULT_CONFIG)
+            config.update(
+                enabled=True,
+                privacy_acknowledged_at="2026-09-11T00:00:00+00:00",
+                extractor_model=None,
+            )
+            runtime.atomic_write_json(paths.config, config)
+            transcript = root / "legacy-backfill.jsonl"
+            write_transcript(transcript, session_id="legacy-backfill", model="gpt-inventory-fallback")
+            before_config = paths.config.read_bytes()
+            results = runtime.apply_backfill(
+                paths,
+                [
+                    {
+                        "session_id": "legacy-backfill",
+                        "transcript_path": str(transcript),
+                        "cwd": str(root),
+                        "model": "gpt-inventory-fallback",
+                    }
+                ],
+            )
+            session_files = list(paths.sessions.iterdir())
+            queue_files = list(paths.queue.iterdir())
+            after_config = paths.config.read_bytes()
+
+        self.assertEqual(
+            results,
+            [{"status": "skipped", "reason": "unconfigured_model", "session_id": "legacy-backfill"}],
+        )
+        self.assertEqual(session_files, [])
+        self.assertEqual(queue_files, [])
+        self.assertEqual(after_config, before_config)
+
+    def test_backfill_dry_inventory_and_apply_bind_persisted_model_not_transcript_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = enabled_paths(root / "codex", model="gpt-backfill-configured")
             transcript = paths.codex_home / "sessions" / "2026" / "session.jsonl"
-            write_transcript(transcript, session_id="backfill-1")
+            write_transcript(transcript, session_id="backfill-1", model="gpt-backfill-transcript")
             old = runtime.utc_now().timestamp() - 3600
             os.utime(transcript, (old, old))
             inventory = runtime.discover_backfill(paths, limit=5, older_than_minutes=30)
             self.assertEqual([item["session_id"] for item in inventory], ["backfill-1"])
             applied = runtime.apply_backfill(paths, inventory)
+            queue = runtime.read_queue(paths)[0][1]
             self.assertEqual(applied[0]["status"], "queued")
+            self.assertEqual(queue["extractor_model"], "gpt-backfill-configured")
             self.assertEqual(runtime.discover_backfill(paths, limit=5, older_than_minutes=30), [])
 
     def test_imported_state_survives_independent_plugin_path(self):
