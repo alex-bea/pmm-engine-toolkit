@@ -71,7 +71,8 @@ allows it. Do not fill a gap through general knowledge or the fictional example.
 
 ## Step 3 — Fill the template
 
-Follow the exact seven-section order and all limits in `../assets/output-template.md`.
+Follow the exact seven-section order, all global writing rules, and all limits in
+`../assets/output-template.md`.
 
 ### Section 1 — Brief Info
 
