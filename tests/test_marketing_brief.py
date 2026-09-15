@@ -45,6 +45,7 @@ class MarketingBriefPublicTest(unittest.TestCase):
             "references/REF-evidence-and-privacy.md",
             "assets/output-template.md",
             "examples/EX-synthetic.md",
+            "examples/fixtures/behavior-cases.md",
             "examples/fictional-report-filters/source-packet.md",
             "examples/fictional-report-filters/marketing-brief.md",
         }
@@ -101,6 +102,9 @@ class MarketingBriefPublicTest(unittest.TestCase):
             "15 words maximum",
             "10 words maximum",
             "Eight words maximum",
+            "Do not use em dashes in the final brief",
+            "professional, pragmatic, direct, and slightly positive tone",
+            "blank-line spacing rather than decorative rules",
         ):
             self.assertIn(required, template)
 
@@ -141,6 +145,8 @@ class MarketingBriefPublicTest(unittest.TestCase):
 
         summary = example.split("## 2. Launch Summary\n", 1)[1].split("\n## 3.", 1)[0]
         self.assertLessEqual(len(words(summary)), 50)
+        self.assertNotIn("—", example)
+        self.assertNotRegex(example, r"(?m)^---+$")
 
     def test_fictional_sources_support_the_completed_brief(self):
         source = read(EXAMPLE / "source-packet.md")
@@ -199,11 +205,27 @@ class MarketingBriefPublicTest(unittest.TestCase):
             "Do not search for it",
             "default to Tier 2",
             "Do not merge conflicting claims",
+            "all global writing rules",
             "return the full updated brief",
             "## Error handling",
             "publish, message, schedule, or mutate an external system",
         ):
             self.assertIn(required, workflow)
+
+    def test_behavior_case_fixture_covers_acceptance_scenarios(self):
+        cases = read(PACKAGE / "examples" / "fixtures" / "behavior-cases.md")
+        expected = {
+            "CASE-MB-001": ("Source conflict", "[Missing]"),
+            "CASE-MB-002": ("Tier selection", "Tier 2 ambiguity default"),
+            "CASE-MB-003": ("Multiple launches", "two separate seven-section briefs"),
+            "CASE-MB-004": ("Missing information and research request", "Decline to research"),
+            "CASE-MB-005": ("Scoped edit", "Return the full revised brief"),
+        }
+        for case_id, phrases in expected.items():
+            self.assertEqual(cases.count(case_id), 1, case_id)
+            for phrase in phrases:
+                self.assertIn(phrase, cases, f"{case_id}: {phrase}")
+        self.assertIn("Fictional test fixture", cases)
 
     def test_public_slice_has_no_obvious_private_or_credential_material(self):
         blocked_pattern = (

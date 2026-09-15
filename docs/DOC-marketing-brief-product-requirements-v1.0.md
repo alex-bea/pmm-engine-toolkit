@@ -111,7 +111,8 @@ connector, undeclared package, or network service is required.
 Every brief uses, in order: Brief Info; Launch Summary; Audience and Problem; Launch Scope
 and Value; Messaging; Distribution; and Success. The package preserves the approved fields,
 optionality, word limits, user-outcome launch name, active voice, plain language,
-bottom-line-first style, and factual proof rules.
+bottom-line-first style, factual proof rules, no-em-dash output constraint,
+professional/pragmatic/direct/slightly-positive tone, and spacing-only section separation.
 
 Organization-specific terminology becomes optional adopter-approved naming guidance. The
 private task-system rule becomes a generic project-management boundary.
@@ -190,6 +191,11 @@ contracts, reserved domains, and blocked-content patterns. The complete unit sui
 skill-pack validator, GitHub Actions validator, strict governed-document audit, link checks,
 security plan, and IP inventory verification pass before pull-request review.
 
+Static repository tests validate the documented contracts and synthetic case coverage; they
+do not by themselves prove model execution. Candidate verification records conflict, tier,
+multi-launch, missing/research, and edit evaluations as pass, fail, or not run. An unavailable
+or unexecuted behavior case is never reported as passing.
+
 ### MB-REQ-015 — Output compatibility
 
 The public output uses the golden seven-section Markdown identity and remains readable by
@@ -223,6 +229,11 @@ The installable package contains a concise entrypoint, Codex metadata, a complet
 separate source-priority, launch-tier, and evidence/privacy references, the reusable output
 template, a starter README, an example index, and one fictional input/output pair.
 
+The package also contains compact fictional behavior cases for source conflicts, tier
+selection, multiple launches, incomplete inputs with a research request, and scoped edits.
+They support repeatable evaluation and do not constitute a second completed template
+counterpart.
+
 The workflow does not need a runtime script: its transformation is language work. Fragile
 structural and privacy contracts are enforced in repository tests. All runtime links are
 skill-relative.
@@ -252,8 +263,8 @@ continue to paste content, attach files, or provide authorized local paths.
 
 1. **Package fidelity:** replace the router, runbook, and template; add package-local
    references and the starter guide.
-2. **Example and tests:** add the independently authored fictional source/brief pair and
-   focused fidelity tests.
+2. **Example and tests:** add the independently authored fictional source/brief pair,
+   synthetic behavior cases, and focused fidelity tests.
 3. **Governance and release:** add inventory, PRD, privacy review, catalog/export/IP records,
    run all checks, and open one pull request.
 
@@ -265,7 +276,7 @@ another skill.
 | ID | Test | Expected result |
 |---|---|---|
 | MB-AT-001 | Copy only the skill directory and resolve all runtime paths. | Package runs without a repository-root dependency. |
-| MB-AT-002 | Compare template headings, fields, order, optionality, and limits with the approved parity matrix. | The complete seven-section contract is present. |
+| MB-AT-002 | Compare template headings, fields, order, optionality, limits, and generic global rules with the approved parity matrix. | The complete seven-section and writing-format contract is present. |
 | MB-AT-003 | Parse the fictional completed brief and source packet. | Every section is populated, every field meets its limit, and every material fact is supported. |
 | MB-AT-004 | Present synthetic conflicting sources. | Field ownership selects the correct source; unresolved equal-authority facts remain missing. |
 | MB-AT-005 | Exercise Tier 1, Tier 2, Tier 3, ambiguous, and explicit-tier cases. | The documented framework and defaults apply. |
@@ -307,6 +318,8 @@ another skill.
 - Source precedence applies field by field. Equal-authority unresolved facts remain missing.
 - Multiple launches are separated even when they share context.
 - Real private examples exist, but no public runtime or test depends on them.
+- Static tests prove contract and fixture integrity, while actual agent behavior is recorded
+  separately as pass, fail, or not run.
 - A validation command that cannot run is a release blocker, not a pass.
 
 ## Approval and release gates

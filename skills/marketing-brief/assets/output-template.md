@@ -3,12 +3,15 @@
 ## Global writing rules
 
 - Use active voice, plain language, and a bottom-line-first structure.
+- Do not use em dashes in the final brief.
+- Use a professional, pragmatic, direct, and slightly positive tone.
 - Avoid jargon, buzzwords, hype, and unsupported certainty.
 - Use only facts from approved supplied sources.
 - Do not invent metrics, dates, customers, claims, or proof.
 - Preserve supplied names, links, handles, dates, and approved terminology exactly.
 - Follow the section order and limits exactly.
 - Keep sections short and use parallel structure in bullets.
+- Use blank-line spacing rather than decorative rules to separate sections.
 - Write `[Missing]` for unsupported required information.
 - Do not add task lists or new sections during normal execution.
 
