@@ -8,6 +8,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "skills" / "pre-read-sharpener"
 EXAMPLE = PACKAGE / "examples" / "fictional-rollout-decision"
+SETUP_FIXTURE = PACKAGE / "examples" / "fixtures" / "setup-smoke-test.md"
 
 
 def read(path):
@@ -25,11 +26,14 @@ class PreReadSharpenerPublicTest(unittest.TestCase):
             "SKILL.md",
             "agents/openai.yaml",
             "assets/output-template.md",
+            "assets/setup-mapping.md",
+            "assets/setup-receipt.md",
             "examples/EX-synthetic.md",
             "examples/fictional-rollout-decision/source-draft.md",
             "examples/fictional-rollout-decision/review-and-rewrite.md",
             "examples/fixtures/behavior-cases.md",
-            "references/RUN-pre-read-sharpener-workflow.md",
+            "examples/fixtures/setup-smoke-test.md",
+            "references/RUN-pre-read-sharpener-setup-workflow.md",
             "references/REF-decision-ready-criteria.md",
             "references/REF-evidence-and-privacy.md",
         }
@@ -42,6 +46,66 @@ class PreReadSharpenerPublicTest(unittest.TestCase):
         for target in re.findall(r"`((?:references|assets|examples)/[^`]+)`", skill):
             self.assertTrue((PACKAGE / target).is_file(), target)
         self.assertNotIn("docs/", skill)
+
+    def test_setup_workflow_is_the_sole_run_and_has_required_contract(self):
+        run_files = sorted((PACKAGE / "references").glob("RUN-*.md"))
+        self.assertEqual(
+            [path.name for path in run_files],
+            ["RUN-pre-read-sharpener-setup-workflow.md"],
+        )
+        workflow = read(run_files[0])
+        headings = [
+            "## 1. Setup outcome",
+            "## 2. Installation checks",
+            "## 3. Source mapping",
+            "## 4. Output destinations",
+            "## 5. Configuration and state",
+            "## 6. Permissions and secrets",
+            "## 7. Test run",
+            "## 8. Setup receipt",
+            "## 9. Repair, rerun, and reconfiguration",
+            "## 10. Normal execution",
+        ]
+        positions = [workflow.index(heading) for heading in headings]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn(
+            "| Source ID | Purpose | Kind | Locator | Authorization method | Data class | Required | Read check |",
+            workflow,
+        )
+        self.assertIn(
+            "| Destination ID | Artifact | Location | Write mode | Visibility | Retention | External approval | Required | Write check |",
+            workflow,
+        )
+        for state in ("ready", "ready-with-optional-limitations", "blocked"):
+            self.assertIn(state, workflow)
+        for term in ("publishing", "notifications", "scheduling", "production"):
+            self.assertIn(term, workflow.lower())
+
+    def test_setup_assets_keep_mutable_state_outside_package(self):
+        mapping = read(PACKAGE / "assets" / "setup-mapping.md")
+        receipt = read(PACKAGE / "assets" / "setup-receipt.md")
+        for required in (
+            "PRS-SRC-DRAFT",
+            "PRS-SRC-FIXTURE",
+            "PRS-DST-OUTPUT",
+            "PRS-DST-CONFIG",
+            "PRS-DST-RECEIPT",
+            "PRS-DST-TEST",
+            "{authorized-workspace}",
+            "Credential values stored:** no",
+        ):
+            self.assertIn(required, mapping)
+        for required in (
+            "Package revision or digest",
+            "Configuration digest",
+            "Mapping readiness",
+            "Files created",
+            "ready-with-optional-limitations",
+            "Normal execution entrypoint",
+            "receipt is stale",
+        ):
+            self.assertIn(required, receipt)
+        self.assertNotIn("/" + "Users/", mapping + receipt)
 
     def test_discovery_metadata_remains_valid(self):
         metadata = read(PACKAGE / "agents" / "openai.yaml")
@@ -106,22 +170,45 @@ class PreReadSharpenerPublicTest(unittest.TestCase):
         self.assertIn("after three revision rounds", criteria)
 
     def test_workflow_covers_complete_review_repair_persistence_and_edits(self):
-        workflow = read(PACKAGE / "references" / "RUN-pre-read-sharpener-workflow.md")
+        workflow = read(PACKAGE / "references" / "RUN-pre-read-sharpener-setup-workflow.md")
         for required in (
-            "## Step 0 — Accept input",
-            "### 3.1 Blunt PM review",
-            "### 3.2 Biggest issues",
-            "### 3.3 Specific cuts",
-            "### 3.4 Tightened rewrite",
-            "### 3.5 Suggested agenda",
+            "### Step 0 — Accept input",
+            "#### 3.1 Blunt PM review",
+            "#### 3.2 Biggest issues",
+            "#### 3.3 Specific cuts",
+            "#### 3.4 Tightened rewrite",
+            "#### 3.5 Suggested agenda",
             "no more than three revision rounds",
             "outputs/pre-reads/YYYY-MM-DD-<slug>-pre-read.md",
             "append `-2`, `-3`",
-            "## Edit handling",
-            "## Error handling",
+            "### Edit handling",
+            "### Error handling",
             "Do not silently choose another destination",
         ):
             self.assertIn(required, workflow)
+
+    def test_setup_fixture_is_complete_and_internally_consistent(self):
+        fixture = read(SETUP_FIXTURE)
+        for required in (
+            "Fictional setup fixture",
+            "PRS-SRC-DRAFT",
+            "PRS-SRC-FIXTURE",
+            "PRS-DST-OUTPUT",
+            "PRS-DST-CONFIG",
+            "PRS-DST-RECEIPT",
+            "PRS-DST-TEST",
+            "examples/fictional-rollout-decision/source-draft.md",
+            "approve-the-four-week-guided-import-expansion",
+            "ten passing criteria",
+            "Overall status:** ready",
+            "RUN-pre-read-sharpener-setup-workflow.md",
+            "No production source",
+        ):
+            self.assertIn(required, fixture)
+        private_or_live = re.compile(
+            r"/" + r"Users/|https?://|\b(?:TODO|TBD)\b"
+        )
+        self.assertNotRegex(fixture, private_or_live)
 
     def test_completed_example_has_full_ordered_delivery(self):
         example = read(EXAMPLE / "review-and-rewrite.md")
@@ -205,6 +292,10 @@ class PreReadSharpenerPublicTest(unittest.TestCase):
             "CASE-PRS-006": "Persistent quality failure",
             "CASE-PRS-007": "Save and collision",
             "CASE-PRS-008": "Scoped edit",
+            "CASE-PRS-009": "First-run setup",
+            "CASE-PRS-010": "Unsafe destination",
+            "CASE-PRS-011": "Stale setup receipt",
+            "CASE-PRS-012": "Repair after fixture failure",
         }
         for case_id, title in expected.items():
             self.assertEqual(cases.count(case_id), 1, case_id)
@@ -227,15 +318,23 @@ class PreReadSharpenerPublicTest(unittest.TestCase):
         self.assertEqual(findings, [])
 
     def test_governed_documents_are_traceable(self):
-        prd = read(ROOT / "docs" / "DOC-pre-read-sharpener-product-requirements-v1.0.md")
-        inventory = read(ROOT / "docs" / "DOC-pre-read-sharpener-source-inventory-v1.0.md")
+        prd = read(ROOT / "docs" / "DOC-pre-read-sharpener-product-requirements-v1.1.md")
+        inventory = read(ROOT / "docs" / "DOC-pre-read-sharpener-source-inventory-v1.1.md")
         requirements = set(re.findall(r"\bPRS-REQ-\d{3}\b", prd))
         acceptance = set(re.findall(r"\bPRS-AT-\d{3}\b", prd))
+        setup_requirements = set(re.findall(r"\bPRSW-REQ-\d{3}\b", prd))
+        setup_acceptance = set(re.findall(r"\bPRSW-AT-\d{3}\b", prd))
         self.assertEqual(requirements, {f"PRS-REQ-{number:03d}" for number in range(1, 13)})
         self.assertEqual(acceptance, {f"PRS-AT-{number:03d}" for number in range(1, 13)})
+        self.assertEqual(setup_requirements, {f"PRSW-REQ-{number:03d}" for number in range(1, 13)})
+        self.assertEqual(setup_acceptance, {f"PRSW-AT-{number:03d}" for number in range(1, 13)})
         inventory_requirements = set(re.findall(r"\bPRS-REQ-\d{3}\b", inventory))
         self.assertTrue(inventory_requirements.issubset(requirements))
+        inventory_setup_requirements = set(re.findall(r"\bPRSW-REQ-\d{3}\b", inventory))
+        self.assertTrue(inventory_setup_requirements.issubset(setup_requirements))
         for requirement in requirements:
+            self.assertGreaterEqual(prd.count(requirement), 2, requirement)
+        for requirement in setup_requirements:
             self.assertGreaterEqual(prd.count(requirement), 2, requirement)
         self.assertIn("status: Draft", prd)
         self.assertIn("normative: false", prd)
