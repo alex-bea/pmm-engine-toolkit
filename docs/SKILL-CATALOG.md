@@ -54,12 +54,15 @@ The categories are mutually exclusive by each skill's primary job.
   [product requirements](DOC-marketing-brief-product-requirements-v1.0.md).
 - `pre-read-sharpener` — turn one supplied executive pre-read into a blunt editorial review,
   specific cuts, a constrained decision-ready rewrite, and an optional meeting agenda. The
-  skill applies a ten-line binary quality gate, saves a collision-safe local artifact, and
-  performs no research or external write. Its complete fictional source/output pair
-  demonstrates the format without using private evidence. See the
+  sole setup-and-execution RUN verifies package closure, maps adopter-owned sources and
+  destinations, runs an isolated fictional smoke test, and records a setup receipt before
+  normal use. The skill then applies a ten-line binary quality gate, saves a collision-safe
+  local artifact, and performs no research or external write. Its complete fictional
+  editorial pair and setup fixture demonstrate the contracts without using private evidence.
+  See the
   [starter guide](../skills/pre-read-sharpener/README.md),
-  [public requirements](DOC-pre-read-sharpener-product-requirements-v1.0.md), and
-  [source inventory](DOC-pre-read-sharpener-source-inventory-v1.0.md).
+  [public requirements](DOC-pre-read-sharpener-product-requirements-v1.1.md), and
+  [source inventory](DOC-pre-read-sharpener-source-inventory-v1.1.md).
 - `product-page-copywriter` — draft product and use-case page copy.
 - `sales-one-pager` — produce a prospect-facing one-pager.
 - `strategic-narrative-coach` — stress-test narrative logic.

@@ -68,3 +68,40 @@ for the update.
 **Expected:** Update the Audience field and any directly affected language, rerun all ten
 criteria, return the full revised deliverable, and update the same dated file unless the user
 requests a new version.
+
+## CASE-PRS-009 — First-run setup
+
+**Input:** A newly copied package has no setup mapping or receipt. The user asks to sharpen a
+real draft.
+
+**Expected:** Run the setup sections first. Verify the complete package, present exact
+adopter-owned configuration, receipt, test, and output paths, require confirmation before
+local setup writes, execute the fictional fixture in an isolated workspace, and create a
+receipt before processing the real draft.
+
+## CASE-PRS-010 — Unsafe destination
+
+**Input:** The proposed configuration or output destination is inside the installed skill
+package, is ambiguous, or is not writable.
+
+**Expected:** Mark setup `blocked`, identify the unsafe destination, and ask the adopter to
+confirm a safe path outside the package. Do not silently select another directory and do not
+run the real draft.
+
+## CASE-PRS-011 — Stale setup receipt
+
+**Input:** A previously ready receipt names an older package digest or a different required
+destination mapping.
+
+**Expected:** Treat the receipt as stale, identify the changed package or mapping field, and
+repeat the affected installation, mapping, permission, and fixture checks before normal
+execution. Preserve existing generated pre-reads.
+
+## CASE-PRS-012 — Repair after fixture failure
+
+**Input:** Package closure passes, but the isolated fixture cannot write its receipt or the
+compatible agent cannot complete the expected pre-read.
+
+**Expected:** Keep overall readiness `blocked`. Record the failure as failed or unavailable,
+name the exact repair action, preserve diagnostic evidence, and never convert static
+inspection into a passed end-to-end test.
