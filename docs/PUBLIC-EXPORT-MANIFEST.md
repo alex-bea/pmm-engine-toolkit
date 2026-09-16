@@ -29,6 +29,14 @@ generic Tier 1–3 launch guidance, multi-launch and edit behavior, and a comple
 source packet with its finished brief. It is stateless and directly installable; private
 examples were used only to calibrate structure and depth and are not part of the export.
 
+The `pre-read-sharpener` package preserves the complete decision-editing method: supplied-
+draft intake, silent diagnosis, blunt review, issue list, line-specific cuts, one constrained
+rewrite, an optional decision-call agenda, a ten-line binary quality gate, a three-round
+repair ceiling, and collision-safe local persistence. It includes the canonical rewrite
+template, package-local evidence and privacy rules, and one independently fictional source
+and completed output pair. No qualifying real private completed output was available, and no
+private example, source content, registry state, or generated pre-read is part of the export.
+
 ## Package contract
 
 Every skill includes:
