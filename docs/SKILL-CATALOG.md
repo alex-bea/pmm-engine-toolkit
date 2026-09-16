@@ -74,6 +74,17 @@ The categories are mutually exclusive by each skill's primary job.
 
 - `git-sweep` — inspect and safely clean merged Git worktrees.
 
+## Skill authoring and governance
+
+- `govern-skills` — let a capable local agent inspect a repository and copy a
+  documents-first governance pattern adapted to existing conventions. The standalone
+  package explains `SKILL`, `RUN`, `STD`, `REF`, template, example, script, policy, adapter,
+  and capability-boundary roles; proposes exact files before writing; runs an isolated
+  fictional setup; and needs no plugin. See the
+  [copy-pattern guide](../skills/govern-skills/README.md),
+  [product requirements](DOC-govern-skills-product-requirements-v1.0.md), and
+  [source inventory](DOC-govern-skills-source-inventory-v1.0.md).
+
 ## Global workflows
 
 - `pmm-accepted-plan-importer` — import an approved plan into governed local state.
@@ -94,13 +105,15 @@ The categories are mutually exclusive by each skill's primary job.
   and separate fictional Codex and Claude lifecycles. Claude behavior is preserved from
   `0.3.0`; this release does not claim Claude transaction parity for Codex.
 
-All 25 standalone packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
+All 26 standalone packages include a `SKILL.md`, `agents/openai.yaml`, a runbook, a reusable asset,
 and a synthetic example. Deterministic workflows also include scripts and tests. See the
 standards and templates in `docs/` before modifying a package.
 
 ## Codex governance plugin
 
-The installable `skill-governance` plugin is separate from the 25 PMM workflow packages:
+The installable `skill-governance` plugin is separate from the 26 standalone packages. Its
+`govern-skills` skill is the optional automated distribution, not a prerequisite for the
+standalone copy pattern:
 
 - `govern-skills` — initialize, audit, and safely repair skill governance, or install an
   inactive shared control plane for separately managed Claude Code and Codex enforcement.

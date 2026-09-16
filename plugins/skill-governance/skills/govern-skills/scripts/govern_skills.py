@@ -38,6 +38,7 @@ ENFORCEMENT_SCRIPTS = (
     "codex_pretooluse.py",
     "governance_control.py",
     "governance_policy.py",
+    "pretooluse.py",
     "publisher_guard.py",
 )
 

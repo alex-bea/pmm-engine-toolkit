@@ -3,7 +3,7 @@
 A portable, public-safe PMM operating toolkit for planning work, producing evidence-bound
 marketing artifacts, synthesizing signals, and maintaining repository hygiene:
 
-- **25 standalone agent skills** — the approved v1 set across planning, execution,
+- **26 standalone agent skills** — the approved v1 set across planning, execution,
   intelligence, drafting, signal operations, and repository hygiene.
 - **PMM Instinct Review plugin (`0.3.1` draft)** — a self-contained, human-gated
   improvement loop with native local capture and background extraction for Codex and
@@ -12,6 +12,8 @@ marketing artifacts, synthesizing signals, and maintaining repository hygiene:
   file size, churn, and test health.
 - **Standards and templates** — public skill structure, evidence/privacy, approval-gate,
   tracker, and dependency-closure rules with reusable formats and synthetic examples.
+- **Govern Skills copy pattern** — a self-contained, documents-first package that a local
+  coding agent can inspect and adapt without installing a plugin.
 - **Skill governance plugin** — approval-gated initialization, advisory audits, safe
   mechanical fixes, optional blocking CI, and optional Claude Code/Codex runtime guards
   backed by external approval and publisher boundaries.
@@ -54,7 +56,8 @@ start with its catalog entry and package documentation instead.
 | Find a workflow for a PMM job | Browse the [skill catalog](docs/SKILL-CATALOG.md), then read the selected package's `SKILL.md` and any package README. |
 | Use one standalone skill | Copy its complete `skills/<name>/` directory into a compatible agent environment, keeping its subdirectories together. The [competitive-intelligence starter kit](skills/comp-intel/README.md) shows the pattern. |
 | Evaluate the PMM Instinct Review candidate | Read the evaluation notice and setup guidance in the next section before installing or enabling anything. |
-| Add repository-level governance | Start with the [Codex governance plugin](docs/CODEX-GOVERNANCE-PLUGIN.md). |
+| Copy a governance pattern into a repository | Give your local agent the [standalone Govern Skills package](skills/govern-skills/README.md) and use its copy prompt. No plugin is required. |
+| Add optional governance automation | After documents-first adoption, evaluate the [Codex governance plugin](docs/CODEX-GOVERNANCE-PLUGIN.md) for validators, hooks, and advanced controls. |
 | Contribute a change | Follow [CONTRIBUTING.md](CONTRIBUTING.md) and the [continuous-integration guide](docs/CI.md). |
 
 Run Diffguard Lite against a Git base ref:
@@ -182,10 +185,22 @@ their agent environment and record the resulting evidence using the shipped cont
 The earlier [Codex migration requirements](docs/product-requirements/comp-intel/README.md) are
 retained as non-binding design history.
 
+To copy the repository's skill-governance architecture without installing anything, open the
+[Govern Skills package](skills/govern-skills/README.md) and give its prompt to Claude Code,
+Codex, or another capable local coding agent. The agent first inventories the target
+repository, adapts the `SKILL`/`RUN`/`STD`/`REF` pattern to existing conventions, proposes
+exact files, and runs a fictional isolated setup test. Documents are the default scope;
+registries, validators, CI, hooks, capability restrictions, external approval, and
+publishers remain separate optional layers.
+
 See the [public export manifest](docs/PUBLIC-EXPORT-MANIFEST.md) for the exact package
 contract, generalization rules, and pre-publication gates.
 
-## Codex governance plugin
+## Optional Codex governance plugin
+
+The standalone [Govern Skills copy pattern](skills/govern-skills/README.md) is the simplest
+adoption path. The plugin is optional advanced tooling for repositories that also want its
+initializer, audits, work tracker, or separately activated runtime guard.
 
 Install the public marketplace and plugin:
 

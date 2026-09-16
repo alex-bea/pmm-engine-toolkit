@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.agents/governance/bin/claude_pretooluse.py\"",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.agents/governance/bin/pretooluse.py\" --harness claude",
             "timeout": 5
           }
         ]

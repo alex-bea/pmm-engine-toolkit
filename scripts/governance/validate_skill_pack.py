@@ -18,7 +18,7 @@ SKILLS = {
     "pmm-weekly-impact", "guidance-review", "linkedin-ghostwriter", "marketing-brief",
     "pre-read-sharpener", "product-page-copywriter", "sales-one-pager",
     "strategic-narrative-coach", "meeting-notes-scaffolder", "slack-monitor-scaffolder",
-    "weekly-summary-promoter", "git-sweep", "pmm-accepted-plan-importer",
+    "weekly-summary-promoter", "git-sweep", "pmm-accepted-plan-importer", "govern-skills",
 }
 PLUGIN_NAME = "pmm-instinct-review"
 PLUGIN = ROOT / "plugins" / PLUGIN_NAME
@@ -153,6 +153,16 @@ COMP_INTEL_REQUIRED = (
     "examples/fixtures/local-source.json",
     "examples/fixtures/synthesis-package-template.json",
 )
+GOVERN_SKILLS_REQUIRED = (
+    "README.md",
+    "assets/templates/AGENTS.md",
+    "assets/templates/SKILL.md",
+    "assets/templates/governance-config.yaml",
+    "examples/fixtures/fictional-repository-map.yaml",
+    "examples/fixtures/fictional-setup-receipt.md",
+    "references/REF-governance-adoption-guide-v1.0.md",
+    "references/RUN-govern-skills-setup-workflow-v1.0.md",
+)
 
 
 def frontmatter(path: Path) -> dict[str, str]:
@@ -216,8 +226,8 @@ def validate_governance_plugin(errors: list[str]) -> None:
         return
     if manifest.get("name") != "skill-governance":
         errors.append("governance plugin manifest name mismatch")
-    if manifest.get("version") != "0.3.0":
-        errors.append("governance plugin manifest version must be 0.3.0")
+    if manifest.get("version") != "0.3.1":
+        errors.append("governance plugin manifest version must be 0.3.1")
     if manifest.get("skills") != "./skills/":
         errors.append("governance plugin must declare ./skills/")
     if "apps" in manifest or "mcpServers" in manifest:
@@ -231,8 +241,8 @@ def validate_governance_plugin(errors: list[str]) -> None:
     pre_tool = hooks.get("hooks", {}).get("PreToolUse", []) if isinstance(hooks, dict) else []
     if not isinstance(pre_tool, list) or not pre_tool:
         errors.append("governance plugin must declare a PreToolUse hook")
-    elif "codex_pretooluse.py" not in json.dumps(pre_tool):
-        errors.append("governance plugin PreToolUse hook must call codex_pretooluse.py")
+    elif "pretooluse.py" not in json.dumps(pre_tool) or "--harness codex" not in json.dumps(pre_tool):
+        errors.append("governance plugin PreToolUse hook must call pretooluse.py for codex")
 
     try:
         marketplace = json.loads(marketplace_path.read_text(encoding="utf-8"))
@@ -269,6 +279,7 @@ def validate_governance_plugin(errors: list[str]) -> None:
             "scripts/governance_control.py",
             "scripts/approval_verifier.py",
             "scripts/publisher_guard.py",
+            "scripts/pretooluse.py",
             "scripts/claude_pretooluse.py",
             "scripts/codex_pretooluse.py",
             "assets/schemas/governance-manifest.schema.json",
@@ -473,6 +484,29 @@ def main() -> int:
             for forbidden in ("import yaml", "from yaml", ".claude", "/Users/", "subprocess"):
                 if forbidden in runtime_text:
                     errors.append(f"comp-intel runtime contains forbidden dependency/path: {forbidden}")
+
+        if name == "govern-skills":
+            for rel in GOVERN_SKILLS_REQUIRED:
+                if not (skill / rel).is_file():
+                    errors.append(f"govern-skills: missing {rel}")
+            run_files = sorted((skill / "references").glob("RUN-*.md"))
+            if [path.name for path in run_files] != ["RUN-govern-skills-setup-workflow-v1.0.md"]:
+                errors.append("govern-skills: expected one setup-workflow RUN")
+            for standard in STANDARD_MIRRORS["govern-skills"]:
+                canonical = ROOT / "docs" / standard
+                mirror = skill / "references" / standard
+                if not mirror.is_file():
+                    errors.append(f"govern-skills: missing standard mirror {standard}")
+                elif canonical.read_bytes() != mirror.read_bytes():
+                    errors.append(f"govern-skills: standard mirror drift {standard}")
+            try:
+                json.loads(
+                    (skill / "examples/fixtures/fictional-repository-map.yaml").read_text(
+                        encoding="utf-8"
+                    )
+                )
+            except (OSError, json.JSONDecodeError) as exc:
+                errors.append(f"govern-skills: invalid fictional mapping: {exc}")
 
     validate_governance_plugin(errors)
 

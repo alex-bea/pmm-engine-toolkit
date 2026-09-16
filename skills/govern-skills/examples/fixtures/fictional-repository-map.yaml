@@ -1,0 +1,110 @@
+{
+  "fixture": "fictional-acorn-studio",
+  "fictional": true,
+  "repository": {
+    "root": "workspace/acorn-notes",
+    "default_branch": "main",
+    "instructions": ["AGENTS.md"],
+    "existing_skill_roots": ["agent-skills"],
+    "existing_governance_documents": [],
+    "existing_validators": [],
+    "working_tree": "clean"
+  },
+  "sources": [
+    {
+      "source_id": "SRC-REPO",
+      "purpose": "Inspect repository structure and local conventions",
+      "kind": "local repository",
+      "locator": "workspace/acorn-notes",
+      "authorization_method": "adopter-provided filesystem access",
+      "data_class": "synthetic",
+      "required": true,
+      "read_check": "AGENTS.md and agent-skills are readable"
+    },
+    {
+      "source_id": "SRC-PACKAGE",
+      "purpose": "Read the governance pattern",
+      "kind": "copied skill package",
+      "locator": "workspace/packages/govern-skills",
+      "authorization_method": "local read access",
+      "data_class": "public",
+      "required": true,
+      "read_check": "SKILL.md and the sole setup RUN resolve"
+    }
+  ],
+  "destinations": [
+    {
+      "destination_id": "DST-DOCS",
+      "artifact": "Adapted governance documents",
+      "location": "workspace/acorn-notes/docs/governance",
+      "write_mode": "create only",
+      "visibility": "repository",
+      "retention": "repository policy",
+      "external_approval": "no",
+      "required": true,
+      "write_check": "parent exists and planned filenames do not collide"
+    },
+    {
+      "destination_id": "DST-CONFIG",
+      "artifact": "Completed adopter configuration",
+      "location": "workspace/acorn-notes/.agents/governance/adoption.yaml",
+      "write_mode": "create only",
+      "visibility": "repository",
+      "retention": "until superseded",
+      "external_approval": "no",
+      "required": true,
+      "write_check": "path is outside the installed package"
+    },
+    {
+      "destination_id": "DST-TEST",
+      "artifact": "Isolated fixture output",
+      "location": "temporary/acorn-governance-test",
+      "write_mode": "create",
+      "visibility": "local temporary",
+      "retention": "remove after review",
+      "external_approval": "no",
+      "required": true,
+      "write_check": "new temporary directory"
+    },
+    {
+      "destination_id": "DST-RECEIPT",
+      "artifact": "Setup receipt",
+      "location": "workspace/acorn-notes/.agents/governance/setup-receipt.md",
+      "write_mode": "create only",
+      "visibility": "repository",
+      "retention": "until stale and replaced",
+      "external_approval": "no",
+      "required": true,
+      "write_check": "path is outside the installed package"
+    }
+  ],
+  "selected_layers": {
+    "instruction_only": true,
+    "static_validator": false,
+    "runtime_guard": false,
+    "capability_boundary": false,
+    "external_authority": false
+  },
+  "approved_test_actions": [
+    "copy AGENTS template into the temporary destination",
+    "copy SKILL template into the temporary destination",
+    "write one setup receipt in the temporary destination",
+    "validate expected files and links"
+  ],
+  "disabled_actions": [
+    "plugin installation",
+    "hook activation",
+    "CI mutation",
+    "approval creation",
+    "messaging",
+    "scheduling",
+    "publishing",
+    "production state mutation"
+  ],
+  "expected_test_files": [
+    "docs/governance/AGENTS.md",
+    "agent-skills/sample-skill/SKILL.md",
+    ".agents/governance/setup-receipt.md"
+  ],
+  "fictional_contact": "maintainer@acorn-studio.invalid"
+}
