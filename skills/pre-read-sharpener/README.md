@@ -24,6 +24,28 @@ normally contains:
 Missing decision-critical information is marked `[Missing]`. The skill never fills a gap
 from general knowledge or the fictional example.
 
+## First-run setup
+
+The package's sole RUN file is a setup-and-execution wizard. On first use, after a package
+change, or when configuration changes, it:
+
+1. verifies the complete installed package and package-relative links;
+2. maps whether real drafts arrive by paste, attachment, or authorized local path;
+3. confirms the output, configuration, receipt, and temporary test destinations;
+4. checks local read and write permissions without storing credential values;
+5. runs the bundled fictional fixture in an isolated temporary workspace; and
+6. writes a setup receipt with readiness, evidence, limitations, and the normal entrypoint.
+
+Copy [`assets/setup-mapping.md`](assets/setup-mapping.md) to an adopter-owned path such as
+`{authorized-workspace}/.pre-read-sharpener/setup.md`. Write the receipt from
+[`assets/setup-receipt.md`](assets/setup-receipt.md) under the same adopter-owned workspace.
+Never put configuration, receipts, drafts, test results, or generated pre-reads inside the
+installed skill package.
+
+Setup uses no connector, network service, secret, publisher, scheduler, or fixed model. The
+smoke test disables publishing, messages, notifications, scheduling, approval creation, and
+production writes. A passing setup authorizes only the confirmed local workflow.
+
 ## How it works
 
 1. **Accept the draft:** Stop and request it when no draft is supplied. Confirm intent when
@@ -39,8 +61,8 @@ from general knowledge or the fictional example.
 6. **Save:** Return the complete result inline and save the same content under the current
    workspace's `outputs/pre-reads/` directory.
 
-The complete procedure is in
-[`references/RUN-pre-read-sharpener-workflow.md`](references/RUN-pre-read-sharpener-workflow.md).
+The complete setup and operating procedure is in
+[`references/RUN-pre-read-sharpener-setup-workflow.md`](references/RUN-pre-read-sharpener-setup-workflow.md).
 
 ## What you receive
 
@@ -72,6 +94,16 @@ overwriting. A later edit updates the same dated file unless you request a new v
 The path is relative to your authorized working directory, not the installed skill package.
 No external service is contacted or modified.
 
+Recommended setup state paths are:
+
+```text
+.pre-read-sharpener/setup.md
+.pre-read-sharpener/receipts/setup-receipt.md
+```
+
+These paths are also relative to the authorized workspace. A receipt becomes stale after a
+package revision, required mapping, dependency set, or configuration digest changes.
+
 ## Invocation
 
 In Claude Code, Codex, or another compatible agent, ask:
@@ -92,19 +124,25 @@ The example is entirely fictional and is not evidence for a real company or prod
    [`review and rewrite`](examples/fictional-rollout-decision/review-and-rewrite.md).
 3. Use the [`behavior cases`](examples/fixtures/behavior-cases.md) to understand edge-case
    handling.
+4. Run the fictional
+   [`setup smoke test`](examples/fixtures/setup-smoke-test.md) in a temporary workspace before
+   supplying a real draft.
 
 ## Package map
 
 | File | Purpose |
 |---|---|
 | `SKILL.md` | Trigger, boundaries, runtime routing, and output contract |
-| `references/RUN-pre-read-sharpener-workflow.md` | Complete execution, persistence, edit, and error procedure |
+| `references/RUN-pre-read-sharpener-setup-workflow.md` | Installation checks, mappings, safe test, receipt, repair, and complete normal execution |
 | `references/REF-decision-ready-criteria.md` | Four anchors and ten binary quality tests |
 | `references/REF-evidence-and-privacy.md` | Source, privacy, untrusted-input, and write safeguards |
 | `assets/output-template.md` | Canonical tightened-rewrite template |
+| `assets/setup-mapping.md` | Blank adopter-owned source, destination, configuration, and permission schema |
+| `assets/setup-receipt.md` | Blank setup-readiness receipt and staleness contract |
 | `examples/EX-synthetic.md` | Fictional example index and interpretation guidance |
 | `examples/fictional-rollout-decision/` | Complete fictional source and output pair |
 | `examples/fixtures/behavior-cases.md` | Compact edge-case evaluation inputs and expectations |
+| `examples/fixtures/setup-smoke-test.md` | Complete fictional setup map, isolated test procedure, expected artifacts, and receipt |
 
 ## Limits
 

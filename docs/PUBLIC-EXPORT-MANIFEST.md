@@ -43,6 +43,12 @@ repair ceiling, and collision-safe local persistence. It includes the canonical 
 template, package-local evidence and privacy rules, and one independently fictional source
 and completed output pair. No qualifying real private completed output was available, and no
 private example, source content, registry state, or generated pre-read is part of the export.
+Its sole setup-and-execution RUN also verifies package closure, maps the adopter's one supplied
+draft input and local output/configuration/receipt destinations, checks local permissions,
+runs a bundled fictional fixture in an isolated temporary workspace, and records readiness
+and stale-state rules in an adopter-owned setup receipt. Blank setup templates and the
+fictional receipt contain no private defaults. The skill has no connector, secret, network,
+publisher, scheduler, notification, or external approval dependency.
 
 ## Package contract
 

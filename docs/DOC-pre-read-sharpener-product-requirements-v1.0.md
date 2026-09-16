@@ -8,7 +8,7 @@ requires:
   - STD-governance-document-metadata-v1.0.md
   - STD-skill-dependencies-v1.0.md
   - STD-skill-structure-v1.0.md
-status: Draft
+status: Superseded
 version: "1.0"
 owner: alex-bea
 consumers:
@@ -19,6 +19,11 @@ change_control: Pull request review and project-owner approval
 ---
 
 # Public Pre-Read Sharpener Product Requirements (v1.0)
+
+> **Superseded:** Replaced by
+> [`DOC-pre-read-sharpener-product-requirements-v1.1.md`](DOC-pre-read-sharpener-product-requirements-v1.1.md),
+> which preserves these editorial requirements and adds the setup-wizard contract. This file
+> remains as historical evidence for the merged v1.0 candidate.
 
 ## Document purpose and authority
 

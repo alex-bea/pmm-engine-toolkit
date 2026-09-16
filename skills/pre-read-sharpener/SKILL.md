@@ -13,12 +13,24 @@ documents, or inventing facts.
 
 ## Required workflow
 
-1. Read `references/RUN-pre-read-sharpener-workflow.md`.
-2. Apply `references/REF-decision-ready-criteria.md` as a binary quality gate.
-3. Follow `references/REF-evidence-and-privacy.md` for source and write boundaries.
-4. Render the rewrite with `assets/output-template.md` exactly.
-5. Use `examples/EX-synthetic.md` only to understand expected structure and depth, never as
+1. Read `references/RUN-pre-read-sharpener-setup-workflow.md` for setup, verification,
+   diagnosis, first use, and normal execution.
+2. On first use or when setup is stale, complete `assets/setup-mapping.md`, run
+   `examples/fixtures/setup-smoke-test.md` in an isolated workspace, and write the receipt
+   from `assets/setup-receipt.md` outside the installed package.
+3. Apply `references/REF-decision-ready-criteria.md` as a binary quality gate.
+4. Follow `references/REF-evidence-and-privacy.md` for source and write boundaries.
+5. Render the rewrite with `assets/output-template.md` exactly.
+6. Use `examples/EX-synthetic.md` only to understand expected structure and depth, never as
    evidence for a real pre-read.
+
+## Setup readiness
+
+Use the sole RUN file for install, configure, verify, diagnose, and first-use requests. A
+current setup receipt must confirm package closure, the adopter's source and output mapping,
+local permissions, and the fictional smoke test before normal execution. Configuration,
+receipts, drafts, and generated outputs belong in the adopter's authorized workspace, not
+inside this package.
 
 ## Inputs and missing information
 

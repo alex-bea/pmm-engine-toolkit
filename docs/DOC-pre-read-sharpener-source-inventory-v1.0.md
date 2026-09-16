@@ -5,7 +5,7 @@ requires:
   - STD-evidence-privacy-v1.0.md
   - STD-governance-document-metadata-v1.0.md
   - STD-skill-dependencies-v1.0.md
-status: Draft
+status: Superseded
 version: "1.0"
 owner: alex-bea
 consumers:
@@ -16,6 +16,12 @@ change_control: Pull request review
 ---
 
 # Pre-Read Sharpener Source Inventory (v1.0)
+
+> **Superseded:** Replaced by
+> [`DOC-pre-read-sharpener-source-inventory-v1.1.md`](DOC-pre-read-sharpener-source-inventory-v1.1.md),
+> which retains this editorial lineage and adds setup mappings, destinations, mutable state,
+> fixture, receipt, and current public-package dispositions. This file remains as historical
+> evidence for the merged v1.0 candidate.
 
 ## Purpose and boundary
 
