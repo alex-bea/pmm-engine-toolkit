@@ -31,6 +31,7 @@ APPROVAL_SCRIPT = GOVERNANCE_SCRIPT_DIR / "approval_verifier.py"
 PUBLISHER_SCRIPT = GOVERNANCE_SCRIPT_DIR / "publisher_guard.py"
 CLAUDE_HOOK_SCRIPT = GOVERNANCE_SCRIPT_DIR / "claude_pretooluse.py"
 CODEX_HOOK_SCRIPT = GOVERNANCE_SCRIPT_DIR / "codex_pretooluse.py"
+UNIFIED_HOOK_SCRIPT = GOVERNANCE_SCRIPT_DIR / "pretooluse.py"
 
 
 def load_module(name: str, path: Path):
@@ -62,6 +63,7 @@ class GovernancePluginTest(unittest.TestCase):
         cls.publisher = load_module("publisher_guard", PUBLISHER_SCRIPT)
         cls.claude_hook = load_module("claude_pretooluse", CLAUDE_HOOK_SCRIPT)
         cls.codex_hook = load_module("codex_pretooluse", CODEX_HOOK_SCRIPT)
+        cls.unified_hook = load_module("pretooluse", UNIFIED_HOOK_SCRIPT)
 
     def test_govern_skills_routes_setup_through_the_adoption_guide(self):
         skill_root = SKILL_SCRIPT.parents[1]
@@ -316,6 +318,68 @@ class GovernancePluginTest(unittest.TestCase):
             record = self.policy.decision_record(claude_decision)
             self.assertNotIn("private-canary-value", record)
             self.assertNotIn("state/runs/example.yaml", record)
+
+    def test_unified_hook_delegates_without_policy_drift(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            policy = self.policy.default_policy()
+            policy["enabled"] = True
+            policy["execution_mode"] = "interactive"
+            fixtures = (
+                (
+                    "claude",
+                    {
+                        "tool_name": "Write",
+                        "tool_input": {"file_path": "state/runs/example.yaml"},
+                    },
+                    self.claude_hook,
+                ),
+                (
+                    "codex",
+                    {
+                        "tool_name": "apply_patch",
+                        "tool_input": {
+                            "command": "*** Begin Patch\n*** Update File: state/runs/example.yaml\n@@\n-old\n+new\n*** End Patch"
+                        },
+                    },
+                    self.codex_hook,
+                ),
+            )
+            for harness, payload, direct in fixtures:
+                with self.subTest(harness=harness):
+                    self.assertEqual(
+                        self.unified_hook.detect_harness(payload, harness), harness
+                    )
+                    direct_request = direct.normalize(payload, repo, policy)
+                    unified_request = self.unified_hook.normalize(
+                        payload, harness, repo, policy
+                    )
+                    self.assertEqual(unified_request, direct_request)
+                    self.assertEqual(
+                        self.policy.decide(unified_request, policy, repo),
+                        self.policy.decide(direct_request, policy, repo),
+                    )
+
+            with self.assertRaises(self.policy.PolicyError):
+                self.unified_hook.detect_harness(
+                    {"tool_name": "Bash", "tool_input": {"command": "true"}}
+                )
+            with self.assertRaises(self.policy.PolicyError):
+                self.unified_hook.detect_harness(
+                    {"harness": "claude", "tool_name": "Write"}, "codex"
+                )
+
+            hooks = (
+                ROOT / "plugins/skill-governance/hooks/hooks.json"
+            ).read_text(encoding="utf-8")
+            claude_template = (
+                ROOT
+                / "plugins/skill-governance/skills/govern-skills/assets/templates/claude-settings.json"
+            ).read_text(encoding="utf-8")
+            self.assertIn("pretooluse.py", hooks)
+            self.assertIn("--harness codex", hooks)
+            self.assertIn("pretooluse.py", claude_template)
+            self.assertIn("--harness claude", claude_template)
 
     def test_policy_blocks_alternate_shell_and_scheduled_publication(self):
         with tempfile.TemporaryDirectory() as tmp:

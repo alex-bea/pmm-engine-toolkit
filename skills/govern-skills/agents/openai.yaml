@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern Skills"
+  short_description: "Copy and adapt skill governance patterns"
+  default_prompt: "Use $govern-skills to inspect this repository and propose a documents-first governance setup."

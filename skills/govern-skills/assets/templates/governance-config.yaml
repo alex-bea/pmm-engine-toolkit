@@ -1,0 +1,26 @@
+version: "1.0"
+scope:
+  repositories: []
+  workflows: []
+  harnesses: []
+selected_layers:
+  instruction_only: true
+  static_validator: false
+  runtime_guard: false
+  capability_boundary: false
+  external_authority: false
+paths:
+  instructions: ""
+  skills: ""
+  standards: ""
+  configuration: ""
+  state: ""
+  test_output: ""
+  setup_receipt: ""
+review:
+  owner: ""
+  change_control: ""
+  approval_system_of_record: ""
+retention:
+  test_artifacts: "remove-after-review"
+  setup_receipts: "adopter-policy"

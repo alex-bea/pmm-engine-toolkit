@@ -1,5 +1,12 @@
 # Codex Skill Governance Plugin
 
+For documents-first adoption without a plugin, use the standalone
+[`skills/govern-skills/` copy pattern](../skills/govern-skills/README.md). Give its included
+prompt to a capable local coding agent; it will inspect the target repository, propose an
+adapted file plan, and run a fictional setup test before claiming readiness.
+
+The plugin described below is optional advanced tooling.
+
 The `skill-governance` plugin installs three self-contained Codex skills:
 
 - `govern-skills` initializes and audits skill structure, metadata, registry entries,
@@ -144,8 +151,11 @@ Runtime activation is an administrator operation, not an agent convenience flag:
    publisher executable, not the agent or repository, holds credentials.
 7. Run the negative test matrix before enabling the policy.
 
-The two harness adapters normalize their tool payloads and call the same
-`governance_policy.py`; they do not carry separate rules. Only exact direct invocations of
+The optional hook registrations call one `pretooluse.py` entrypoint with an explicit
+`--harness` value. That entrypoint delegates payload normalization to the retained Claude
+Code and Codex adapters, and both call the same `governance_policy.py`; they do not carry
+separate rules. Ambiguous payloads fail closed. Existing direct adapter entrypoints remain
+available for compatibility. Only exact direct invocations of
 the packaged control scripts receive controlled-command status. Compound shell commands,
 pipelines, redirections, and wrapper-name smuggling remain untrusted.
 

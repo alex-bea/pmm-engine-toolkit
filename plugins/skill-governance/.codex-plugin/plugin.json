@@ -1,6 +1,6 @@
 {
   "name": "skill-governance",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Audit and repair portable skill governance, add optional cross-harness runtime guards, maintain lightweight work tracking, and audit opted-in Markdown.",
   "author": {
     "name": "Alexander Bea",

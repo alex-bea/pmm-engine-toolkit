@@ -2,7 +2,7 @@
 
 ## Approved v1 boundary
 
-This local fresh-history repository contains the 25 standalone skills and one draft
+This local fresh-history repository contains the 26 standalone skills and one draft
 dual-runtime agent plugin listed in `SKILL-CATALOG.md`, Diffguard Lite, shared public standards, reusable
 templates, synthetic examples, and tests.
 The root governance set covers contributions, conduct, project decisions, security,
@@ -10,6 +10,13 @@ support, privacy, licensing, and independent setup.
 
 It also contains the `skill-governance` Codex plugin, its public marketplace entry, and three
 self-contained governance skills that can be installed independently from GitHub.
+
+The standalone `skills/govern-skills/` package is the primary low-friction governance
+adoption path. A user can give the package to a capable local coding agent and ask it to
+inspect a repository, adapt the `SKILL`/`RUN`/`STD`/`REF` pattern to existing conventions,
+show an exact file plan, run a synthetic isolated setup, and leave an adopter-owned receipt.
+It requires no plugin. Documents are the default layer; registries, validators, CI, hooks,
+capability restrictions, external authority, and publishers remain explicit opt-ins.
 
 The repository also contains a complete, agent-neutral competitive-intelligence starter kit
 under `skills/comp-intel/`: a working analyst method, fillable source/registry/positioning/
@@ -61,11 +68,16 @@ deterministic initializer/audit/fix scripts, installable schemas and templates, 
 examples with optional PMM profiles. The document audit is read-only and validates only
 opted-in Markdown structure and local paths. CI verifies mirrored standards against `docs/`.
 
-The `govern-skills` package also includes a shared runtime policy decision, thin Claude Code
+The plugin's `govern-skills` package also includes a shared runtime policy decision, thin Claude Code
 and Codex PreToolUse adapters, schema-version-2 run control, an external approval-verifier
 contract, and a publisher guard. Runtime installation is opt-in and inactive by default.
 External verifier and publisher implementations, credentials, enabled adopter policy,
 mutable run state, and protected audit records are not part of the public package.
+
+The plugin hook registrations use one `pretooluse.py` entrypoint with an explicit harness
+argument. It delegates to the retained Claude Code and Codex normalizers, which preserves
+one shared policy decision and direct-adapter compatibility without making the plugin a
+standalone-package dependency.
 
 The `plugins/pmm-instinct-review/` `0.3.1` Draft release candidate contains
 separate Codex and Claude manifests, marketplace registration for Codex, runtime-specific

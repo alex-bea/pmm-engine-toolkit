@@ -1,5 +1,13 @@
 # Skill Governance Plugin Changelog
 
+## 0.3.1 — Draft
+
+- Added one `pretooluse.py` entrypoint for Claude Code and Codex hook registrations.
+- Kept both existing harness adapters and delegated normalization to them, preserving the
+  shared policy decision and direct-adapter compatibility.
+- Added explicit harness arguments to the packaged Codex hook and Claude settings template
+  so ambiguous payloads fail closed without platform-specific policy duplication.
+
 ## 0.3.0 — Draft
 
 - Added an agent-facing adoption guide that makes Claude Code and Codex inspect first,
