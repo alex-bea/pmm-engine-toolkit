@@ -27,18 +27,22 @@ The categories are mutually exclusive by each skill's primary job.
 - `comp-intel` — run a reusable competitive-intelligence practice: configure a market and
   sources, collect attributable signals, review evidence, analyze competitor and narrative
   changes, find positioning gaps, draft an executive brief, and propose reviewed registry and
-  tracker updates. A guided first run asks for a product website and competitor homepages,
-  proposes official sources for verification, requests approval before reading internal
-  content, drafts adopter positioning for review, and then runs a limited or full baseline.
+  tracker updates. It uses one normal RUN plus a conditionally loaded `configured-sources`
+  setup contract. A matching adopter-owned readiness receipt bypasses detailed setup;
+  `missing`, `stale`, and `blocked` states route to installation or repair. A guided first run
+  asks for a product website and competitor homepages, proposes official sources for
+  verification, requests approval before reading internal content, drafts adopter positioning
+  for review, and then runs a limited or full baseline.
   The [starter-kit guide](../skills/comp-intel/README.md) lists every working document and
   includes a full-depth fictional embedded-wallet example with one completed counterpart for
   every human-readable template. The example preserves the structures and analytical depth of
   a mature workflow without publishing a reversible alias map or real facts. It is agent-neutral
   and works with adopter-provided source access; the bundled controller is optional advanced
   support. The
-  [source inventory](DOC-comp-intel-source-inventory-v1.0.md) and
-  [earlier Codex migration suite](product-requirements/comp-intel/README.md) remain non-binding
-  design history.
+  [current requirements](DOC-comp-intel-product-requirements-v1.1.md) and
+  [source inventory](DOC-comp-intel-source-inventory-v1.1.md) document the candidate boundary;
+  the [earlier Codex migration suite](product-requirements/comp-intel/README.md) remains
+  non-binding design history.
 - `pmm-weekly-impact` — connect shipped work to outcomes and next bets.
 
 ## Marketing and sales drafting or review

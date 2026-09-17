@@ -1,0 +1,76 @@
+schema_version: 1
+skill_slug: comp-intel
+setup_profile: configured-sources
+package:
+  path: test-install/skills/comp-intel
+  revision: fictional-setup-test-v1
+  digest: sha256:0c06e8b30cbf11666622d12862fd7fe13b3e4f63970b6cdac7fca0d59c064360
+setup_contract_version: "1.0"
+workspace_root: test-workspace
+controller_data_root: test-workspace/.comp-intel
+markets:
+  - market_id: synthetic-devtools
+    market_pack: markets/synthetic-devtools.json
+    required: true
+sources:
+  - source_id: synthetic-fixture
+    purpose: Exercise deterministic public evidence collection.
+    kind: local-fixture
+    locator: fixtures/synthetic-source.json
+    authorization_method: bundled fictional fixture
+    data_class: synthetic
+    required: true
+    read_check: Fixture parses and contains a pages array.
+  - source_id: local-fixture
+    purpose: Exercise adopter-owned local-file normalization.
+    kind: local-file
+    locator: local/local-source.json
+    authorization_method: isolated test-workspace filesystem
+    data_class: synthetic
+    required: false
+    read_check: File is contained by the configured data root and parses.
+  - source_id: live-organizational-sources
+    purpose: Represent live web and internal sources that are disabled in this test.
+    kind: none
+    locator: none
+    authorization_method: not configured
+    data_class: synthetic
+    required: false
+    read_check: Confirm no live adapter is enabled.
+destinations:
+  - destination_id: fictional-data-root
+    artifact: Run state, evidence, approvals, registry, and local reports
+    location: test-workspace/.comp-intel
+    write_mode: create
+    visibility: private-synthetic
+    retention: test-duration
+    external_approval: false
+    required: true
+    write_check: Destination is outside test-install and initially empty.
+  - destination_id: fictional-setup-state
+    artifact: Setup configuration and receipt
+    location: test-workspace/.pmm-skills/comp-intel
+    write_mode: create
+    visibility: private-synthetic
+    retention: test-duration
+    external_approval: false
+    required: true
+    write_check: Parent is writable and outside the installed package.
+  - destination_id: external-mutation
+    artifact: Publication, messages, notifications, schedules, and CRM changes
+    location: none
+    write_mode: external-publish
+    visibility: external
+    retention: none
+    external_approval: true
+    required: false
+    write_check: Fail closed because no adapter or authorization is configured.
+reviewers:
+  evidence_reviewer:
+    - fictional-evidence-reviewer
+  apply_approver:
+    - fictional-apply-approver
+timezone: UTC
+retention: test-duration
+receipt_path: test-workspace/.pmm-skills/comp-intel/setup-receipt.yaml
+configuration_revision: fictional-config-v1

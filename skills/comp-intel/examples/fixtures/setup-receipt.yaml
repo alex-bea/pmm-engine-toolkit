@@ -1,0 +1,28 @@
+schema_version: 1
+skill_slug: comp-intel
+status: ready
+installed_at: "2026-09-17T16:00:00Z"
+verified_at: "2026-09-17T16:10:00Z"
+package_revision: fictional-setup-test-v1
+package_digest: sha256:0c06e8b30cbf11666622d12862fd7fe13b3e4f63970b6cdac7fca0d59c064360
+setup_contract_version: "1.0"
+configuration_path: test-workspace/.pmm-skills/comp-intel/setup-config.yaml
+configuration_digest: sha256:4d3e27b86853312a653703ba3fcaf419e22f68d69d15dd5adfa3210421e858cc
+checks:
+  package_closure: true
+  sole_normal_run: true
+  required_mappings: true
+  required_source_access: true
+  reviewer_policy: true
+  destination_safety: true
+  fictional_smoke_test: true
+limitations:
+  - Live web, communication, repository-host, publishing, messaging, notification, scheduling, approval creation, and production writes are disabled.
+  - This receipt is fictional test evidence and never authorizes an organizational run.
+files_created:
+  - test-workspace/.pmm-skills/comp-intel/setup-config.yaml
+  - test-workspace/.pmm-skills/comp-intel/setup-receipt.yaml
+  - test-workspace/.comp-intel/config.json
+  - test-workspace/.comp-intel/markets/synthetic-devtools.json
+normal_entrypoint: references/RUN-workflow.md
+next_repair_action: none

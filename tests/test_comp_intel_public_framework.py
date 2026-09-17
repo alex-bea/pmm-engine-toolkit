@@ -10,6 +10,10 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "skills/comp-intel"
 EXAMPLE = PACKAGE / "examples/fictional-embedded-wallets"
+SETUP_CONTRACT = PACKAGE / "references/REF-comp-intel-setup-contract.md"
+SETUP_CONFIG = PACKAGE / "assets/setup-config.yaml"
+SETUP_RECEIPT = PACKAGE / "assets/setup-receipt.yaml"
+SETUP_FIXTURES = PACKAGE / "examples/fixtures"
 
 TEMPLATE_EXAMPLES = {
     "market-pack-template.yaml": "market-pack.yaml",
@@ -79,13 +83,14 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
         required = [
             "README.md",
             "SKILL.md",
-            "references/RUN-onboarding.md",
             "references/RUN-workflow.md",
+            "references/REF-comp-intel-setup-contract.md",
             "references/REF-analyst-contract.md",
-            "references/DOC-setup-and-mapping.md",
             "references/DOC-evidence-and-claims.md",
             "references/DOC-review-and-apply.md",
             "references/DOC-troubleshooting.md",
+            "assets/setup-config.yaml",
+            "assets/setup-receipt.yaml",
             "assets/source-map-template.md",
             "assets/onboarding-state-template.md",
             "assets/adopter-positioning-template.md",
@@ -96,9 +101,104 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
             "assets/run-record-template.md",
             "assets/evidence-log-template.md",
             "assets/output-template.md",
+            "examples/fixtures/setup-config.yaml",
+            "examples/fixtures/setup-receipt.yaml",
+            "examples/fixtures/setup-smoke-test.md",
         ]
         missing = [path for path in required if not (PACKAGE / path).is_file()]
         self.assertEqual(missing, [])
+
+    def test_setup_bundle_has_one_normal_run_and_separate_contract(self):
+        run_files = sorted((PACKAGE / "references").glob("RUN-*.md"))
+        self.assertEqual([path.name for path in run_files], ["RUN-workflow.md"])
+        self.assertTrue(SETUP_CONTRACT.is_file())
+        self.assertFalse((PACKAGE / "references/RUN-onboarding.md").exists())
+        self.assertFalse((PACKAGE / "references/DOC-setup-and-mapping.md").exists())
+
+        run = read(run_files[0])
+        contract = read(SETUP_CONTRACT)
+        source_header = "| Source ID | Purpose | Kind | Locator | Authorization method | Data class | Required | Read check |"
+        destination_header = "| Destination ID | Artifact | Location | Write mode | Visibility | Retention | External approval | Required | Write check |"
+        self.assertNotIn(source_header, run)
+        self.assertNotIn(destination_header, run)
+        self.assertIn(source_header, contract)
+        self.assertIn(destination_header, contract)
+        self.assertIn("**Setup profile:** `configured-sources`", contract)
+
+        headings = [
+            "## 1. Setup profile",
+            "## 2. Readiness and routing",
+            "## 3. Installation checks",
+            "## 4. Source mapping",
+            "## 5. Output destinations",
+            "## 6. Configuration and state",
+            "## 7. Permissions and secrets",
+            "## 8. Safe test run",
+            "## 9. Setup receipt",
+            "## 10. Repair and reconfiguration",
+        ]
+        positions = [contract.index(heading) for heading in headings]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_setup_assets_are_blank_and_fictional_counterparts_are_complete(self):
+        config = yaml.safe_load(read(SETUP_CONFIG))
+        receipt = yaml.safe_load(read(SETUP_RECEIPT))
+        fixture_config = yaml.safe_load(read(SETUP_FIXTURES / "setup-config.yaml"))
+        fixture_receipt = yaml.safe_load(read(SETUP_FIXTURES / "setup-receipt.yaml"))
+
+        self.assertEqual(config["skill_slug"], "comp-intel")
+        self.assertEqual(config["setup_profile"], "configured-sources")
+        self.assertEqual(config["sources"], [])
+        self.assertEqual(config["destinations"], [])
+        self.assertIn("{authorized-workspace}", config["receipt_path"])
+        self.assertIn("{ready|missing|stale|blocked}", receipt["status"])
+        self.assertEqual(receipt["normal_entrypoint"], "references/RUN-workflow.md")
+
+        self.assertEqual(fixture_config["setup_profile"], "configured-sources")
+        self.assertTrue(fixture_config["sources"])
+        self.assertTrue(fixture_config["destinations"])
+        self.assertEqual(fixture_receipt["status"], "ready")
+        self.assertTrue(all(fixture_receipt["checks"].values()))
+        self.assertEqual(
+            fixture_receipt["package_digest"], fixture_config["package"]["digest"]
+        )
+        self.assertEqual(
+            fixture_receipt["package_revision"], fixture_config["package"]["revision"]
+        )
+
+    def test_conditional_routing_and_setup_state_are_coherent(self):
+        skill = read(PACKAGE / "SKILL.md").lower()
+        readme = read(PACKAGE / "README.md")
+        contract = read(SETUP_CONTRACT).lower()
+        smoke = read(SETUP_FIXTURES / "setup-smoke-test.md").lower()
+
+        for state in ("ready", "missing", "stale", "blocked"):
+            self.assertIn(state, skill)
+            self.assertIn(state, contract)
+            self.assertIn(state, smoke)
+        self.assertIn("do not load", skill)
+        self.assertIn("explicit setup", skill)
+        self.assertIn("references/run-workflow.md", skill)
+        self.assertIn("references/run-workflow.md", readme.lower())
+        self.assertIn("references/ref-comp-intel-setup-contract.md", readme.lower())
+        self.assertIn(".pmm-skills/comp-intel/setup-receipt.yaml", readme)
+
+    def test_setup_smoke_test_is_isolated_and_external_mutation_is_disabled(self):
+        smoke = read(SETUP_FIXTURES / "setup-smoke-test.md").lower()
+        for term in (
+            "temporary workspace",
+            "evidence_review",
+            "publication",
+            "message",
+            "notifications",
+            "scheduling",
+            "approval creation",
+            "production",
+            "unchanged",
+        ):
+            self.assertIn(term, smoke)
+        self.assertNotIn("/" + "users/", smoke)
+        self.assertNotIn("c:" + "\\" + "users" + "\\", smoke)
 
     def test_every_human_template_has_exactly_one_completed_counterpart(self):
         self.assertEqual(
@@ -404,18 +504,18 @@ class CompIntelPublicFrameworkTest(unittest.TestCase):
         normalized = " ".join(skill.split())
         self.assertIn("Claude Code, Codex", skill)
         self.assertIn("The method is the product", skill)
-        self.assertIn("optional advanced mode", normalized)
+        self.assertIn("optional advanced", normalized)
         self.assertNotIn("Codex Desktop is the supported", skill)
 
-    def test_onboarding_requires_verification_before_canonical_or_content_access(self):
-        onboarding = read(PACKAGE / "references/RUN-onboarding.md")
-        normalized = " ".join(onboarding.lower().split())
+    def test_setup_requires_verification_before_canonical_or_content_access(self):
+        setup = read(SETUP_CONTRACT)
+        normalized = " ".join(setup.lower().split())
         self.assertIn(
-            "only after the pmm verifies a candidate may it be written to `source-map.md`",
+            "only a pmm-verified candidate enters the canonical source map",
             normalized,
         )
-        self.assertIn("do not read messages or document bodies yet", normalized)
-        self.assertIn("ask the pmm which sources may be read", normalized)
+        self.assertIn("inspect internal source metadata before content", normalized)
+        self.assertIn("ask which candidates may be read", normalized)
 
         source_map = read(EXAMPLE / "source-map.md").lower()
         onboarding_state = read(EXAMPLE / "onboarding-state.md").lower()

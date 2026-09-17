@@ -4,12 +4,25 @@ This is the operational runbook. The default is an agent-led, document-based wor
 optional controller at the end adds machine-checked state transitions but does not replace the
 analysis method.
 
+## Readiness preflight
+
+This is the sole normal-execution RUN. For a live organizational run, enter it only after the
+adopter-owned setup receipt is `ready` and matches the installed package and setup
+configuration. A ready route does not load the detailed setup contract or rerun its fixture.
+
+If the receipt is `missing`, `stale`, or `blocked`, or the user explicitly requests setup,
+configuration, verification, diagnosis, or repair, stop before live collection and follow
+`references/REF-comp-intel-setup-contract.md`. The explicit bundled fictional test route may
+also load that contract, but it never authorizes organizational source access.
+
 ## 0. Select mode and scope
 
 Use exactly one market or product area per run.
 
-If the market lacks a reviewed source map or approved adopter positioning, stop here and follow
-`references/RUN-onboarding.md`. Do not make the PMM construct those files without guidance.
+If the market lacks a reviewed source map or approved adopter positioning, setup is no longer
+ready. Stop here, classify the receipt as `missing`, `stale`, or `blocked` as applicable, and
+route to `references/REF-comp-intel-setup-contract.md`. Do not make the PMM construct those
+files without guidance.
 
 | Mode | Use it when | Collection behavior | End state |
 |---|---|---|---|

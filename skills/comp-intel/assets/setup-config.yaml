@@ -1,0 +1,20 @@
+schema_version: 1
+skill_slug: comp-intel
+setup_profile: configured-sources
+package:
+  path: "{installed-package-path}"
+  revision: "{package-revision}"
+  digest: "{sha256-package-digest}"
+setup_contract_version: "1.0"
+workspace_root: "{authorized-workspace}"
+controller_data_root: "{authorized-workspace}/.comp-intel"
+markets: []
+sources: []
+destinations: []
+reviewers:
+  evidence_reviewer: []
+  apply_approver: []
+timezone: "{IANA-timezone-if-window-interpretation-needs-it}"
+retention: "{adopter-policy-if-used}"
+receipt_path: "{authorized-workspace}/.pmm-skills/comp-intel/setup-receipt.yaml"
+configuration_revision: "{adopter-assigned-revision}"
