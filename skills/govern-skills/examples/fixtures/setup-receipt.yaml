@@ -1,0 +1,22 @@
+schema_version: 1
+skill_slug: govern-skills
+status: ready
+installed_at: "2030-02-03T12:00:00Z"
+verified_at: "2030-02-03T12:05:00Z"
+package_revision: fictional-v1
+package_digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+setup_contract_version: "1.0"
+configuration_path: temporary/acorn-governance-test/workspace/acorn-notes/.agents/govern-skills/setup-config.yaml
+configuration_digest: sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+scope: documents-only
+checks:
+  package_closure: pass
+  instructions_and_git_state: pass
+  source_mapping: pass
+  destination_checks: pass
+  metadata_and_links: pass
+  isolated_fixture: pass
+  optional_layers: not-applicable
+limitations:
+  - This receipt proves only the synthetic documents-only setup contract.
+normal_entrypoint: references/RUN-govern-skills-workflow-v1.1.md

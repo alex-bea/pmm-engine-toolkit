@@ -2,7 +2,7 @@
 doc_type: DOC
 normative: false
 requires: []
-status: Draft
+status: Superseded
 version: "1.0"
 owner: alex-bea
 consumers:
@@ -13,6 +13,9 @@ change_control: Pull request review and project-owner approval
 ---
 
 # Public Govern Skills Copy-Pattern Product Requirements (v1.0)
+
+> Superseded by `DOC-govern-skills-product-requirements-v1.1.md`, which separates normal
+> execution from conditional setup and adds stable machine-readable readiness state.
 
 ## Document Purpose and Authority
 

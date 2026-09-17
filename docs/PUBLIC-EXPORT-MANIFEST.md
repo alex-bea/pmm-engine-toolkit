@@ -17,6 +17,15 @@ inspect a repository, adapt the `SKILL`/`RUN`/`STD`/`REF` pattern to existing co
 show an exact file plan, run a synthetic isolated setup, and leave an adopter-owned receipt.
 It requires no plugin. Documents are the default layer; registries, validators, CI, hooks,
 capability restrictions, external authority, and publishers remain explicit opt-ins.
+Its sole RUN is normal governance execution. Explicit setup, installation, configuration,
+verification, diagnosis, repair, or a missing, stale, or blocked receipt conditionally loads
+a separate setup contract; a matching ready receipt does not. The `local-persistence`
+profile stores blank-to-completed YAML configuration and readiness contracts at stable
+adopter-owned paths outside the installed package. Dates are audit evidence, not expiry.
+The bundled Acorn Studio setup configuration, YAML receipt, and smoke-test procedure are
+independently fictional and operate only in a temporary workspace. The detailed Markdown
+receipt remains an optional human-readable evidence report. This amendment does not modify
+the optional public plugin or any canonical or mirrored governance standard.
 
 The repository also contains a complete, agent-neutral competitive-intelligence starter kit
 under `skills/comp-intel/`: a working analyst method, fillable source/registry/positioning/

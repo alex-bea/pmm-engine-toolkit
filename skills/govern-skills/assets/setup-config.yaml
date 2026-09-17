@@ -1,0 +1,55 @@
+schema_version: 1
+skill_slug: govern-skills
+setup_profile: local-persistence
+package:
+  path: "[installed-package-path]"
+  revision: "[package-revision]"
+  digest: "sha256:[package-digest]"
+selected_scope:
+  name: documents-only
+  layers:
+    instruction_only: true
+    static_validator: false
+    runtime_guard: false
+    capability_boundary: false
+    external_authority: false
+sources:
+  - source_id: SRC-REPO
+    purpose: Inspect repository structure and conventions.
+    kind: local-repository
+    locator: "[authorized-repository-root]"
+    authorization_method: existing-filesystem-authorization
+    data_class: "[classification]"
+    required: true
+    read_check: "[check-and-result]"
+  - source_id: SRC-PACKAGE
+    purpose: Read the reusable governance pattern.
+    kind: copied-package-or-public-url
+    locator: "[package-locator]"
+    authorization_method: local-or-public-read-access
+    data_class: public
+    required: true
+    read_check: "[check-and-result]"
+destinations:
+  - destination_id: DST-CONFIG
+    artifact: Completed setup configuration
+    location: "[authorized-workspace]/.agents/govern-skills/setup-config.yaml"
+    write_mode: create-or-reviewed-update
+    visibility: "[private-or-repository]"
+    retention: until-superseded
+    external_approval: false
+    required: true
+    write_check: "[check-and-result]"
+  - destination_id: DST-RECEIPT
+    artifact: Machine-readable readiness receipt
+    location: "[authorized-workspace]/.agents/govern-skills/setup-receipt.yaml"
+    write_mode: create-or-reviewed-replacement
+    visibility: "[private-or-repository]"
+    retention: "[adopter-policy]"
+    external_approval: false
+    required: true
+    write_check: "[check-and-result]"
+configuration_path: "[authorized-workspace]/.agents/govern-skills/setup-config.yaml"
+receipt_path: "[authorized-workspace]/.agents/govern-skills/setup-receipt.yaml"
+owner: "[accountable-owner]"
+change_control: "[actual-change-control-mechanism]"

@@ -82,10 +82,12 @@ The categories are mutually exclusive by each skill's primary job.
   documents-first governance pattern adapted to existing conventions. The standalone
   package explains `SKILL`, `RUN`, `STD`, `REF`, template, example, script, policy, adapter,
   and capability-boundary roles; proposes exact files before writing; runs an isolated
-  fictional setup; and needs no plugin. See the
+  fictional setup; and needs no plugin. Its sole RUN handles normal governance work. Setup
+  detail loads only for explicit setup or a missing, stale, or blocked adopter-owned YAML
+  receipt; a matching ready receipt routes directly to normal work. See the
   [copy-pattern guide](../skills/govern-skills/README.md),
-  [product requirements](DOC-govern-skills-product-requirements-v1.0.md), and
-  [source inventory](DOC-govern-skills-source-inventory-v1.0.md).
+  [product requirements](DOC-govern-skills-product-requirements-v1.1.md), and
+  [source inventory](DOC-govern-skills-source-inventory-v1.1.md).
 
 ## Global workflows
 

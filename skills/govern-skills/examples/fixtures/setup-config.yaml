@@ -1,0 +1,56 @@
+schema_version: 1
+skill_slug: govern-skills
+setup_profile: local-persistence
+fictional: true
+package:
+  path: temporary/acorn-governance-test/packages/govern-skills
+  revision: fictional-v1
+  digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+selected_scope:
+  name: documents-only
+  layers:
+    instruction_only: true
+    static_validator: false
+    runtime_guard: false
+    capability_boundary: false
+    external_authority: false
+sources:
+  - source_id: SRC-REPO
+    purpose: Inspect the fictional repository.
+    kind: local-repository
+    locator: temporary/acorn-governance-test/workspace/acorn-notes
+    authorization_method: isolated-fixture-access
+    data_class: synthetic
+    required: true
+    read_check: Fictional AGENTS.md and agent-skills directory are readable.
+  - source_id: SRC-PACKAGE
+    purpose: Read the copied governance package.
+    kind: copied-package
+    locator: temporary/acorn-governance-test/packages/govern-skills
+    authorization_method: isolated-fixture-access
+    data_class: public
+    required: true
+    read_check: Entrypoint, normal RUN, setup contract, and routed package files resolve.
+destinations:
+  - destination_id: DST-CONFIG
+    artifact: Completed setup configuration
+    location: temporary/acorn-governance-test/workspace/acorn-notes/.agents/govern-skills/setup-config.yaml
+    write_mode: create-only
+    visibility: synthetic-local
+    retention: remove-after-review
+    external_approval: false
+    required: true
+    write_check: Parent is isolated and target does not collide.
+  - destination_id: DST-RECEIPT
+    artifact: Machine-readable readiness receipt
+    location: temporary/acorn-governance-test/workspace/acorn-notes/.agents/govern-skills/setup-receipt.yaml
+    write_mode: create-only
+    visibility: synthetic-local
+    retention: remove-after-review
+    external_approval: false
+    required: true
+    write_check: Parent is isolated and target does not collide.
+configuration_path: temporary/acorn-governance-test/workspace/acorn-notes/.agents/govern-skills/setup-config.yaml
+receipt_path: temporary/acorn-governance-test/workspace/acorn-notes/.agents/govern-skills/setup-receipt.yaml
+owner: Fictional Acorn Studio maintainer
+change_control: Fictional fixture procedure

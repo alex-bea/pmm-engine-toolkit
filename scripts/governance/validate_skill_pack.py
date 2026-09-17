@@ -155,13 +155,19 @@ COMP_INTEL_REQUIRED = (
 )
 GOVERN_SKILLS_REQUIRED = (
     "README.md",
+    "assets/setup-config.yaml",
+    "assets/setup-receipt.yaml",
     "assets/templates/AGENTS.md",
     "assets/templates/SKILL.md",
     "assets/templates/governance-config.yaml",
     "examples/fixtures/fictional-repository-map.yaml",
     "examples/fixtures/fictional-setup-receipt.md",
+    "examples/fixtures/setup-config.yaml",
+    "examples/fixtures/setup-receipt.yaml",
+    "examples/fixtures/setup-smoke-test.md",
+    "references/REF-govern-skills-setup-contract.md",
     "references/REF-governance-adoption-guide-v1.0.md",
-    "references/RUN-govern-skills-setup-workflow-v1.0.md",
+    "references/RUN-govern-skills-workflow-v1.1.md",
 )
 
 
@@ -490,8 +496,8 @@ def main() -> int:
                 if not (skill / rel).is_file():
                     errors.append(f"govern-skills: missing {rel}")
             run_files = sorted((skill / "references").glob("RUN-*.md"))
-            if [path.name for path in run_files] != ["RUN-govern-skills-setup-workflow-v1.0.md"]:
-                errors.append("govern-skills: expected one setup-workflow RUN")
+            if [path.name for path in run_files] != ["RUN-govern-skills-workflow-v1.1.md"]:
+                errors.append("govern-skills: expected one normal workflow RUN")
             for standard in STANDARD_MIRRORS["govern-skills"]:
                 canonical = ROOT / "docs" / standard
                 mirror = skill / "references" / standard

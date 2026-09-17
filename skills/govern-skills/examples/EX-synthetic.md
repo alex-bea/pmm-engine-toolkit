@@ -5,13 +5,14 @@ domains do not describe a real organization or installation.
 
 1. Read the complete fictional
    [`repository mapping`](fixtures/fictional-repository-map.yaml).
-2. Compare it with the blank
-   [`governance configuration`](../assets/templates/governance-config.yaml).
-3. Follow the package's
-   [`setup and execution workflow`](../references/RUN-govern-skills-setup-workflow-v1.0.md)
-   in an isolated temporary directory.
-4. Compare the result with the fictional
-   [`setup receipt`](fixtures/fictional-setup-receipt.md).
+2. Compare the fictional [`setup configuration`](fixtures/setup-config.yaml) with the blank
+   [`setup configuration`](../assets/setup-config.yaml).
+3. Follow the [`setup contract`](../references/REF-govern-skills-setup-contract.md) and
+   [`smoke test`](fixtures/setup-smoke-test.md) in an isolated temporary directory.
+4. Compare the machine-readable result with the fictional YAML
+   [`setup receipt`](fixtures/setup-receipt.yaml). The fictional
+   [`detailed receipt`](fixtures/fictional-setup-receipt.md) demonstrates the optional
+   human-readable evidence report.
 
 The fictional selection is documents only. Hooks, CI mutation, registries, external
 approval services, scheduling, messaging, and publishing are deliberately not applicable.
