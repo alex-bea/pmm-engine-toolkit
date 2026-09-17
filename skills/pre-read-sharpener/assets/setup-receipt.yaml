@@ -1,0 +1,20 @@
+schema_version: 1
+skill_slug: "pre-read-sharpener"
+status: "{ready|blocked}"
+installed_at: "{ISO-8601-timestamp}"
+verified_at: "{ISO-8601-timestamp}"
+package_revision: "{package-revision}"
+package_digest: "{sha256-package-digest}"
+setup_contract_version: "1.0"
+configuration_path: "{authorized-workspace}/.pmm-skills/pre-read-sharpener/setup-config.yaml"
+configuration_digest: "{sha256-configuration-digest}"
+checks:
+  package_closure: "{passed|failed|skipped|unavailable}"
+  source_mapping: "{passed|failed|skipped|unavailable}"
+  destination_mapping: "{passed|failed|skipped|unavailable}"
+  local_permissions: "{passed|failed|skipped|unavailable}"
+  fictional_fixture: "{passed|failed|skipped|unavailable}"
+  package_unchanged: "{passed|failed|skipped|unavailable}"
+limitations: []
+normal_entrypoint: "references/RUN-pre-read-sharpener-workflow.md"
+next_repair_action: "{none-or-action}"

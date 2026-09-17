@@ -1,0 +1,39 @@
+schema_version: 1
+skill_slug: "pre-read-sharpener"
+setup_profile: "local-persistence"
+package:
+  path: "{installed-package-path}"
+  revision: "{package-revision}"
+  digest: "{sha256-package-digest}"
+sources:
+  - id: "PRS-SRC-DRAFT"
+    kind: "{paste|attachment|authorized-local-file}"
+    locator: "{per-run-input-or-authorized-local-path}"
+    authorization_method: "{user-supplied-content-or-local-filesystem}"
+    required: true
+  - id: "PRS-SRC-FIXTURE"
+    kind: "package-local-file"
+    locator: "examples/fictional-rollout-decision/source-draft.md"
+    authorization_method: "local-filesystem-read"
+    required_for_setup_test: true
+destinations:
+  - id: "PRS-DST-OUTPUT"
+    location: "{authorized-workspace}/outputs/pre-reads"
+    write_mode: "create-or-update-known-edit"
+    required_for_persistence: true
+  - id: "PRS-DST-CONFIG"
+    location: "{authorized-workspace}/.pmm-skills/pre-read-sharpener/setup-config.yaml"
+    write_mode: "create-or-confirmed-update"
+    required_for_persistence: true
+  - id: "PRS-DST-RECEIPT"
+    location: "{authorized-workspace}/.pmm-skills/pre-read-sharpener/setup-receipt.yaml"
+    write_mode: "create-or-confirmed-replace"
+    required_for_persistence: true
+  - id: "PRS-DST-TEST"
+    location: "{isolated-temporary-workspace}"
+    write_mode: "create-test-artifacts"
+    required_for_setup_test: true
+timezone: "{IANA-timezone-for-dated-filenames}"
+retention: "{adopter-selected-retention}"
+receipt_path: "{authorized-workspace}/.pmm-skills/pre-read-sharpener/setup-receipt.yaml"
+configuration_revision: "{adopter-assigned-revision}"

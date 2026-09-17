@@ -8,7 +8,7 @@ requires:
   - STD-governance-document-metadata-v1.0.md
   - STD-skill-dependencies-v1.0.md
   - STD-skill-structure-v1.0.md
-status: Draft
+status: Superseded
 version: "1.1"
 owner: alex-bea
 consumers:
@@ -19,6 +19,11 @@ change_control: Pull request review and project-owner approval
 ---
 
 # Public Pre-Read Sharpener Product Requirements (v1.1)
+
+> Superseded by
+> [`DOC-pre-read-sharpener-product-requirements-v1.2.md`](DOC-pre-read-sharpener-product-requirements-v1.2.md),
+> which replaces setup-first execution with conditional local-persistence setup. Retained as
+> design history; do not use this version as the current package contract.
 
 ## Document purpose and authority
 

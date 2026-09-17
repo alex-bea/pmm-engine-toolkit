@@ -43,12 +43,15 @@ repair ceiling, and collision-safe local persistence. It includes the canonical 
 template, package-local evidence and privacy rules, and one independently fictional source
 and completed output pair. No qualifying real private completed output was available, and no
 private example, source content, registry state, or generated pre-read is part of the export.
-Its sole setup-and-execution RUN also verifies package closure, maps the adopter's one supplied
-draft input and local output/configuration/receipt destinations, checks local permissions,
-runs a bundled fictional fixture in an isolated temporary workspace, and records readiness
-and stale-state rules in an adopter-owned setup receipt. Blank setup templates and the
-fictional receipt contain no private defaults. The skill has no connector, secret, network,
-publisher, scheduler, notification, or external approval dependency.
+Its sole RUN is normal editorial execution. Inline work needs no setup. Optional local
+persistence conditionally loads a separate setup contract, maps the adopter's supplied-draft
+mode and local output/configuration/receipt destinations, checks local permissions, runs a
+bundled fictional fixture in an isolated temporary workspace, and records readiness in an
+adopter-owned YAML receipt. A current ready receipt routes directly to normal execution;
+missing, stale, or blocked persistence routes to setup. Blank YAML templates and fictional
+evidence contain no private defaults, and setup never rewrites the installed package. The
+skill has no connector, secret, network, publisher, scheduler, notification, or external
+approval dependency.
 
 ## Package contract
 
