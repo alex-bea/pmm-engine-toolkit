@@ -5,7 +5,7 @@ requires:
   - STD-evidence-privacy-v1.0.md
   - STD-governance-document-metadata-v1.0.md
   - STD-skill-dependencies-v1.0.md
-status: Draft
+status: Superseded
 version: "1.1"
 owner: alex-bea
 consumers:
@@ -16,6 +16,11 @@ change_control: Pull request review
 ---
 
 # Pre-Read Sharpener Source Inventory (v1.1)
+
+> Superseded by
+> [`DOC-pre-read-sharpener-source-inventory-v1.2.md`](DOC-pre-read-sharpener-source-inventory-v1.2.md),
+> which inventories the conditional setup bundle. Retained as advisory design history; do
+> not use this version as the current package inventory.
 
 ## Purpose and boundary
 

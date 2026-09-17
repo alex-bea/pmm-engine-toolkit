@@ -23,9 +23,8 @@ the intended transformation. Do not rewrite or save it yet.
 **Input:** A fictional draft recommends expanding a pilot but supplies no audience, timing,
 alternative, reversal cost, or success measure.
 
-**Expected:** Use the documented missing-data marker for decision-critical gaps. Do not
-invent facts to make the specificity criterion pass. After no more than three repair rounds,
-identify any criterion that remains failing and ask before returning a failing draft.
+**Expected:** Mark decision-critical gaps `[Missing]`. Do not invent facts. After no more
+than three repair rounds, identify any failing criterion and ask before returning it.
 
 ## CASE-PRS-004 — Decision call
 
@@ -37,71 +36,76 @@ one Deciding question, and a ten-row self-check.
 
 ## CASE-PRS-005 — Informational pre-read
 
-**Input:** A fictional quarterly operating review summarizes results and requests no meeting
-decision.
+**Input:** A fictional quarterly operating review requests no meeting decision.
 
-**Expected:** Confirm that the user wants sharpening despite the non-decision format. If
-confirmed, omit the decision-call agenda and state that the agenda does not apply.
+**Expected:** Confirm the intended transformation. If confirmed, omit the decision-call
+agenda and state that it does not apply.
 
 ## CASE-PRS-006 — Persistent quality failure
 
-**Input:** A decision draft provides a recommendation but no evidence or concrete outcome;
-the user forbids marking missing data or requesting facts.
+**Input:** A decision draft lacks evidence and a concrete outcome; the user forbids missing
+markers or fact requests.
 
-**Expected:** Revise and rescore at most three times. Then name the blocking criteria and ask
-whether to return the still-failing draft. Never label it passing.
+**Expected:** Revise and rescore at most three times, name the blockers, and ask whether to
+return the still-failing draft. Never label it passing.
 
 ## CASE-PRS-007 — Save and collision
 
-**Input:** A passing fictional rewrite titled “Approve the Harborline Beta Expansion” is run
-twice on the same date in a clean temporary workspace.
+**Input:** A ready persistence route saves the same passing fictional title twice on one
+date in a clean workspace.
 
 **Expected:** Save the first result to
-`outputs/pre-reads/YYYY-MM-DD-approve-the-harborline-beta-expansion-pre-read.md`. Save the
-second to the same stem with `-2` before `.md`. Do not overwrite the first artifact.
+`outputs/pre-reads/YYYY-MM-DD-approve-the-harborline-beta-expansion-pre-read.md` and the
+second with `-2` before `.md`. Do not overwrite the first.
 
 ## CASE-PRS-008 — Scoped edit
 
-**Input:** After a passing result is saved, the user changes the meeting audience and asks
-for the update.
+**Input:** After a passing persistent result is saved, the user changes the meeting audience.
 
-**Expected:** Update the Audience field and any directly affected language, rerun all ten
-criteria, return the full revised deliverable, and update the same dated file unless the user
-requests a new version.
+**Expected:** Update affected content, rerun all ten criteria, return the complete result,
+and update the same dated file unless a new version is requested.
 
-## CASE-PRS-009 — First-run setup
+## CASE-PRS-009 — Inline bypass
 
-**Input:** A newly copied package has no setup mapping or receipt. The user asks to sharpen a
-real draft.
+**Input:** A newly copied package has no configuration or receipt. The user supplies a draft
+and requests inline output only.
 
-**Expected:** Run the setup sections first. Verify the complete package, present exact
-adopter-owned configuration, receipt, test, and output paths, require confirmation before
-local setup writes, execute the fictional fixture in an isolated workspace, and create a
-receipt before processing the real draft.
+**Expected:** Enter `RUN-pre-read-sharpener-workflow.md` immediately. Do not load the setup
+contract, run the fixture, or create configuration, receipt, or output files.
 
-## CASE-PRS-010 — Unsafe destination
+## CASE-PRS-010 — Ready persistence route
 
-**Input:** The proposed configuration or output destination is inside the installed skill
-package, is ambiguous, or is not writable.
+**Input:** Configuration and a `ready` receipt match the current package, setup contract,
+required mappings, dependency set, and configuration digest.
 
-**Expected:** Mark setup `blocked`, identify the unsafe destination, and ask the adopter to
-confirm a safe path outside the package. Do not silently select another directory and do not
-run the real draft.
+**Expected:** Enter the normal RUN without loading setup detail or rerunning the fixture.
+Write only the configured deliverable and leave setup configuration and receipt unchanged.
 
-## CASE-PRS-011 — Stale setup receipt
+## CASE-PRS-011 — Missing receipt
 
-**Input:** A previously ready receipt names an older package digest or a different required
-destination mapping.
+**Input:** Persistent output is requested, but no receipt exists at the configured path.
 
-**Expected:** Treat the receipt as stale, identify the changed package or mapping field, and
-repeat the affected installation, mapping, permission, and fixture checks before normal
-execution. Preserve existing generated pre-reads.
+**Expected:** Resolve status `missing`, load the setup contract, and request confirmation
+before setup writes. The same draft remains eligible for inline output.
 
-## CASE-PRS-012 — Repair after fixture failure
+## CASE-PRS-012 — Stale receipt
 
-**Input:** Package closure passes, but the isolated fixture cannot write its receipt or the
-compatible agent cannot complete the expected pre-read.
+**Input:** A previously ready receipt names an older package or configuration digest.
 
-**Expected:** Keep overall readiness `blocked`. Record the failure as failed or unavailable,
-name the exact repair action, preserve diagnostic evidence, and never convert static
-inspection into a passed end-to-end test.
+**Expected:** Resolve status `stale`, identify the changed binding, and rerun affected checks
+before persistence. Dates alone do not cause staleness. Preserve generated pre-reads.
+
+## CASE-PRS-013 — Blocked persistence
+
+**Input:** The configured output is inside the installed package, unwritable, or a required
+fixture check failed.
+
+**Expected:** Resolve status `blocked`, name the exact repair, and perform no persistent or
+external write. Offer the unaffected inline route when the supplied draft is readable.
+
+## CASE-PRS-014 — Explicit setup request
+
+**Input:** A current ready installation receives “verify setup.”
+
+**Expected:** Load the setup contract because the request is explicit. Re-run only required
+checks, record all statuses honestly, and never rewrite installed package files.

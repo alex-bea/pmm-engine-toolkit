@@ -2,7 +2,7 @@
 
 ## What this skill does
 
-`pre-read-sharpener` turns an existing executive pre-read into a shorter,
+`pre-read-sharpener` turns one existing executive pre-read into a shorter,
 decision-oriented document. It returns a direct editorial review, specific cuts, a
 constrained rewrite, and, for a decision call, a compact meeting agenda.
 
@@ -24,29 +24,59 @@ normally contains:
 Missing decision-critical information is marked `[Missing]`. The skill never fills a gap
 from general knowledge or the fictional example.
 
-## First-run setup
+## Normal use
 
-The package's sole RUN file is a setup-and-execution wizard. On first use, after a package
-change, or when configuration changes, it:
+Choose one output route:
 
-1. verifies the complete installed package and package-relative links;
-2. maps whether real drafts arrive by paste, attachment, or authorized local path;
-3. confirms the output, configuration, receipt, and temporary test destinations;
-4. checks local read and write permissions without storing credential values;
-5. runs the bundled fictional fixture in an isolated temporary workspace; and
-6. writes a setup receipt with readiness, evidence, limitations, and the normal entrypoint.
+- **Inline:** The result is returned in the response. No installation setup, configuration,
+  or receipt is required.
+- **Persistent local output:** The result is also written beneath the configured
+  `outputs/pre-reads/` destination. This route requires a current `ready` receipt.
 
-Copy [`assets/setup-mapping.md`](assets/setup-mapping.md) to an adopter-owned path such as
-`{authorized-workspace}/.pre-read-sharpener/setup.md`. Write the receipt from
-[`assets/setup-receipt.md`](assets/setup-receipt.md) under the same adopter-owned workspace.
-Never put configuration, receipts, drafts, test results, or generated pre-reads inside the
-installed skill package.
+Normal editorial work follows
+[`references/RUN-pre-read-sharpener-workflow.md`](references/RUN-pre-read-sharpener-workflow.md).
+A ready persistence route enters that RUN without loading setup detail or rerunning the
+fixture.
 
-Setup uses no connector, network service, secret, publisher, scheduler, or fixed model. The
-smoke test disables publishing, messages, notifications, scheduling, approval creation, and
-production writes. A passing setup authorizes only the confirmed local workflow.
+## Setup
 
-## How it works
+Setup is conditional because the package uses the `local-persistence` profile. Run setup
+only when you explicitly want to configure, verify, diagnose, or repair the installation,
+or when persistent output reports `missing`, `stale`, or `blocked` readiness.
+
+Detailed setup rules are in
+[`references/REF-pre-read-sharpener-setup-contract.md`](references/REF-pre-read-sharpener-setup-contract.md).
+Copy the blank schemas to adopter-owned paths outside the installed package:
+
+```text
+{authorized-workspace}/.pmm-skills/pre-read-sharpener/setup-config.yaml
+{authorized-workspace}/.pmm-skills/pre-read-sharpener/setup-receipt.yaml
+```
+
+Use [`assets/setup-config.yaml`](assets/setup-config.yaml) for source and output destination
+mapping and [`assets/setup-receipt.yaml`](assets/setup-receipt.yaml) for readiness evidence.
+Never edit those installed templates in place.
+
+Setup verifies package closure and links, confirms local input/output paths and permissions,
+and runs the bundled
+[`fictional setup smoke test`](examples/fixtures/setup-smoke-test.md) in a separate temporary
+workspace. The test disables publishing, messaging, notifications, scheduling, approval
+creation, network mutation, and production writes. It must leave the copied installation
+unchanged.
+
+Receipt states mean:
+
+- `ready`: persistent output may enter the normal RUN directly;
+- `missing`: no receipt exists at the stable path;
+- `stale`: a bound package, setup-contract, mapping, dependency, or configuration digest
+  changed; and
+- `blocked`: a required current check failed or is unavailable.
+
+Dates are audit evidence and do not make a receipt stale. Reconfigure only affected checks,
+show differences before changing an existing file, preserve generated pre-reads, and never
+delete or rewrite the installed package to mark setup complete.
+
+## How normal execution works
 
 1. **Accept the draft:** Stop and request it when no draft is supplied. Confirm intent when
    the source is clearly not a pre-read.
@@ -58,11 +88,8 @@ production writes. A passing setup authorizes only the confirmed local workflow.
    question.
 5. **Self-check:** Score all ten decision-ready criteria. Revise failures up to three times;
    ask before returning a result that still fails.
-6. **Save:** Return the complete result inline and save the same content under the current
-   workspace's `outputs/pre-reads/` directory.
-
-The complete setup and operating procedure is in
-[`references/RUN-pre-read-sharpener-setup-workflow.md`](references/RUN-pre-read-sharpener-setup-workflow.md).
+6. **Persist when configured:** Return every result inline. On a ready persistence route,
+   also save the same content beneath the configured `outputs/pre-reads/` directory.
 
 ## What you receive
 
@@ -79,9 +106,9 @@ The full deliverable also contains:
 - a decision-call agenda when applicable; and
 - a ten-row pass/fail self-check.
 
-## Saved artifact
+## Persistent artifact
 
-The default local path is:
+The default configured pattern is:
 
 ```text
 outputs/pre-reads/YYYY-MM-DD-<slug>-pre-read.md
@@ -91,18 +118,8 @@ The slug comes from the rewrite title, then the input title, then the first eigh
 words. A same-day collision uses `-2`, `-3`, and later numeric suffixes rather than
 overwriting. A later edit updates the same dated file unless you request a new version.
 
-The path is relative to your authorized working directory, not the installed skill package.
-No external service is contacted or modified.
-
-Recommended setup state paths are:
-
-```text
-.pre-read-sharpener/setup.md
-.pre-read-sharpener/receipts/setup-receipt.md
-```
-
-These paths are also relative to the authorized workspace. A receipt becomes stale after a
-package revision, required mapping, dependency set, or configuration digest changes.
+If the configured destination becomes unwritable, the skill still returns the complete
+inline result and reports the persistence failure. It does not choose another path.
 
 ## Invocation
 
@@ -112,7 +129,7 @@ In Claude Code, Codex, or another compatible agent, ask:
 Use $pre-read-sharpener to tighten this draft around the decision.
 ```
 
-Then provide the draft.
+Then provide the draft and say whether you want inline-only or persistent local output.
 
 ## Fictional example
 
@@ -122,27 +139,27 @@ The example is entirely fictional and is not evidence for a real company or prod
    [`source draft`](examples/fictional-rollout-decision/source-draft.md).
 2. Compare it with the
    [`review and rewrite`](examples/fictional-rollout-decision/review-and-rewrite.md).
-3. Use the [`behavior cases`](examples/fixtures/behavior-cases.md) to understand edge-case
-   handling.
-4. Run the fictional
-   [`setup smoke test`](examples/fixtures/setup-smoke-test.md) in a temporary workspace before
-   supplying a real draft.
+3. Use the [`behavior cases`](examples/fixtures/behavior-cases.md) to understand editorial
+   and routing edge cases.
+4. Use the [`setup smoke test`](examples/fixtures/setup-smoke-test.md) only when verifying
+   persistent local output.
 
 ## Package map
 
 | File | Purpose |
 |---|---|
-| `SKILL.md` | Trigger, boundaries, runtime routing, and output contract |
-| `references/RUN-pre-read-sharpener-setup-workflow.md` | Installation checks, mappings, safe test, receipt, repair, and complete normal execution |
+| `SKILL.md` | Trigger, boundaries, conditional router, and output contract |
+| `references/RUN-pre-read-sharpener-workflow.md` | Sole normal editorial workflow |
+| `references/REF-pre-read-sharpener-setup-contract.md` | Conditionally loaded setup, mappings, test, receipt, and repair rules |
 | `references/REF-decision-ready-criteria.md` | Four anchors and ten binary quality tests |
 | `references/REF-evidence-and-privacy.md` | Source, privacy, untrusted-input, and write safeguards |
 | `assets/output-template.md` | Canonical tightened-rewrite template |
-| `assets/setup-mapping.md` | Blank adopter-owned source, destination, configuration, and permission schema |
-| `assets/setup-receipt.md` | Blank setup-readiness receipt and staleness contract |
+| `assets/setup-config.yaml` | Blank adopter-owned source and destination configuration schema |
+| `assets/setup-receipt.yaml` | Blank setup-readiness receipt schema |
 | `examples/EX-synthetic.md` | Fictional example index and interpretation guidance |
 | `examples/fictional-rollout-decision/` | Complete fictional source and output pair |
-| `examples/fixtures/behavior-cases.md` | Compact edge-case evaluation inputs and expectations |
-| `examples/fixtures/setup-smoke-test.md` | Complete fictional setup map, isolated test procedure, expected artifacts, and receipt |
+| `examples/fixtures/behavior-cases.md` | Compact editorial and routing edge cases |
+| `examples/fixtures/setup-smoke-test.md` | Complete fictional conditional-setup test |
 
 ## Limits
 
@@ -151,7 +168,8 @@ The example is entirely fictional and is not evidence for a real company or prod
 - No synthesis across multiple source documents.
 - No from-scratch pre-read generation.
 - No external publishing, messaging, scheduling, or service mutation.
-- No adopter draft or generated output is stored inside the installed package.
+- No adopter configuration, receipt, draft, or generated output is stored inside the
+  installed package.
 
 The public template is faithful to the written golden workflow. No qualifying real private
 completed output was available; the worked example is independently fictional and should be
