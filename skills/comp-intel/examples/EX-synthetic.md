@@ -55,6 +55,21 @@ order:
    to verify AsterPort's proposed migration guide next.
 10. The proposed registry and tracker changes remain pending until the exact draft is reviewed.
 
+## Fictional setup and routing evidence
+
+The HarborKey directory demonstrates the analyst content model. Setup readiness is demonstrated
+separately so completed installation state is never confused with canonical market evidence:
+
+| File | What it demonstrates |
+|---|---|
+| [`fixtures/setup-config.yaml`](fixtures/setup-config.yaml) | Completed fictional `configured-sources` mapping with only bundled synthetic inputs and temporary local destinations |
+| [`fixtures/setup-receipt.yaml`](fixtures/setup-receipt.yaml) | Fictional `ready` receipt with package/configuration identity, checks, limitations, and normal entrypoint |
+| [`fixtures/setup-smoke-test.md`](fixtures/setup-smoke-test.md) | Isolated initialization, validation, collection ceiling, four-state routing, side-effect boundary, and package-immutability checks |
+
+A matching `ready` receipt routes directly to `references/RUN-workflow.md`; `missing`, `stale`,
+and `blocked` route to the setup contract. The fictional receipt never authorizes live source
+access or a production run.
+
 ## Optional controller example
 
 The JSON fixtures in `fixtures/` exercise the bundled deterministic controller. They are a

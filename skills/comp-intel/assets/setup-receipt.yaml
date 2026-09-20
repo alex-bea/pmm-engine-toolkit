@@ -1,0 +1,22 @@
+schema_version: 1
+skill_slug: comp-intel
+status: "{ready|missing|stale|blocked}"
+installed_at: "{ISO-8601-timestamp}"
+verified_at: "{ISO-8601-timestamp}"
+package_revision: "{package-revision}"
+package_digest: "{sha256-package-digest}"
+setup_contract_version: "1.0"
+configuration_path: "{authorized-workspace}/.pmm-skills/comp-intel/setup-config.yaml"
+configuration_digest: "{sha256-configuration-digest}"
+checks:
+  package_closure: false
+  sole_normal_run: false
+  required_mappings: false
+  required_source_access: false
+  reviewer_policy: false
+  destination_safety: false
+  fictional_smoke_test: false
+limitations: []
+files_created: []
+normal_entrypoint: references/RUN-workflow.md
+next_repair_action: "{none-or-exact-action}"

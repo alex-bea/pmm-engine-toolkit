@@ -2,16 +2,16 @@
 
 This package is a reusable version of a working competitive-intelligence practice. It gives
 an AI coding agent the analyst instructions, templates, review gates, and fictional example
-needed to run the practice with your sources and your market context.
+needed to run the practice with your sources and market context.
 
 The default workflow is document-led. You do not need the bundled Python controller, a
 specific connector, or a particular AI product. Claude Code, Codex, or another agent can
-follow the same steps as long as it can read local files and access the sources you authorize.
+follow the same method when it can read local files and access sources you authorize.
 
 ## Install
 
 Copy the entire `comp-intel` directory into the skill location used by your agent. Keep its
-subdirectories together so all relative links resolve.
+subdirectories together so all package-relative links resolve.
 
 - Claude Code repository install: `.claude/skills/comp-intel/`
 - Codex repository install: `.agents/skills/comp-intel/`
@@ -20,111 +20,138 @@ subdirectories together so all relative links resolve.
 Then ask the agent to use `comp-intel` or invoke `$comp-intel` in runtimes that support
 explicit skill names.
 
-## Your first 30 minutes
+## Setup
 
-Start with your product website plus competitor names and homepages. Ask:
+`comp-intel` uses the `configured-sources` profile. A live organizational run requires a
+reviewed source map, approved adopter positioning, a competitor registry, authorized source
+access, reviewer roles, and adopter-owned local destinations.
+
+Detailed installation and first-run guidance lives in
+`references/REF-comp-intel-setup-contract.md`. Normal analysis lives in
+`references/RUN-workflow.md`; when setup is `ready`, the normal route does not load the setup
+contract.
+
+Keep completed setup state outside the installed package at stable workspace-owned paths:
 
 ```text
-Use $comp-intel to set up this market and run my first baseline.
+{authorized-workspace}/.pmm-skills/comp-intel/setup-config.yaml
+{authorized-workspace}/.pmm-skills/comp-intel/setup-receipt.yaml
+```
+
+Start from `assets/setup-config.yaml` and `assets/setup-receipt.yaml`. The receipt status means:
+
+- `ready`: package and configuration identities match and every required check passes;
+- `missing`: required setup state or the receipt does not exist;
+- `stale`: package, configuration, setup contract, or required mapping changed; and
+- `blocked`: a required source, permission, path, destination, or validation check failed.
+
+Dates in the receipt are audit metadata, not automatic expiry. Never put credentials in the
+configuration or receipt. A secret belongs in the adopter's normal credential mechanism and
+the setup file records only the mechanism and required permission.
+
+### Safe setup test
+
+Before connecting organizational sources, follow
+`examples/fixtures/setup-smoke-test.md` with the fictional
+`examples/fixtures/setup-config.yaml` and `examples/fixtures/setup-receipt.yaml`. Use a copied
+package and a separate temporary workspace. The test disables live web, communication,
+repository-host, publishing, messaging, notifications, scheduling, approval creation, and
+production writes.
+
+### Diagnose and repair
+
+Ask the agent to use `$comp-intel` to diagnose setup. It will compare package and configuration
+identity, validate required mappings and permissions, test local destinations without
+overwriting data, and name the exact repair. Repair updates only confirmed setup state and
+preserves existing evidence, registries, trackers, approvals, and reports.
+
+## First live setup
+
+You can begin with an adopter website plus competitor names and homepages:
+
+```text
+Use $comp-intel to set up this market and prepare it for a first baseline.
 ```
 
 The agent will:
 
-1. create a separate workspace for the product, geography, or product-geography scope;
-2. use each competitor homepage to propose official product, pricing, blog, changelog,
-   release-note, documentation, repository, and social sources;
-3. ask you to verify those links before saving them to the canonical source map;
-4. inspect available Slack and Drive metadata, suggest a manageable set of likely sources,
-   and ask permission before reading any content;
-5. ask whether you have other useful sources;
-6. draft your product positioning from approved sources and revise it with you;
-7. record your positioning approval; and
-8. run the first baseline, clearly labeling limited coverage and recommending what to add next.
+1. create a separate adopter-owned workspace for the selected market;
+2. propose official product, pricing, blog, changelog, release, documentation, repository,
+   and social sources from supplied homepages;
+3. ask you to verify candidates before writing them to the canonical source map;
+4. inspect only available internal-source metadata, then request permission before reading
+   content;
+5. ask whether you have other relevant sources;
+6. draft adopter positioning from approved sources for your review;
+7. verify required paths, permissions, reviewers, and local destinations;
+8. record a digest-bound `ready` receipt outside the package; and
+9. enter `references/RUN-workflow.md` in `baseline` mode.
 
-The target is about 30 minutes of PMM attention. Research and rendering may continue after the
-interactive setup. Read `references/RUN-onboarding.md` for the exact procedure.
+Research and rendering may continue after the interactive decisions. Unverified candidates
+stay in `onboarding-state.md`; they never become canonical sources automatically.
 
-## What to bring and where it goes
+## Adopter-owned working files
 
-You can start with only the first two rows. The agent proposes the rest and records each
-decision as setup progresses.
+Copy these templates into the configured market and run directories, never into the installed
+skill as live state:
 
-| Information or source | Required to start? | Saved in |
-|---|---|---|
-| Product name, website, and product/geography scope | yes | `market-pack.yaml` |
-| Competitor names and homepages | yes | `market-pack.yaml` |
-| Proposed competitor product, pricing, blog, changelog, release, docs, repository, and social links | agent discovers; PMM verifies | Pending in `onboarding-state.md`; verified results in `source-map.md` |
-| Approved product docs, positioning, strategy, priorities, or proof | no | Access record in `source-map.md`; synthesized position in `adopter-positioning.md` |
-| Approved Slack channels, Drive files, local notes, or other internal sources | no | `source-map.md` with approved access scope and sensitivity |
-| Existing competitor facts or past narrative captures | no | `competitor-registry.md` and, when comparative, `positioning-context.md` |
-| Optional stakeholder or business priorities | no | `stakeholder-lens.yaml` |
-
-## Files the setup creates
-
-Create an adopter-owned folder outside the installed skill and copy these templates into it:
-
-| Copy this file | What you fill in |
+| Template | Purpose |
 |---|---|
-| `assets/market-pack-template.yaml` | Market name, competitor roster, analysis categories, and date policy |
-| `assets/onboarding-state-template.md` | Setup progress, pending source candidates, approvals, and safe resume point |
-| `assets/source-map-template.md` | Verified competitor and adopter sources used by future runs |
-| `assets/adopter-positioning-template.md` | Approved audience, problem, category, value, differentiation, claims, proof, and comparison criteria |
-| `assets/competitor-registry-template.md` | Durable competitor facts, current narrative, watch items, and source dates |
-| `assets/positioning-context-template.md` | Post-research competitor comparisons, counters, concessions, and missing responses |
-| `assets/stakeholder-lens-template.yaml` | Optional decision priorities used to rank—not manufacture—signals |
-| `assets/tracker-templates.md` | Battlecard gaps, narrative changes, and unconfirmed win/loss signals |
-| `assets/run-record-template.md` | Mode, scope, loaded inputs, stage history, and safe resume point |
+| `assets/onboarding-state-template.md` | Setup progress, pending source candidates, approvals, and resume point |
+| `assets/market-pack-template.yaml` | Market boundary, roster, aliases, analysis categories, and date policy |
+| `assets/source-map-template.md` | Verified competitor, adopter, internal, local, and community sources |
+| `assets/adopter-positioning-template.md` | Approved audience, problem, category, value, claims, proof, and comparison criteria |
+| `assets/competitor-registry-template.md` | Durable facts, current narrative, pricing, watch items, and source dates |
+| `assets/positioning-context-template.md` | Competitor comparisons, counters, concessions, gaps, and watches |
+| `assets/stakeholder-lens-template.yaml` | Optional role-based priorities used to rank, not manufacture, signals |
+| `assets/tracker-templates.md` | Battlecard gaps, narrative changes, and unconfirmed evaluation signals |
+| `assets/run-record-template.md` | Scope, inputs, capabilities, stage history, artifacts, and resume point |
 | `assets/evidence-log-template.md` | Source coverage plus accepted, rejected, conflicting, and limited evidence |
-| `assets/output-template.md` | The briefing produced for each run |
+| `assets/output-template.md` | Evidence-backed briefing and proposed state changes |
 
-Follow `references/DOC-setup-and-mapping.md` for the setup checklist. The complete fictional
-worked example starts at `examples/EX-synthetic.md`. Its HarborKey embedded-wallet scenario
-fills all 11 human-readable templates at the depth of a mature working practice, while using
-only non-reversible fictional facts and reserved `.invalid` URLs.
+The fictional HarborKey example begins at `examples/EX-synthetic.md` and fills all eleven
+human-readable templates at mature depth using only invented facts and reserved `.invalid`
+URLs.
 
 ## Run it
 
 Useful prompts include:
 
 ```text
-Use $comp-intel to set up a competitor registry and source map for this market.
-```
-
-```text
 Use $comp-intel to run a standard scan for [market] from [start date] through [end date].
-Use my files in [folder], stop for evidence review, and do not update the registry yet.
+Stop for evidence review and do not update the registry yet.
 ```
 
 ```text
 Use $comp-intel to resume run [run ID] from evidence review and prepare the draft briefing.
 ```
 
-The runbook supports four modes:
+The sole normal runbook, `references/RUN-workflow.md`, supports:
 
-- `baseline`: establish the first current-state registry with a longer adopter-chosen window;
+- `baseline`: establish the first current-state registry with an adopter-chosen window;
 - `standard`: scan a recent absolute window and report material changes;
-- `collection-only`: gather and normalize evidence, then stop;
+- `collection-only`: gather and normalize evidence, then stop; and
 - `resume`: continue from saved evidence without silently recollecting it.
 
-## What each package document does
+## Package map
 
 | Document | Purpose |
 |---|---|
-| `SKILL.md` | Routes the agent, states boundaries, and defines the end-to-end output contract |
-| `references/RUN-onboarding.md` | Guides first-run source discovery, verification, positioning approval, baseline, and enrichment |
-| `references/RUN-workflow.md` | Gives the exact collection, analysis, review, and update procedure |
-| `references/REF-analyst-contract.md` | Defines evidence quality, analyst judgment, gap rules, and executive-writing standards |
-| `references/DOC-setup-and-mapping.md` | Shows how to replace placeholders with your market, sources, permissions, and owners |
-| `references/DOC-evidence-and-claims.md` | Defines the evidence log and rules for claims, dates, conflicts, and confidence |
-| `references/DOC-review-and-apply.md` | Defines the human review gates and safe local-update procedure |
-| `references/DOC-troubleshooting.md` | Explains safe degradation and failure handling |
-| `assets/*-template.*` | Provides blank, reusable working files for the adopter's own context |
-| `examples/EX-synthetic.md` | Walks through a full-depth fictional embedded-wallet baseline and links one completed counterpart for every human-readable template |
-| `scripts/` and `assets/schemas/` | Optional deterministic controller for teams that need machine-checked manifests and approvals |
+| `SKILL.md` | Routes ready normal work, explicit setup, and non-ready states |
+| `references/RUN-workflow.md` | Sole normal collection, analysis, review, and local-update workflow |
+| `references/REF-comp-intel-setup-contract.md` | Conditional installation, mappings, permissions, test, receipt, diagnosis, and repair |
+| `references/REF-analyst-contract.md` | Evidence quality, analyst judgment, gap rules, and executive-writing standards |
+| `references/DOC-evidence-and-claims.md` | Evidence and claim dates, conflicts, confidence, and traceability |
+| `references/DOC-review-and-apply.md` | Human review gates and safe local apply |
+| `references/DOC-troubleshooting.md` | Safe degradation and workflow failure handling |
+| `assets/*-template.*` | Blank reusable market, evidence, registry, tracker, and report structures |
+| `examples/EX-synthetic.md` | Full-depth fictional baseline and setup-test entrypoint |
+| `scripts/` and `assets/schemas/` | Optional deterministic controller and machine-readable contracts |
 
 ## Safety boundary
 
-Keep live source mappings, customer or deal context, private messages, stakeholder profiles,
-credentials, evidence, reports, registries, and trackers in the adopter-owned folder—not in
-the installed skill or a public fork. The skill never grants authority to publish, message
-people, change a CRM, or alter a battlecard outside the reviewed local workflow.
+Keep live mappings, customer or deal context, private messages, stakeholder profiles,
+credentials, setup state, evidence, reports, registries, and trackers in the adopter-owned
+workspace—not in the installed skill or a public fork. Local evidence or state approval does
+not authorize publication, messages, CRM changes, schedules, notifications, or other external
+mutation.

@@ -6,7 +6,7 @@ requires:
   - STD-evidence-privacy-v1.0.md
   - STD-skill-dependencies-v1.0.md
   - product-requirements/comp-intel/DOC-comp-intel-codex-migration-prd-v1.0.md
-status: Draft
+status: Superseded
 version: "1.0"
 owner: alex-bea
 consumers:
@@ -17,6 +17,11 @@ change_control: Pull request review
 ---
 
 # Competitive Intelligence Source Inventory (v1.0)
+
+This inventory is retained as design history. It is superseded by
+[`DOC-comp-intel-source-inventory-v1.1.md`](DOC-comp-intel-source-inventory-v1.1.md), which
+records the current one-RUN conditional setup architecture. Do not use this version to restore
+the removed onboarding RUN or setup document.
 
 ## 1. Purpose and boundary
 

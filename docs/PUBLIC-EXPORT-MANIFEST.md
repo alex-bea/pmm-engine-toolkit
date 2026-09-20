@@ -20,11 +20,14 @@ capability restrictions, external authority, and publishers remain explicit opt-
 
 The repository also contains a complete, agent-neutral competitive-intelligence starter kit
 under `skills/comp-intel/`: a working analyst method, fillable source/registry/positioning/
-tracker templates, a guided first-run procedure, review gates, a full-depth fictional
+tracker templates, one normal RUN, a conditional `configured-sources` setup contract,
+adopter-owned setup configuration and readiness receipt schemas, review gates, a full-depth fictional
 embedded-wallet example with one completed counterpart for every human-readable template,
 and an optional deterministic controller. The example is a non-reversible structural mirror:
 it retains reusable analytical depth but contains no real entity, fact, URL, or alias map. The
-setup procedure starts with adopter and
+setup route uses `ready`, `missing`, `stale`, and `blocked` states; a matching ready receipt
+enters normal execution without loading setup detail. The isolated fictional smoke test has no
+live source or external side effect. Setup starts with adopter and
 competitor homepages, keeps unverified source candidates outside the canonical source map,
 requires adopter-positioning approval before comparison, and permits an explicitly limited
 baseline. An earlier Draft Codex migration suite under `product-requirements/comp-intel/` is
