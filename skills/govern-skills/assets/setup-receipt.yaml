@@ -1,0 +1,22 @@
+schema_version: 1
+skill_slug: govern-skills
+status: missing
+installed_at: null
+verified_at: null
+package_revision: "[package-revision]"
+package_digest: "sha256:[package-digest]"
+setup_contract_version: "1.0"
+configuration_path: "[authorized-workspace]/.agents/govern-skills/setup-config.yaml"
+configuration_digest: "sha256:[configuration-digest]"
+scope: documents-only
+checks:
+  package_closure: not-run
+  instructions_and_git_state: not-run
+  source_mapping: not-run
+  destination_checks: not-run
+  metadata_and_links: not-run
+  isolated_fixture: not-run
+  optional_layers: not-applicable
+limitations:
+  - Complete the setup contract before normal execution.
+normal_entrypoint: references/RUN-govern-skills-workflow-v1.1.md

@@ -6,7 +6,7 @@ requires:
   - STD-evidence-privacy-v1.0.md
   - STD-governance-document-metadata-v1.0.md
   - STD-skill-dependencies-v1.0.md
-status: Draft
+status: Superseded
 version: "1.0"
 owner: alex-bea
 consumers:
@@ -17,6 +17,9 @@ change_control: Pull request review
 ---
 
 # Govern Skills Copy-Pattern Source Inventory (v1.0)
+
+> Superseded by `DOC-govern-skills-source-inventory-v1.1.md`, which inventories the
+> conditional-setup amendment and its unchanged boundaries.
 
 This advisory inventory records the bounded design and public-target closure used for the
 standalone package. Private source content and real operating data are not distributed.

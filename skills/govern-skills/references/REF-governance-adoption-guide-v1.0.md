@@ -2,7 +2,6 @@
 doc_type: REF
 normative: true
 requires:
-  - RUN-govern-skills-setup-workflow-v1.0.md
   - STD-ai-skill-governance-prd-v1.0.md
   - STD-governance-document-metadata-v1.0.md
   - STD-runtime-enforcement-v1.0.md
@@ -28,6 +27,11 @@ not require an installer, plugin, registry, hook, CI workflow, hosted service, o
 The agent may claim only what it observes. A written policy can guide behavior, but it does
 not prove that a validator, hook, capability restriction, human approval service, or
 publisher exists.
+
+Use this guide only after `REF-govern-skills-setup-contract.md` reports a matching `ready`
+receipt. If readiness is missing, stale, or blocked, return to that setup contract. Normal
+governance work follows `RUN-govern-skills-workflow-v1.1.md` and should not reload setup
+detail.
 
 ## 1. Inspect before asking setup questions
 

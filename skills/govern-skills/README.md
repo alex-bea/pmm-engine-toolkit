@@ -22,14 +22,12 @@ actual root during inspection.
 
 ## Why the files are separated
 
-The package makes each maintenance concern easy to find:
-
 | Primitive | Job | Typical update point |
 |---|---|---|
 | `SKILL.md` | Discovery, routing, and durable boundaries | Change when the job or trigger changes. |
-| `RUN-*.md` | Ordered setup and operating workflow | Insert or change a workflow step here. |
+| `RUN-*.md` | Ordered normal workflow | Insert or change an operating step here. |
 | `STD-*.md` | Stable rules shared across decisions | Change only when the rule itself changes. |
-| `REF-*.md` | Detailed guidance needed in one mode | Add knowledge without bloating the entrypoint. |
+| `REF-*.md` | Focused setup or mode guidance | Add knowledge without bloating the entrypoint. |
 | Templates | Blank structures copied and adapted | Change when an artifact contract changes. |
 | Examples | Fictional completed demonstrations | Change when users need clearer depth or edge cases. |
 | Scripts | Optional deterministic checks or transforms | Add only when repeatable mechanics justify code. |
@@ -40,20 +38,46 @@ The package makes each maintenance concern easy to find:
 Versioned governance documents are intentionally small and retained. Their filenames make
 dependencies, authority, and safe insertion points visible to both people and agents.
 
-## Default adoption path
+## Setup
 
-1. Read [`SKILL.md`](SKILL.md), then follow the sole
-   [setup and execution workflow](references/RUN-govern-skills-setup-workflow-v1.0.md).
-2. Inspect the adopter repository before proposing changes.
-3. Reuse compatible local naming, metadata, and directory conventions.
-4. Start with documents, templates, and examples only.
-5. Show an exact file plan and obtain scoped approval before writing.
-6. Run the bundled fictional fixture in an isolated temporary directory.
-7. Save the completed mapping, configuration, and setup receipt outside this package.
+The setup profile is `local-persistence`. It stores a completed configuration and a compact
+readiness receipt in the adopter's authorized workspace, outside the installed package.
+Unless an existing compatible convention governs those files, use:
 
-The package-local standards are deliberately duplicated so a copy of this one directory is
-self-contained. The fictional mapping and receipt demonstrate shape only; they are not
-defaults or evidence about a real installation.
+- `.agents/govern-skills/setup-config.yaml` for the completed mapping; and
+- `.agents/govern-skills/setup-receipt.yaml` for the current readiness record.
+
+For explicit setup, install, configure, verify, diagnose, or repair requests—and whenever
+the receipt is missing, stale, or blocked—follow the
+[`setup contract`](references/REF-govern-skills-setup-contract.md). Begin with the blank
+[`setup configuration`](assets/setup-config.yaml) and
+[`setup receipt`](assets/setup-receipt.yaml). Run the
+[`fictional smoke test`](examples/fixtures/setup-smoke-test.md) in an isolated temporary
+directory and compare the generated state with the fictional
+[`configuration`](examples/fixtures/setup-config.yaml) and
+[`receipt`](examples/fixtures/setup-receipt.yaml).
+
+A receipt is `ready` only for its named scope. It is stale when the package revision or
+digest, setup-contract version, required mapping, selected enforcement layer, dependency
+set, or configuration digest changes. Dates are audit evidence only; there is no
+time-to-live. Repair only the affected scope, rerun its checks, and write a new receipt.
+
+The YAML receipt is the stable machine-readable readiness record. The existing
+[`detailed receipt template`](assets/output-template.md) and fictional Markdown receipt are
+optional human-readable evidence reports, not substitutes for the YAML readiness record.
+
+## Normal use
+
+With a matching `ready` receipt, follow the sole normal
+[`governance workflow`](references/RUN-govern-skills-workflow-v1.1.md). Normal audit or
+maintenance work should not load the setup contract. The usual sequence is:
+
+1. inspect the repository and controlling instructions;
+2. choose one governance mode;
+3. load only the relevant standards;
+4. report evidence and an exact proposed boundary;
+5. obtain scoped approval before writes; and
+6. run focused verification and report limitations.
 
 ## Optional layers
 
@@ -72,14 +96,15 @@ is optional advanced tooling; it is not required for this copy-and-adapt workflo
 
 ## Package map
 
-- `references/RUN-govern-skills-setup-workflow-v1.0.md` — setup, safe test, receipt, and
-  normal governance work.
-- `references/REF-governance-adoption-guide-v1.0.md` — inspect-first adoption method and
-  readiness reporting.
+- `references/RUN-govern-skills-workflow-v1.1.md` — normal governance work.
+- `references/REF-govern-skills-setup-contract.md` — setup, readiness, safe test, receipt,
+  and repair contract.
+- `references/REF-governance-adoption-guide-v1.0.md` — inspect-first adoption method.
 - `references/STD-*.md` — eight reusable public governance standards.
-- `assets/templates/` — blank repository instruction, skill, and configuration templates.
-- `assets/output-template.md` — setup-receipt template.
-- `examples/fixtures/` — complete fictional mapping and receipt.
+- `assets/setup-config.yaml` and `assets/setup-receipt.yaml` — blank setup-state contracts.
+- `assets/templates/` — blank repository instruction, skill, and governance templates.
+- `assets/output-template.md` — optional detailed human-readable receipt.
+- `examples/fixtures/` — complete fictional mapping, setup state, smoke test, and receipt.
 
 Adopted files belong to the adopter repository. Mutable configuration, state, outputs, and
 receipts stay outside the installed package.
